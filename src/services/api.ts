@@ -1,9 +1,18 @@
 import { mockWorkflows, mockBlocks, mockRegistryStats, mockHealth } from './mockData'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://backend-dev.pankh.ai/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
 const BLOCKS_BASE_URL = '/blocks' // Block endpoints
-const API_KEY = import.meta.env.VITE_API_KEY || 'dev-key-change-me' // API key from environment
+const API_KEY = import.meta.env.VITE_API_KEY || 'df2c28ad-c3d5-4218-b0c8-258ccd0a8b99' // API key from environment
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || false
+
+// Debug: Log configuration on load
+console.log('🔧 Frontend API Configuration:', {
+  API_BASE_URL,
+  API_KEY: API_KEY ? '***' + API_KEY.slice(-4) : 'NOT SET',
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  NODE_ENV: import.meta.env.NODE_ENV,
+  MODE: import.meta.env.MODE,
+})
 
 // Centralized auth headers
 const getAuthHeaders = () => ({

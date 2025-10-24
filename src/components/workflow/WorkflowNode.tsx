@@ -149,8 +149,7 @@ const WorkflowNode = ({ data, selected, id }: WorkflowNodeProps) => {
           statusColor
         } ${selected ? 'ring-4 ring-blue-300 ring-offset-2 shadow-2xl' : 'shadow-lg'}`}
       >
-                {/* Input Handle (Target) */}
-               {' '}
+                {/* Input Handle (Target) */}       {' '}
         <Handle
           type="target"
           position={Position.Left}
@@ -281,8 +280,7 @@ const WorkflowNode = ({ data, selected, id }: WorkflowNodeProps) => {
           )}
                  {' '}
         </div>
-                {/* Output Handle (Source) */}
-               {' '}
+                {/* Output Handle (Source) */}       {' '}
         <Handle
           type="source"
           position={Position.Right}
