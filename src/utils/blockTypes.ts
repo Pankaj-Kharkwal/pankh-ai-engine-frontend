@@ -1,0 +1,589 @@
+import {
+  Search, Globe, MessageSquare, Volume2, Plus, Hash, Mail, Database, FileText,
+  Code, Filter, Upload, Download, Calendar, Clock, Zap, Brain, Eye, Lock,
+  Workflow, GitBranch, Settings, BarChart, PieChart, Image, Video, Music,
+  Smartphone, Monitor, Server, Cloud, Key, Shield, User, Users, Heart,
+  Star, Flag, Tag, Bookmark, Link, Share, Copy, Scissors, RotateCw,
+  RefreshCw, Play, Pause, Square, FastForward, Rewind, Volume1, VolumeX
+} from 'lucide-react'
+
+export interface BlockType {
+  type: string
+  name: string
+  icon: React.ComponentType<any>
+  color: string
+  category: string
+  description: string
+  defaultParams: any
+}
+
+export const availableBlockTypes: BlockType[] = [
+  // AI & Machine Learning
+  {
+    type: 'azure_chat',
+    name: 'Azure OpenAI Chat',
+    icon: Brain,
+    color: 'text-purple-400',
+    category: 'ai',
+    description: 'Chat with Azure OpenAI models',
+    defaultParams: {
+      system: 'You are a helpful assistant',
+      prompt: 'Hello, how can I help you?',
+      temperature: 0.7,
+      max_tokens: 1000
+    }
+  },
+  {
+    type: 'gpt_analyze',
+    name: 'GPT Text Analysis',
+    icon: Eye,
+    color: 'text-purple-400',
+    category: 'ai',
+    description: 'Analyze text with GPT models',
+    defaultParams: {
+      text: '',
+      analysis_type: 'sentiment',
+      detail_level: 'medium'
+    }
+  },
+  {
+    type: 'ai_summarize',
+    name: 'AI Text Summarizer',
+    icon: FileText,
+    color: 'text-purple-400',
+    category: 'ai',
+    description: 'Summarize long text using AI',
+    defaultParams: {
+      text: '',
+      max_length: 500,
+      style: 'concise'
+    }
+  },
+  {
+    type: 'ai_translate',
+    name: 'AI Translator',
+    icon: Globe,
+    color: 'text-purple-400',
+    category: 'ai',
+    description: 'Translate text between languages',
+    defaultParams: {
+      text: '',
+      source_language: 'auto',
+      target_language: 'en'
+    }
+  },
+
+  // Data Processing
+  {
+    type: 'searxng_search',
+    name: 'SearXNG Search',
+    icon: Search,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Search the web using SearXNG',
+    defaultParams: {
+      query: '',
+      limit: 10,
+      timeout_sec: 30
+    }
+  },
+  {
+    type: 'scrape_urls',
+    name: 'Web Scraper',
+    icon: Globe,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Scrape content from URLs',
+    defaultParams: {
+      urls: [],
+      max_chars_per_doc: 5000,
+      timeout_sec: 30
+    }
+  },
+  {
+    type: 'json_parse',
+    name: 'JSON Parser',
+    icon: Code,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Parse and extract data from JSON',
+    defaultParams: {
+      json_data: '{}',
+      path: '$',
+      default_value: null
+    }
+  },
+  {
+    type: 'csv_parser',
+    name: 'CSV Parser',
+    icon: Database,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Parse CSV data into structured format',
+    defaultParams: {
+      csv_data: '',
+      delimiter: ',',
+      has_header: true
+    }
+  },
+  {
+    type: 'filter_array',
+    name: 'Array Filter',
+    icon: Filter,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Filter arrays based on conditions',
+    defaultParams: {
+      array: [],
+      condition: 'length > 0',
+      field: null
+    }
+  },
+  {
+    type: 'sort_array',
+    name: 'Array Sorter',
+    icon: BarChart,
+    color: 'text-blue-400',
+    category: 'data',
+    description: 'Sort arrays by specified criteria',
+    defaultParams: {
+      array: [],
+      field: null,
+      direction: 'asc'
+    }
+  },
+
+  // Network & HTTP
+  {
+    type: 'http_get',
+    name: 'HTTP GET',
+    icon: Download,
+    color: 'text-green-400',
+    category: 'network',
+    description: 'Make HTTP GET requests',
+    defaultParams: {
+      url: '',
+      headers: {},
+      timeout: 30
+    }
+  },
+  {
+    type: 'http_post',
+    name: 'HTTP POST',
+    icon: Upload,
+    color: 'text-green-400',
+    category: 'network',
+    description: 'Make HTTP POST requests',
+    defaultParams: {
+      url: '',
+      data: {},
+      headers: {},
+      timeout: 30
+    }
+  },
+  {
+    type: 'webhook_receive',
+    name: 'Webhook Receiver',
+    icon: Workflow,
+    color: 'text-green-400',
+    category: 'network',
+    description: 'Receive data via webhooks',
+    defaultParams: {
+      path: '/webhook',
+      method: 'POST',
+      auth_required: false
+    }
+  },
+  {
+    type: 'api_request',
+    name: 'API Request',
+    icon: Server,
+    color: 'text-green-400',
+    category: 'network',
+    description: 'Make authenticated API requests',
+    defaultParams: {
+      url: '',
+      method: 'GET',
+      auth_type: 'bearer',
+      api_key: ''
+    }
+  },
+
+  // Communication
+  {
+    type: 'email_send',
+    name: 'Send Email',
+    icon: Mail,
+    color: 'text-yellow-400',
+    category: 'communication',
+    description: 'Send emails via SMTP',
+    defaultParams: {
+      to: '',
+      subject: '',
+      body: '',
+      html: false
+    }
+  },
+  {
+    type: 'slack_webhook',
+    name: 'Slack Message',
+    icon: MessageSquare,
+    color: 'text-yellow-400',
+    category: 'communication',
+    description: 'Send messages to Slack',
+    defaultParams: {
+      webhook_url: '',
+      text: '',
+      channel: '#general',
+      username: 'Bot'
+    }
+  },
+  {
+    type: 'discord_webhook',
+    name: 'Discord Message',
+    icon: MessageSquare,
+    color: 'text-yellow-400',
+    category: 'communication',
+    description: 'Send messages to Discord',
+    defaultParams: {
+      webhook_url: '',
+      content: '',
+      username: 'Bot'
+    }
+  },
+  {
+    type: 'sms_send',
+    name: 'Send SMS',
+    icon: Smartphone,
+    color: 'text-yellow-400',
+    category: 'communication',
+    description: 'Send SMS messages',
+    defaultParams: {
+      to: '',
+      message: '',
+      provider: 'twilio'
+    }
+  },
+
+  // Utility Functions
+  {
+    type: 'echo',
+    name: 'Echo',
+    icon: Volume2,
+    color: 'text-gray-400',
+    category: 'utility',
+    description: 'Output text or data',
+    defaultParams: {
+      message: 'Hello World!'
+    }
+  },
+  {
+    type: 'delay',
+    name: 'Delay',
+    icon: Clock,
+    color: 'text-gray-400',
+    category: 'utility',
+    description: 'Wait for specified time',
+    defaultParams: {
+      seconds: 5,
+      unit: 'seconds'
+    }
+  },
+  {
+    type: 'variable_set',
+    name: 'Set Variable',
+    icon: Settings,
+    color: 'text-gray-400',
+    category: 'utility',
+    description: 'Store data in variables',
+    defaultParams: {
+      name: 'my_variable',
+      value: '',
+      type: 'string'
+    }
+  },
+  {
+    type: 'variable_get',
+    name: 'Get Variable',
+    icon: Download,
+    color: 'text-gray-400',
+    category: 'utility',
+    description: 'Retrieve stored variables',
+    defaultParams: {
+      name: 'my_variable',
+      default_value: null
+    }
+  },
+  {
+    type: 'condition',
+    name: 'Condition',
+    icon: GitBranch,
+    color: 'text-gray-400',
+    category: 'utility',
+    description: 'Conditional branching logic',
+    defaultParams: {
+      condition: 'equals',
+      value1: '',
+      value2: '',
+      case_sensitive: true
+    }
+  },
+
+  // Math Operations
+  {
+    type: 'sum',
+    name: 'Sum',
+    icon: Plus,
+    color: 'text-orange-400',
+    category: 'math',
+    description: 'Add numbers together',
+    defaultParams: {
+      numbers: [1, 2, 3, 4, 5]
+    }
+  },
+  {
+    type: 'math',
+    name: 'Math Operation',
+    icon: Hash,
+    color: 'text-orange-400',
+    category: 'math',
+    description: 'Perform mathematical calculations',
+    defaultParams: {
+      operation: 'add',
+      operand1: 0,
+      operand2: 0
+    }
+  },
+  {
+    type: 'statistics',
+    name: 'Statistics',
+    icon: BarChart,
+    color: 'text-orange-400',
+    category: 'math',
+    description: 'Calculate statistical measures',
+    defaultParams: {
+      data: [],
+      metrics: ['mean', 'median', 'std']
+    }
+  },
+  {
+    type: 'random_number',
+    name: 'Random Number',
+    icon: Hash,
+    color: 'text-orange-400',
+    category: 'math',
+    description: 'Generate random numbers',
+    defaultParams: {
+      min: 1,
+      max: 100,
+      count: 1,
+      integer: true
+    }
+  },
+
+  // File Operations
+  {
+    type: 'file_read',
+    name: 'Read File',
+    icon: FileText,
+    color: 'text-indigo-400',
+    category: 'document',
+    description: 'Read content from files',
+    defaultParams: {
+      file_path: '',
+      encoding: 'utf-8',
+      binary: false
+    }
+  },
+  {
+    type: 'file_write',
+    name: 'Write File',
+    icon: FileText,
+    color: 'text-indigo-400',
+    category: 'document',
+    description: 'Write content to files',
+    defaultParams: {
+      file_path: '',
+      content: '',
+      mode: 'write',
+      encoding: 'utf-8'
+    }
+  },
+  {
+    type: 'pdf_extract',
+    name: 'PDF Extractor',
+    icon: FileText,
+    color: 'text-indigo-400',
+    category: 'document',
+    description: 'Extract text from PDF files',
+    defaultParams: {
+      file_path: '',
+      page_range: 'all',
+      output_format: 'text'
+    }
+  },
+  {
+    type: 'image_process',
+    name: 'Image Processor',
+    icon: Image,
+    color: 'text-indigo-400',
+    category: 'document',
+    description: 'Process and manipulate images',
+    defaultParams: {
+      image_path: '',
+      operation: 'resize',
+      width: 800,
+      height: 600
+    }
+  },
+
+  // Security
+  {
+    type: 'hash',
+    name: 'Hash Generator',
+    icon: Lock,
+    color: 'text-red-400',
+    category: 'security',
+    description: 'Generate cryptographic hashes',
+    defaultParams: {
+      text: '',
+      algorithm: 'sha256',
+      encoding: 'hex'
+    }
+  },
+  {
+    type: 'encrypt',
+    name: 'Encrypt Data',
+    icon: Shield,
+    color: 'text-red-400',
+    category: 'security',
+    description: 'Encrypt sensitive data',
+    defaultParams: {
+      data: '',
+      algorithm: 'AES',
+      key: '',
+      iv: ''
+    }
+  },
+  {
+    type: 'jwt_generate',
+    name: 'JWT Generator',
+    icon: Key,
+    color: 'text-red-400',
+    category: 'security',
+    description: 'Generate JSON Web Tokens',
+    defaultParams: {
+      payload: {},
+      secret: '',
+      algorithm: 'HS256',
+      expires_in: '1h'
+    }
+  },
+  {
+    type: 'password_generate',
+    name: 'Password Generator',
+    icon: Lock,
+    color: 'text-red-400',
+    category: 'security',
+    description: 'Generate secure passwords',
+    defaultParams: {
+      length: 12,
+      include_symbols: true,
+      include_numbers: true,
+      include_uppercase: true
+    }
+  },
+
+  // Integrations
+  {
+    type: 'github_api',
+    name: 'GitHub API',
+    icon: Code,
+    color: 'text-cyan-400',
+    category: 'integration',
+    description: 'Interact with GitHub API',
+    defaultParams: {
+      endpoint: '/user',
+      method: 'GET',
+      token: '',
+      data: {}
+    }
+  },
+  {
+    type: 'google_sheets',
+    name: 'Google Sheets',
+    icon: Database,
+    color: 'text-cyan-400',
+    category: 'integration',
+    description: 'Read/write Google Sheets data',
+    defaultParams: {
+      spreadsheet_id: '',
+      range: 'A1:Z100',
+      operation: 'read',
+      credentials: {}
+    }
+  },
+  {
+    type: 'aws_s3',
+    name: 'AWS S3',
+    icon: Cloud,
+    color: 'text-cyan-400',
+    category: 'integration',
+    description: 'Upload/download from S3',
+    defaultParams: {
+      bucket: '',
+      key: '',
+      operation: 'upload',
+      access_key: '',
+      secret_key: ''
+    }
+  },
+  {
+    type: 'docker_run',
+    name: 'Docker Run',
+    icon: Server,
+    color: 'text-cyan-400',
+    category: 'integration',
+    description: 'Run Docker containers',
+    defaultParams: {
+      image: '',
+      command: '',
+      environment: {},
+      volumes: []
+    }
+  },
+  {
+    type: 'k8s_deploy',
+    name: 'Kubernetes Deploy',
+    icon: Server,
+    color: 'text-cyan-400',
+    category: 'integration',
+    description: 'Deploy to Kubernetes',
+    defaultParams: {
+      namespace: 'default',
+      manifest: {},
+      kubeconfig: '',
+      operation: 'apply'
+    }
+  }
+]
+
+export const getCategoryColor = (category: string): string => {
+  const colorMap: { [key: string]: string } = {
+    'ai': 'text-purple-400',
+    'data': 'text-blue-400',
+    'network': 'text-green-400',
+    'communication': 'text-yellow-400',
+    'utility': 'text-gray-400',
+    'math': 'text-orange-400',
+    'document': 'text-indigo-400',
+    'security': 'text-red-400',
+    'integration': 'text-cyan-400'
+  }
+  return colorMap[category?.toLowerCase()] || 'text-gray-400'
+}
+
+export const getBlockIcon = (blockType: string) => {
+  const block = availableBlockTypes.find(b => b.type === blockType)
+  return block?.icon || Code
+}
