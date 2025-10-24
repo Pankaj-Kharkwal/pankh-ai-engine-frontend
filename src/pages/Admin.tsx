@@ -1,9 +1,30 @@
 import { Users, Shield, BarChart3, Database, AlertTriangle } from 'lucide-react'
 
 const users = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', status: 'Active', workflows: 12 },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User', status: 'Active', workflows: 8 },
-  { id: 3, name: 'Bob Wilson', email: 'bob@example.com', role: 'User', status: 'Inactive', workflows: 3 },
+  {
+    id: 1,
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'Admin',
+    status: 'Active',
+    workflows: 12,
+  },
+  {
+    id: 2,
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    role: 'User',
+    status: 'Active',
+    workflows: 8,
+  },
+  {
+    id: 3,
+    name: 'Bob Wilson',
+    email: 'bob@example.com',
+    role: 'User',
+    status: 'Inactive',
+    workflows: 3,
+  },
 ]
 
 export default function Admin() {
@@ -11,7 +32,9 @@ export default function Admin() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold gradient-text">Admin Dashboard</h1>
-        <p className="text-gray-400 mt-2">Manage users, system settings, and monitor platform health</p>
+        <p className="text-gray-400 mt-2">
+          Manage users, system settings, and monitor platform health
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -24,7 +47,7 @@ export default function Admin() {
             <Users className="w-8 h-8 text-blue-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -34,7 +57,7 @@ export default function Admin() {
             <BarChart3 className="w-8 h-8 text-green-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -44,7 +67,7 @@ export default function Admin() {
             <Shield className="w-8 h-8 text-green-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -70,7 +93,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {users.map(user => (
                   <tr key={user.id} className="border-b border-glass-200">
                     <td className="py-3">
                       <div>
@@ -79,16 +102,24 @@ export default function Admin() {
                       </div>
                     </td>
                     <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.role === 'Admin' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          user.role === 'Admin'
+                            ? 'bg-purple-900 text-purple-300'
+                            : 'bg-blue-900 text-blue-300'
+                        }`}
+                      >
                         {user.role}
                       </span>
                     </td>
                     <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.status === 'Active' ? 'bg-green-900 text-green-300' : 'bg-gray-900 text-gray-300'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          user.status === 'Active'
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-gray-900 text-gray-300'
+                        }`}
+                      >
                         {user.status}
                       </span>
                     </td>

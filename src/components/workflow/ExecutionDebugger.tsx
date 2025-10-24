@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Play,
   Pause,
@@ -11,33 +11,33 @@ import {
   X,
   Loader,
   ArrowRight, // New: Used for 'Step' button, clearer than SkipForward
-} from "lucide-react";
-import type { Node, Edge } from "@xyflow/react";
+} from 'lucide-react'
+import type { Node, Edge } from '@xyflow/react'
 
 interface ExecutionDebuggerProps {
-  nodes: Node[];
-  edges: Edge[];
-  executionData?: any;
-  isVisible: boolean;
-  onToggleVisibility: () => void;
-  onExecuteStep?: (nodeId: string) => void;
-  onExecuteToBreakpoint?: (breakpointNodeId: string) => void;
-  onStopExecution?: () => void;
+  nodes: Node[]
+  edges: Edge[]
+  executionData?: any
+  isVisible: boolean
+  onToggleVisibility: () => void
+  onExecuteStep?: (nodeId: string) => void
+  onExecuteToBreakpoint?: (breakpointNodeId: string) => void
+  onStopExecution?: () => void
 }
 
 interface Breakpoint {
-  nodeId: string;
-  enabled: boolean;
+  nodeId: string
+  enabled: boolean
 }
 
 interface ExecutionStep {
-  nodeId: string;
-  status: "pending" | "running" | "completed" | "error";
-  inputData?: any;
-  outputData?: any;
-  error?: string;
-  executionTime?: number;
-  timestamp: Date;
+  nodeId: string
+  status: 'pending' | 'running' | 'completed' | 'error'
+  inputData?: any
+  outputData?: any
+  error?: string
+  executionTime?: number
+  timestamp: Date
 }
 
 export default function ExecutionDebugger({
@@ -50,186 +50,181 @@ export default function ExecutionDebugger({
   onExecuteToBreakpoint,
   onStopExecution,
 }: ExecutionDebuggerProps) {
-  const [breakpoints, setBreakpoints] = useState<Breakpoint[]>([]);
-  const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
-  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
-  const [isDebugging, setIsDebugging] = useState(false);
-  const [executionMode, setExecutionMode] = useState<
-    "normal" | "step" | "breakpoint"
-  >("normal");
-  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const [breakpoints, setBreakpoints] = useState<Breakpoint[]>([])
+  const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([])
+  const [currentStepIndex, setCurrentStepIndex] = useState(-1)
+  const [isDebugging, setIsDebugging] = useState(false)
+  const [executionMode, setExecutionMode] = useState<'normal' | 'step' | 'breakpoint'>('normal')
+  const [selectedStep, setSelectedStep] = useState<number | null>(null)
 
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // --- EXISTING LOGIC REMAINS (useEffect, toggleBreakpoint, etc.) ---
   useEffect(() => {
     if (executionData?.nodeResults) {
-      const steps: ExecutionStep[] = [];
-      const processedNodes = new Set<string>();
+      const steps: ExecutionStep[] = []
+      const processedNodes = new Set<string>()
 
       const getExecutionOrder = (): string[] => {
-        const order: string[] = [];
-        const visited = new Set<string>();
-        const visiting = new Set<string>();
+        const order: string[] = []
+        const visited = new Set<string>()
+        const visiting = new Set<string>()
 
         const visit = (nodeId: string) => {
-          if (visited.has(nodeId) || visiting.has(nodeId)) return;
-          visiting.add(nodeId);
+          if (visited.has(nodeId) || visiting.has(nodeId)) return
+          visiting.add(nodeId)
 
-          const incomingEdges = edges.filter((edge) => edge.target === nodeId);
-          incomingEdges.forEach((edge) => visit(edge.source));
+          const incomingEdges = edges.filter(edge => edge.target === nodeId)
+          incomingEdges.forEach(edge => visit(edge.source))
 
-          visiting.delete(nodeId);
-          visited.add(nodeId);
-          order.push(nodeId);
-        };
+          visiting.delete(nodeId)
+          visited.add(nodeId)
+          order.push(nodeId)
+        }
 
-        nodes.forEach((node) => {
-          const hasIncoming = edges.some((edge) => edge.target === node.id);
+        nodes.forEach(node => {
+          const hasIncoming = edges.some(edge => edge.target === node.id)
           if (!hasIncoming) {
-            visit(node.id);
+            visit(node.id)
           }
-        });
+        })
 
         // Ensure all nodes are included in the execution steps, even if they have cycles or no connections
         nodes.forEach(node => {
-            if (!order.includes(node.id)) {
-                order.push(node.id);
-            }
-        });
+          if (!order.includes(node.id)) {
+            order.push(node.id)
+          }
+        })
 
-        return order;
-      };
+        return order
+      }
 
-      const executionOrder = getExecutionOrder();
+      const executionOrder = getExecutionOrder()
 
-      executionOrder.forEach((nodeId) => {
-        const result = executionData.nodeResults[nodeId];
+      executionOrder.forEach(nodeId => {
+        const result = executionData.nodeResults[nodeId]
         if (result) {
           steps.push({
             nodeId,
-            status: result.success ? "completed" : "error",
+            status: result.success ? 'completed' : 'error',
             inputData: result.inputData,
             outputData: result.outputData,
             error: result.error,
             executionTime: result.executionTime,
             timestamp: new Date(result.timestamp || Date.now()),
-          });
-          processedNodes.add(nodeId);
+          })
+          processedNodes.add(nodeId)
         } else {
           steps.push({
             nodeId,
-            status: "pending",
+            status: 'pending',
             timestamp: new Date(),
-          });
+          })
         }
-      });
+      })
 
-      setExecutionSteps(steps);
+      setExecutionSteps(steps)
       setCurrentStepIndex(
-        steps.findIndex((step) => step.status === "running") !== -1
-          ? steps.findIndex((step) => step.status === "running")
-          : steps.length - 1,
-      );
+        steps.findIndex(step => step.status === 'running') !== -1
+          ? steps.findIndex(step => step.status === 'running')
+          : steps.length - 1
+      )
     } else {
-      setExecutionSteps([]);
-      setCurrentStepIndex(-1);
+      setExecutionSteps([])
+      setCurrentStepIndex(-1)
     }
-  }, [executionData, nodes, edges]);
+  }, [executionData, nodes, edges])
 
   const toggleBreakpoint = (nodeId: string) => {
-    setBreakpoints((prev) => {
-      const existing = prev.find((bp) => bp.nodeId === nodeId);
+    setBreakpoints(prev => {
+      const existing = prev.find(bp => bp.nodeId === nodeId)
       if (existing) {
         // Toggle the enabled status if it exists
-        return prev.map((bp) =>
-          bp.nodeId === nodeId ? { ...bp, enabled: !bp.enabled } : bp,
-        );
+        return prev.map(bp => (bp.nodeId === nodeId ? { ...bp, enabled: !bp.enabled } : bp))
       } else {
         // Add new enabled breakpoint
-        return [...prev, { nodeId, enabled: true }];
+        return [...prev, { nodeId, enabled: true }]
       }
-    });
-  };
+    })
+  }
 
   const isBreakpointEnabled = (nodeId: string) => {
-    return breakpoints.some((bp) => bp.nodeId === nodeId && bp.enabled);
-  };
+    return breakpoints.some(bp => bp.nodeId === nodeId && bp.enabled)
+  }
 
   const startDebugging = () => {
-    setIsDebugging(true);
-    setExecutionMode("step");
-    setCurrentStepIndex(0);
-    setSelectedStep(0);
-  };
+    setIsDebugging(true)
+    setExecutionMode('step')
+    setCurrentStepIndex(0)
+    setSelectedStep(0)
+  }
 
   const stopDebugging = () => {
-    setIsDebugging(false);
-    setExecutionMode("normal");
-    setCurrentStepIndex(-1);
-    setSelectedStep(null);
-    onStopExecution?.();
-  };
+    setIsDebugging(false)
+    setExecutionMode('normal')
+    setCurrentStepIndex(-1)
+    setSelectedStep(null)
+    onStopExecution?.()
+  }
 
   const executeNextStep = () => {
     if (currentStepIndex < executionSteps.length - 1) {
-      const nextStep = executionSteps[currentStepIndex + 1];
-      setCurrentStepIndex(currentStepIndex + 1);
-      setSelectedStep(currentStepIndex + 1);
-      onExecuteStep?.(nextStep.nodeId);
+      const nextStep = executionSteps[currentStepIndex + 1]
+      setCurrentStepIndex(currentStepIndex + 1)
+      setSelectedStep(currentStepIndex + 1)
+      onExecuteStep?.(nextStep.nodeId)
     }
-  };
+  }
 
   const executeToNextBreakpoint = () => {
     const nextBreakpointIndex = executionSteps.findIndex(
-      (step, index) =>
-        index > currentStepIndex && isBreakpointEnabled(step.nodeId),
-    );
+      (step, index) => index > currentStepIndex && isBreakpointEnabled(step.nodeId)
+    )
 
     if (nextBreakpointIndex !== -1) {
-      setCurrentStepIndex(nextBreakpointIndex);
-      setSelectedStep(nextBreakpointIndex);
-      onExecuteToBreakpoint?.(executionSteps[nextBreakpointIndex].nodeId);
+      setCurrentStepIndex(nextBreakpointIndex)
+      setSelectedStep(nextBreakpointIndex)
+      onExecuteToBreakpoint?.(executionSteps[nextBreakpointIndex].nodeId)
     }
-  };
+  }
 
   const getNodeName = (nodeId: string) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    return node?.data?.label || node?.type || nodeId;
-  };
+    const node = nodes.find(n => n.id === nodeId)
+    return node?.data?.label || node?.type || nodeId
+  }
   // --- END OF EXISTING LOGIC ---
 
   // --- NEW UI HELPER FUNCTIONS ---
 
-  const getStepStatusIcon = (status: ExecutionStep["status"]) => {
-    const baseClasses = "w-4 h-4";
+  const getStepStatusIcon = (status: ExecutionStep['status']) => {
+    const baseClasses = 'w-4 h-4'
     switch (status) {
-      case "running":
+      case 'running':
         // IMPROVEMENT: Loader icon is prominent
-        return <Loader className={`${baseClasses} text-indigo-500 animate-spin`} />; 
-      case "completed":
-        return <CheckCircle className={`${baseClasses} text-green-500`} />;
-      case "error":
-        return <AlertCircle className={`${baseClasses} text-red-500`} />;
+        return <Loader className={`${baseClasses} text-indigo-500 animate-spin`} />
+      case 'completed':
+        return <CheckCircle className={`${baseClasses} text-green-500`} />
+      case 'error':
+        return <AlertCircle className={`${baseClasses} text-red-500`} />
       default:
         // IMPROVEMENT: Darker gray for better contrast
-        return <Circle className={`${baseClasses} text-gray-500 fill-gray-200`} />; 
+        return <Circle className={`${baseClasses} text-gray-500 fill-gray-200`} />
     }
-  };
+  }
 
   // IMPROVEMENT: This function now returns classes for a left border accent, reducing card background noise
-  const getStepAccentClasses = (status: ExecutionStep["status"]) => {
+  const getStepAccentClasses = (status: ExecutionStep['status']) => {
     switch (status) {
-        case "running":
-            return "border-l-4 border-indigo-400";
-        case "completed":
-            return "border-l-4 border-green-400";
-        case "error":
-            return "border-l-4 border-red-400";
-        default:
-            return "border-l-4 border-gray-300";
+      case 'running':
+        return 'border-l-4 border-indigo-400'
+      case 'completed':
+        return 'border-l-4 border-green-400'
+      case 'error':
+        return 'border-l-4 border-red-400'
+      default:
+        return 'border-l-4 border-gray-300'
     }
-  };
+  }
 
   // --- COMPONENT RENDER ---
 
@@ -244,7 +239,7 @@ export default function ExecutionDebugger({
           <Settings className="w-6 h-6 text-indigo-600" />
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -315,7 +310,7 @@ export default function ExecutionDebugger({
           <div className="flex-1 text-center p-3 text-gray-700 border-r border-gray-100 bg-gray-50 rounded-tl-lg">
             <div className="text-gray-500 font-medium text-xs">Mode</div>
             <div className="text-gray-900 font-extrabold text-sm capitalize">
-              {isDebugging ? executionMode : "Normal"}
+              {isDebugging ? executionMode : 'Normal'}
             </div>
           </div>
           <div className="flex-1 text-center p-3 text-gray-700 border-r border-gray-100 bg-gray-50">
@@ -327,7 +322,7 @@ export default function ExecutionDebugger({
           <div className="flex-1 text-center p-3 text-gray-700 bg-gray-50 rounded-tr-lg">
             <div className="text-gray-500 font-medium text-xs">Breakpoints</div>
             <div className="text-gray-900 font-extrabold text-sm">
-              {breakpoints.filter((bp) => bp.enabled).length}
+              {breakpoints.filter(bp => bp.enabled).length}
             </div>
           </div>
         </div>
@@ -344,59 +339,55 @@ export default function ExecutionDebugger({
             </div>
           ) : (
             executionSteps.map((step, index) => {
-              const hasBreakpoint = isBreakpointEnabled(step.nodeId);
-              const isCurrentStep = index === currentStepIndex && isDebugging;
-              const isSelected = selectedStep === index;
-              const nodeName = getNodeName(step.nodeId);
+              const hasBreakpoint = isBreakpointEnabled(step.nodeId)
+              const isCurrentStep = index === currentStepIndex && isDebugging
+              const isSelected = selectedStep === index
+              const nodeName = getNodeName(step.nodeId)
 
               return (
                 <div
                   key={`${step.nodeId}-${index}`}
                   className={`border rounded-xl p-3 cursor-pointer transition-all duration-150 shadow-sm bg-white hover:bg-gray-50
-                    ${isSelected
-                      ? "border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50 shadow-lg"
-                      : isCurrentStep
-                        ? "border-yellow-500 ring-2 ring-yellow-200 bg-yellow-50"
-                        : getStepAccentClasses(step.status) // Stronger left border accent
+                    ${
+                      isSelected
+                        ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50 shadow-lg'
+                        : isCurrentStep
+                          ? 'border-yellow-500 ring-2 ring-yellow-200 bg-yellow-50'
+                          : getStepAccentClasses(step.status) // Stronger left border accent
                     }`}
                   onClick={() => setSelectedStep(index)}
                 >
                   <div className="flex items-center space-x-3">
                     {/* Breakpoint Toggle */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleBreakpoint(step.nodeId);
+                      onClick={e => {
+                        e.stopPropagation()
+                        toggleBreakpoint(step.nodeId)
                       }}
                       className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 border-2
-                        ${hasBreakpoint
-                          ? "bg-red-500 border-red-700"
-                          : "bg-transparent border-gray-300 hover:border-red-500"
+                        ${
+                          hasBreakpoint
+                            ? 'bg-red-500 border-red-700'
+                            : 'bg-transparent border-gray-300 hover:border-red-500'
                         }`}
-                      title={hasBreakpoint ? "Remove breakpoint" : "Add breakpoint"}
+                      title={hasBreakpoint ? 'Remove breakpoint' : 'Add breakpoint'}
                     >
-                      {hasBreakpoint && (
-                        <Circle className="w-2.5 h-2.5 fill-white text-white" /> 
-                      )}
+                      {hasBreakpoint && <Circle className="w-2.5 h-2.5 fill-white text-white" />}
                     </button>
 
                     {/* Status Icon */}
-                    <div className="flex-shrink-0">
-                        {getStepStatusIcon(step.status)}
-                    </div>
+                    <div className="flex-shrink-0">{getStepStatusIcon(step.status)}</div>
 
                     {/* Node Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-900 truncate">
-                        {nodeName}
-                      </div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{nodeName}</div>
                       <div className="text-xs text-gray-600 flex items-center space-x-2">
                         <span className="capitalize">{step.status}</span>
                         {step.executionTime !== undefined && step.status !== 'pending' && (
-                            <>
-                                <span className="text-gray-400">•</span>
-                                <span className="font-mono">{step.executionTime}ms</span>
-                            </>
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="font-mono">{step.executionTime}ms</span>
+                          </>
                         )}
                       </div>
                     </div>
@@ -428,28 +419,28 @@ export default function ExecutionDebugger({
                       {[
                         { title: 'Input Data', data: step.inputData, Icon: ArrowRight },
                         { title: 'Output Data', data: step.outputData, Icon: CheckCircle },
-                      ].map(({ title, data, Icon }) => (
-                        data && (
-                          <div key={title}>
-                            <div className="text-xs font-bold text-gray-700 mb-1 flex items-center">
-                              <Icon className="w-3 h-3 mr-1 text-indigo-500" />
-                              {title}:
+                      ].map(
+                        ({ title, data, Icon }) =>
+                          data && (
+                            <div key={title}>
+                              <div className="text-xs font-bold text-gray-700 mb-1 flex items-center">
+                                <Icon className="w-3 h-3 mr-1 text-indigo-500" />
+                                {title}:
+                              </div>
+                              <pre className="text-xs bg-gray-100 p-2 rounded-lg border border-gray-300 overflow-x-auto max-h-40 text-gray-800 font-mono shadow-inner">
+                                {JSON.stringify(data, null, 2)}
+                              </pre>
                             </div>
-                            <pre className="text-xs bg-gray-100 p-2 rounded-lg border border-gray-300 overflow-x-auto max-h-40 text-gray-800 font-mono shadow-inner">
-                              {JSON.stringify(data, null, 2)}
-                            </pre>
-                          </div>
-                        )
-                      ))}
+                          )
+                      )}
                     </div>
                   )}
                 </div>
-              );
+              )
             })
           )}
         </div>
       </div>
     </div>
- 
-);
+  )
 }

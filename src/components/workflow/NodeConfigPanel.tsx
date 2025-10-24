@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   X,
   Settings,
@@ -10,7 +10,7 @@ import {
   Loader2,
   ChevronRight,
   Zap,
-} from 'lucide-react';
+} from 'lucide-react'
 // Assuming the following components/services exist:
 // import { apiClient } from '../../services/api';
 // import BlockParameterForm from '../blocks/BlockParameterForm';
@@ -18,18 +18,20 @@ import {
 // import { BlockTestForm } from '../blocks/BlockTestForm';
 
 // Dummy imports for compilation sake (replace with your actual imports)
-const apiClient: any = { getBlockSchema: async (type: string) => ({ manifest: { config_schema: { properties: {} } } }) };
-const BlockParameterForm = (props: any) => <div>Parameter Form (Using Schema)</div>;
-const BlockIOSchema = (props: any) => <div>I/O Schema View</div>;
-const BlockTestForm = (props: any) => <div>Test Form</div>;
+const apiClient: any = {
+  getBlockSchema: async (type: string) => ({ manifest: { config_schema: { properties: {} } } }),
+}
+const BlockParameterForm = (props: any) => <div>Parameter Form (Using Schema)</div>
+const BlockIOSchema = (props: any) => <div>I/O Schema View</div>
+const BlockTestForm = (props: any) => <div>Test Form</div>
 
 interface NodeConfigPanelProps {
-  nodeId: string | null;
-  node: any;
-  availableNodes?: any[];
-  workflowEnvVars?: Record<string, any>;
-  onUpdate: (nodeId: string, config: any) => void;
-  onClose: () => void;
+  nodeId: string | null
+  node: any
+  availableNodes?: any[]
+  workflowEnvVars?: Record<string, any>
+  onUpdate: (nodeId: string, config: any) => void
+  onClose: () => void
 }
 
 export default function NodeConfigPanel({
@@ -40,55 +42,55 @@ export default function NodeConfigPanel({
   onUpdate,
   onClose,
 }: NodeConfigPanelProps) {
-  const [activeTab, setActiveTab] = useState<'configure' | 'io' | 'test'>('configure');
-  const [config, setConfig] = useState<any>(node?.data?.config || {});
-  const [schema, setSchema] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState<'configure' | 'io' | 'test'>('configure')
+  const [config, setConfig] = useState<any>(node?.data?.config || {})
+  const [schema, setSchema] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
   // New state for success feedback
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     if (node?.data?.blockType) {
-      loadBlockSchema();
+      loadBlockSchema()
       // Reset config when node changes to ensure fresh state
-      setConfig(node.data.config || {});
+      setConfig(node.data.config || {})
     }
-  }, [node?.data?.blockType]);
+  }, [node?.data?.blockType])
 
   const loadBlockSchema = async () => {
-    if (!node?.data?.blockType) return;
+    if (!node?.data?.blockType) return
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const blockSchema = await apiClient.getBlockSchema(node.data.blockType);
-      setSchema(blockSchema);
+      const blockSchema = await apiClient.getBlockSchema(node.data.blockType)
+      setSchema(blockSchema)
     } catch (error) {
-      console.error('Failed to load block schema:', error);
+      console.error('Failed to load block schema:', error)
       // Optional: Display error in the panel
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSave = async () => {
-    if (!nodeId) return;
+    if (!nodeId) return
 
-    setSaving(true);
+    setSaving(true)
     try {
-      onUpdate(nodeId, config);
-      setShowSuccess(true); // Show success indicator
+      onUpdate(nodeId, config)
+      setShowSuccess(true) // Show success indicator
       setTimeout(() => {
-        setSaving(false);
-        setShowSuccess(false); // Hide after a short duration
-      }, 1000);
+        setSaving(false)
+        setShowSuccess(false) // Hide after a short duration
+      }, 1000)
     } catch (error) {
-      console.error('Failed to save configuration:', error);
-      setSaving(false);
-      setShowSuccess(false);
+      console.error('Failed to save configuration:', error)
+      setSaving(false)
+      setShowSuccess(false)
     }
-  };
+  }
 
   const handleTestComplete = (result: any) => {
     if (nodeId) {
@@ -97,35 +99,33 @@ export default function NodeConfigPanel({
         config: config, // Use the current form config
         lastTestResult: result,
         lastTestTimestamp: new Date().toISOString(),
-      });
+      })
     }
-  };
+  }
 
   // Filter available nodes to exclude current node and any unconnected nodes (optional: improve upstream logic)
-  const upstreamNodes = availableNodes.filter((n: any) => n.id !== nodeId);
+  const upstreamNodes = availableNodes.filter((n: any) => n.id !== nodeId)
 
   if (!node) {
-    return null;
+    return null
   }
 
   // Improved Tab Classes for a cleaner look
   const getTabClasses = (tabName: 'configure' | 'io' | 'test') => {
-    const isActive = activeTab === tabName;
+    const isActive = activeTab === tabName
     return `flex items-center space-x-2 px-5 py-3 border-b-2 font-medium transition-all duration-200 cursor-pointer 
-            ${isActive
-        ? 'border-blue-500 text-blue-700 bg-white/70'
-        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-      }`;
-  };
+            ${
+              isActive
+                ? 'border-blue-500 text-blue-700 bg-white/70'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`
+  }
 
   return (
     // Backdrop for blur and centering
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Semi-transparent blur background (backdrop-blur-sm is key) */}
-      <div
-        className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose}></div>
 
       {/* Main Panel - Centered and constrained */}
       <div
@@ -138,7 +138,9 @@ export default function NodeConfigPanel({
             <div className="flex items-center space-x-3">
               <Zap className="w-5 h-5 text-blue-600" />
               <div>
-                <h2 className="text-xl font-bold text-gray-800">{node.data?.label || 'Configure Node'}</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {node.data?.label || 'Configure Node'}
+                </h2>
                 <p className="text-sm text-gray-500 font-mono">{node.data?.blockType}</p>
               </div>
             </div>
@@ -186,8 +188,20 @@ export default function NodeConfigPanel({
                       <div className="flex-1 text-sm text-blue-900">
                         <p className="font-semibold mb-1">Data Referencing</p>
                         <ul className="text-blue-800 space-y-1 text-xs list-disc pl-4">
-                          <li>Use <code className="bg-blue-100 p-0.5 rounded text-blue-800">$node["Node Label"].json</code> to reference **upstream data**.</li>
-                          <li>Access global variables with <code className="bg-blue-100 p-0.5 rounded text-blue-800">$workflow</code>.</li>
+                          <li>
+                            Use{' '}
+                            <code className="bg-blue-100 p-0.5 rounded text-blue-800">
+                              $node["Node Label"].json
+                            </code>{' '}
+                            to reference **upstream data**.
+                          </li>
+                          <li>
+                            Access global variables with{' '}
+                            <code className="bg-blue-100 p-0.5 rounded text-blue-800">
+                              $workflow
+                            </code>
+                            .
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -207,7 +221,9 @@ export default function NodeConfigPanel({
                             key={upstreamNode.id}
                             className="bg-gray-50 border border-gray-100 rounded p-2 transition-shadow hover:shadow-md"
                           >
-                            <div className="text-xs font-bold text-gray-900 truncate">{upstreamNode.data?.label}</div>
+                            <div className="text-xs font-bold text-gray-900 truncate">
+                              {upstreamNode.data?.label}
+                            </div>
                             <code className="text-[11px] text-blue-600 font-mono mt-1 block select-all">
                               $node["{upstreamNode.data?.label}"].json
                             </code>
@@ -232,7 +248,9 @@ export default function NodeConfigPanel({
                     ) : (
                       <div className="text-center py-12 text-gray-400">
                         <Settings className="w-10 h-10 mx-auto mb-3" />
-                        <p className="text-sm font-medium">No configuration parameters for this block.</p>
+                        <p className="text-sm font-medium">
+                          No configuration parameters for this block.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -256,7 +274,8 @@ export default function NodeConfigPanel({
                       <div className="flex-1 text-sm text-yellow-900">
                         <p className="font-semibold mb-1">Test & Validate</p>
                         <p className="text-yellow-800 text-xs">
-                          Run a live test of the node's function with the **current configuration and mock input data**. Remember to **save changes** before testing.
+                          Run a live test of the node's function with the **current configuration
+                          and mock input data**. Remember to **save changes** before testing.
                         </p>
                       </div>
                     </div>
@@ -303,7 +322,7 @@ export default function NodeConfigPanel({
                 <Play className="w-4 h-4" />
                 <span>Quick Test</span>
               </button>
-              
+
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -326,5 +345,5 @@ export default function NodeConfigPanel({
         </div>
       </div>
     </div>
-  );
+  )
 }

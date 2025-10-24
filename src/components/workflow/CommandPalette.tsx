@@ -3,96 +3,94 @@
  * Inspired by VSCode/Sublime Text command palette
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
-import { Command, filterCommands, formatShortcut } from '../../hooks/useKeyboardShortcuts';
+import React, { useState, useEffect, useRef } from 'react'
+import { Search, X } from 'lucide-react'
+import { Command, filterCommands, formatShortcut } from '../../hooks/useKeyboardShortcuts'
 
 interface Props {
-  commands: Command[];
-  isOpen: boolean;
-  onClose: () => void;
+  commands: Command[]
+  isOpen: boolean
+  onClose: () => void
 }
 
 const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
-  const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
-  const filteredCommands = filterCommands(commands, query);
+  const filteredCommands = filterCommands(commands, query)
 
   // Reset state when opened
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setQuery('')
+      setSelectedIndex(0)
+      setTimeout(() => inputRef.current?.focus(), 50)
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Reset selected index when filtered results change
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+    setSelectedIndex(0)
+  }, [query])
 
   // Handle keyboard navigation
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < filteredCommands.length - 1 ? prev + 1 : prev
-          );
-          break;
+          e.preventDefault()
+          setSelectedIndex(prev => (prev < filteredCommands.length - 1 ? prev + 1 : prev))
+          break
 
         case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-          break;
+          e.preventDefault()
+          setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0))
+          break
 
         case 'Enter':
-          e.preventDefault();
+          e.preventDefault()
           if (filteredCommands[selectedIndex]) {
-            executeCommand(filteredCommands[selectedIndex]);
+            executeCommand(filteredCommands[selectedIndex])
           }
-          break;
+          break
 
         case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
+          e.preventDefault()
+          onClose()
+          break
       }
-    };
+    }
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredCommands, selectedIndex, onClose]);
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, filteredCommands, selectedIndex, onClose])
 
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current) {
-      const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+      const selectedElement = listRef.current.children[selectedIndex] as HTMLElement
       if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
     }
-  }, [selectedIndex]);
+  }, [selectedIndex])
 
   const executeCommand = (command: Command) => {
-    command.action();
-    onClose();
-  };
+    command.action()
+    onClose()
+  }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div
@@ -107,7 +105,7 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Type a command or search..."
             className="flex-1 outline-none text-lg text-gray-900 placeholder-gray-400"
             autoComplete="off"
@@ -124,18 +122,13 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
         </div>
 
         {/* Commands List */}
-        <div
-          ref={listRef}
-          className="max-h-96 overflow-y-auto"
-        >
+        <div ref={listRef} className="max-h-96 overflow-y-auto">
           {filteredCommands.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No commands found for "{query}"
-            </div>
+            <div className="p-8 text-center text-gray-500">No commands found for "{query}"</div>
           ) : (
             <div className="py-2">
               {filteredCommands.map((command, index) => {
-                const isSelected = index === selectedIndex;
+                const isSelected = index === selectedIndex
 
                 return (
                   <button
@@ -148,17 +141,11 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
                     `}
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      {command.icon && (
-                        <div className="text-gray-600">{command.icon}</div>
-                      )}
+                      {command.icon && <div className="text-gray-600">{command.icon}</div>}
                       <div className="flex-1">
-                        <div className="text-gray-900 font-medium">
-                          {command.label}
-                        </div>
+                        <div className="text-gray-900 font-medium">{command.label}</div>
                         {command.category && (
-                          <div className="text-sm text-gray-500">
-                            {command.category}
-                          </div>
+                          <div className="text-sm text-gray-500">{command.category}</div>
                         )}
                       </div>
                     </div>
@@ -169,7 +156,7 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
                       </kbd>
                     )}
                   </button>
-                );
+                )
               })}
             </div>
           )}
@@ -179,7 +166,9 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
         <div className="p-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">
+                ↑↓
+              </kbd>
               Navigate
             </span>
             <span className="flex items-center gap-1">
@@ -187,7 +176,9 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
               Select
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">Esc</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs">
+                Esc
+              </kbd>
               Close
             </span>
           </div>
@@ -197,7 +188,7 @@ const CommandPalette: React.FC<Props> = ({ commands, isOpen, onClose }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CommandPalette;
+export default CommandPalette

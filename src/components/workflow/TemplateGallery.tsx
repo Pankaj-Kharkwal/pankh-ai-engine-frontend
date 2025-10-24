@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react'
 import {
   Search,
   Filter,
@@ -15,311 +15,296 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-} from "lucide-react";
-import type { Node, Edge } from "@xyflow/react";
+} from 'lucide-react'
+import type { Node, Edge } from '@xyflow/react'
 
 interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  tags: string[];
-  difficulty: "beginner" | "intermediate" | "advanced";
-  estimatedTime: string;
-  nodes: Node[];
-  edges: Edge[];
-  author: string;
-  rating: number;
-  downloads: number;
-  featured: boolean;
-  previewImage?: string;
-  useCases: string[];
-  requiredBlocks: string[];
+  id: string
+  name: string
+  description: string
+  category: string
+  tags: string[]
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  estimatedTime: string
+  nodes: Node[]
+  edges: Edge[]
+  author: string
+  rating: number
+  downloads: number
+  featured: boolean
+  previewImage?: string
+  useCases: string[]
+  requiredBlocks: string[]
 }
 
 interface TemplateGalleryProps {
-  isVisible: boolean;
-  onToggleVisibility: () => void;
-  onApplyTemplate: (template: WorkflowTemplate) => void;
-  availableBlocks: string[];
+  isVisible: boolean
+  onToggleVisibility: () => void
+  onApplyTemplate: (template: WorkflowTemplate) => void
+  availableBlocks: string[]
 }
 
 const SAMPLE_TEMPLATES: WorkflowTemplate[] = [
   {
-    id: "ai-content-generator",
-    name: "AI Content Generator",
-    description:
-      "Generate blog posts, social media content, and marketing copy using AI",
-    category: "content",
-    tags: ["ai", "writing", "marketing", "automation"],
-    difficulty: "intermediate",
-    estimatedTime: "15 min",
-    author: "Pankh AI",
+    id: 'ai-content-generator',
+    name: 'AI Content Generator',
+    description: 'Generate blog posts, social media content, and marketing copy using AI',
+    category: 'content',
+    tags: ['ai', 'writing', 'marketing', 'automation'],
+    difficulty: 'intermediate',
+    estimatedTime: '15 min',
+    author: 'Pankh AI',
     rating: 4.8,
     downloads: 1250,
     featured: true,
-    useCases: [
-      "Blog writing",
-      "Social media",
-      "Email marketing",
-      "SEO content",
-    ],
-    requiredBlocks: ["azure_chat", "echo"],
+    useCases: ['Blog writing', 'Social media', 'Email marketing', 'SEO content'],
+    requiredBlocks: ['azure_chat', 'echo'],
     nodes: [
       {
-        id: "content_input",
-        type: "visualNode",
+        id: 'content_input',
+        type: 'visualNode',
         position: { x: 100, y: 100 },
         data: {
-          label: "Content Input",
-          blockType: "echo",
-          category: "utility",
-          description: "Input content requirements",
-          parameters: { message: "Write a blog post about AI automation" },
-          executionState: "idle",
-          color: "#f59e0b",
+          label: 'Content Input',
+          blockType: 'echo',
+          category: 'utility',
+          description: 'Input content requirements',
+          parameters: { message: 'Write a blog post about AI automation' },
+          executionState: 'idle',
+          color: '#f59e0b',
         },
       },
       {
-        id: "ai_generator",
-        type: "visualNode",
+        id: 'ai_generator',
+        type: 'visualNode',
         position: { x: 400, y: 100 },
         data: {
-          label: "AI Content Generator",
-          blockType: "azure_chat",
-          category: "ai",
-          description: "Generate content using AI",
+          label: 'AI Content Generator',
+          blockType: 'azure_chat',
+          category: 'ai',
+          description: 'Generate content using AI',
           parameters: {
-            system: "You are a professional content writer.",
-            prompt:
-              "Generate high-quality content based on: {content_input.echo}",
+            system: 'You are a professional content writer.',
+            prompt: 'Generate high-quality content based on: {content_input.echo}',
             temperature: 0.7,
           },
-          executionState: "idle",
-          color: "#8b5cf6",
+          executionState: 'idle',
+          color: '#8b5cf6',
         },
       },
     ],
     edges: [
       {
-        id: "e1",
-        source: "content_input",
-        target: "ai_generator",
-        type: "smoothstep",
+        id: 'e1',
+        source: 'content_input',
+        target: 'ai_generator',
+        type: 'smoothstep',
       },
     ],
   },
   {
-    id: "data-analysis-pipeline",
-    name: "Data Analysis Pipeline",
-    description: "Collect, process, and analyze data from multiple sources",
-    category: "data",
-    tags: ["data", "analysis", "processing", "automation"],
-    difficulty: "advanced",
-    estimatedTime: "30 min",
-    author: "Pankh AI",
+    id: 'data-analysis-pipeline',
+    name: 'Data Analysis Pipeline',
+    description: 'Collect, process, and analyze data from multiple sources',
+    category: 'data',
+    tags: ['data', 'analysis', 'processing', 'automation'],
+    difficulty: 'advanced',
+    estimatedTime: '30 min',
+    author: 'Pankh AI',
     rating: 4.6,
     downloads: 890,
     featured: true,
-    useCases: ["Data processing", "Analytics", "Reporting", "ETL"],
-    requiredBlocks: ["searxng_search", "scrape_urls", "azure_chat", "sum"],
+    useCases: ['Data processing', 'Analytics', 'Reporting', 'ETL'],
+    requiredBlocks: ['searxng_search', 'scrape_urls', 'azure_chat', 'sum'],
     nodes: [
       {
-        id: "data_search",
-        type: "visualNode",
+        id: 'data_search',
+        type: 'visualNode',
         position: { x: 100, y: 100 },
         data: {
-          label: "Search Data",
-          blockType: "searxng_search",
-          category: "data",
-          description: "Search for relevant data",
+          label: 'Search Data',
+          blockType: 'searxng_search',
+          category: 'data',
+          description: 'Search for relevant data',
           parameters: {
-            query: "latest technology trends",
+            query: 'latest technology trends',
             limit: 5,
             timeout_sec: 15,
           },
-          executionState: "idle",
-          color: "#3b82f6",
+          executionState: 'idle',
+          color: '#3b82f6',
         },
       },
       {
-        id: "scrape_content",
-        type: "visualNode",
+        id: 'scrape_content',
+        type: 'visualNode',
         position: { x: 400, y: 100 },
         data: {
-          label: "Scrape Content",
-          blockType: "scrape_urls",
-          category: "data",
-          description: "Extract content from URLs",
+          label: 'Scrape Content',
+          blockType: 'scrape_urls',
+          category: 'data',
+          description: 'Extract content from URLs',
           parameters: {
             top_n_from_searx: 3,
             max_chars_per_doc: 3000,
             timeout_sec: 20,
           },
-          executionState: "idle",
-          color: "#10b981",
+          executionState: 'idle',
+          color: '#10b981',
         },
       },
       {
-        id: "analyze_data",
-        type: "visualNode",
+        id: 'analyze_data',
+        type: 'visualNode',
         position: { x: 700, y: 100 },
         data: {
-          label: "Analyze Data",
-          blockType: "azure_chat",
-          category: "ai",
-          description: "AI-powered data analysis",
+          label: 'Analyze Data',
+          blockType: 'azure_chat',
+          category: 'ai',
+          description: 'AI-powered data analysis',
           parameters: {
-            system: "You are a data analyst.",
-            prompt:
-              "Analyze this data and provide insights: {scrape_content.scrape_urls}",
+            system: 'You are a data analyst.',
+            prompt: 'Analyze this data and provide insights: {scrape_content.scrape_urls}',
             temperature: 0.3,
           },
-          executionState: "idle",
-          color: "#8b5cf6",
+          executionState: 'idle',
+          color: '#8b5cf6',
         },
       },
     ],
     edges: [
       {
-        id: "e1",
-        source: "data_search",
-        target: "scrape_content",
-        type: "smoothstep",
+        id: 'e1',
+        source: 'data_search',
+        target: 'scrape_content',
+        type: 'smoothstep',
       },
       {
-        id: "e2",
-        source: "scrape_content",
-        target: "analyze_data",
-        type: "smoothstep",
+        id: 'e2',
+        source: 'scrape_content',
+        target: 'analyze_data',
+        type: 'smoothstep',
       },
     ],
   },
   {
-    id: "social-media-automation",
-    name: "Social Media Automation",
-    description:
-      "Automate social media posting and engagement across platforms",
-    category: "social",
-    tags: ["social", "automation", "marketing", "posting"],
-    difficulty: "intermediate",
-    estimatedTime: "20 min",
-    author: "Pankh AI",
+    id: 'social-media-automation',
+    name: 'Social Media Automation',
+    description: 'Automate social media posting and engagement across platforms',
+    category: 'social',
+    tags: ['social', 'automation', 'marketing', 'posting'],
+    difficulty: 'intermediate',
+    estimatedTime: '20 min',
+    author: 'Pankh AI',
     rating: 4.4,
     downloads: 675,
     featured: false,
-    useCases: [
-      "Social media",
-      "Content scheduling",
-      "Engagement",
-      "Multi-platform",
-    ],
-    requiredBlocks: ["azure_chat", "echo"],
+    useCases: ['Social media', 'Content scheduling', 'Engagement', 'Multi-platform'],
+    requiredBlocks: ['azure_chat', 'echo'],
     nodes: [
       {
-        id: "content_idea",
-        type: "visualNode",
+        id: 'content_idea',
+        type: 'visualNode',
         position: { x: 100, y: 100 },
         data: {
-          label: "Content Ideas",
-          blockType: "azure_chat",
-          category: "ai",
-          description: "Generate social media content ideas",
+          label: 'Content Ideas',
+          blockType: 'azure_chat',
+          category: 'ai',
+          description: 'Generate social media content ideas',
           parameters: {
-            system: "You are a social media strategist.",
-            prompt:
-              "Generate engaging social media post ideas for tech companies",
+            system: 'You are a social media strategist.',
+            prompt: 'Generate engaging social media post ideas for tech companies',
             temperature: 0.8,
           },
-          executionState: "idle",
-          color: "#8b5cf6",
+          executionState: 'idle',
+          color: '#8b5cf6',
         },
       },
       {
-        id: "format_posts",
-        type: "visualNode",
+        id: 'format_posts',
+        type: 'visualNode',
         position: { x: 400, y: 100 },
         data: {
-          label: "Format Posts",
-          blockType: "echo",
-          category: "utility",
-          description: "Format content for different platforms",
+          label: 'Format Posts',
+          blockType: 'echo',
+          category: 'utility',
+          description: 'Format content for different platforms',
           parameters: {
             message:
-              "Twitter: {content_idea.azure_chat}\n\nLinkedIn: {content_idea.azure_chat}\n\nInstagram: {content_idea.azure_chat}",
+              'Twitter: {content_idea.azure_chat}\n\nLinkedIn: {content_idea.azure_chat}\n\nInstagram: {content_idea.azure_chat}',
           },
-          executionState: "idle",
-          color: "#f59e0b",
+          executionState: 'idle',
+          color: '#f59e0b',
         },
       },
     ],
     edges: [
       {
-        id: "e1",
-        source: "content_idea",
-        target: "format_posts",
-        type: "smoothstep",
+        id: 'e1',
+        source: 'content_idea',
+        target: 'format_posts',
+        type: 'smoothstep',
       },
     ],
   },
   {
-    id: "email-automation",
-    name: "Email Marketing Automation",
-    description: "Automate email campaigns, newsletters, and follow-ups",
-    category: "marketing",
-    tags: ["email", "marketing", "automation", "campaigns"],
-    difficulty: "intermediate",
-    estimatedTime: "25 min",
-    author: "Pankh AI",
+    id: 'email-automation',
+    name: 'Email Marketing Automation',
+    description: 'Automate email campaigns, newsletters, and follow-ups',
+    category: 'marketing',
+    tags: ['email', 'marketing', 'automation', 'campaigns'],
+    difficulty: 'intermediate',
+    estimatedTime: '25 min',
+    author: 'Pankh AI',
     rating: 4.7,
     downloads: 920,
     featured: false,
-    useCases: ["Email marketing", "Newsletters", "Lead nurturing", "Campaigns"],
-    requiredBlocks: ["azure_chat", "echo"],
+    useCases: ['Email marketing', 'Newsletters', 'Lead nurturing', 'Campaigns'],
+    requiredBlocks: ['azure_chat', 'echo'],
     nodes: [
       {
-        id: "segment_audience",
-        type: "visualNode",
+        id: 'segment_audience',
+        type: 'visualNode',
         position: { x: 100, y: 100 },
         data: {
-          label: "Audience Segmentation",
-          blockType: "echo",
-          category: "utility",
-          description: "Define target audience segments",
-          parameters: { message: "Tech professionals interested in AI" },
-          executionState: "idle",
-          color: "#f59e0b",
+          label: 'Audience Segmentation',
+          blockType: 'echo',
+          category: 'utility',
+          description: 'Define target audience segments',
+          parameters: { message: 'Tech professionals interested in AI' },
+          executionState: 'idle',
+          color: '#f59e0b',
         },
       },
       {
-        id: "generate_content",
-        type: "visualNode",
+        id: 'generate_content',
+        type: 'visualNode',
         position: { x: 400, y: 100 },
         data: {
-          label: "Generate Email Content",
-          blockType: "azure_chat",
-          category: "ai",
-          description: "Create personalized email content",
+          label: 'Generate Email Content',
+          blockType: 'azure_chat',
+          category: 'ai',
+          description: 'Create personalized email content',
           parameters: {
-            system: "You are an email marketing expert.",
-            prompt: "Write a compelling email for: {segment_audience.echo}",
+            system: 'You are an email marketing expert.',
+            prompt: 'Write a compelling email for: {segment_audience.echo}',
             temperature: 0.6,
           },
-          executionState: "idle",
-          color: "#8b5cf6",
+          executionState: 'idle',
+          color: '#8b5cf6',
         },
       },
     ],
     edges: [
       {
-        id: "e1",
-        source: "segment_audience",
-        target: "generate_content",
-        type: "smoothstep",
+        id: 'e1',
+        source: 'segment_audience',
+        target: 'generate_content',
+        type: 'smoothstep',
       },
     ],
   },
-];
+]
 
 export default function TemplateGallery({
   isVisible,
@@ -327,93 +312,73 @@ export default function TemplateGallery({
   onApplyTemplate,
   availableBlocks,
 }: TemplateGalleryProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"popular" | "recent" | "rating">(
-    "popular",
-  );
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<WorkflowTemplate | null>(null);
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<'popular' | 'recent' | 'rating'>('popular')
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null)
 
   const categories = [
-    { id: "all", name: "All Templates", icon: Globe },
-    { id: "content", name: "Content", icon: MessageSquare },
-    { id: "data", name: "Data & Analytics", icon: Database },
-    { id: "social", name: "Social Media", icon: Users },
-    { id: "marketing", name: "Marketing", icon: Zap },
-  ];
+    { id: 'all', name: 'All Templates', icon: Globe },
+    { id: 'content', name: 'Content', icon: MessageSquare },
+    { id: 'data', name: 'Data & Analytics', icon: Database },
+    { id: 'social', name: 'Social Media', icon: Users },
+    { id: 'marketing', name: 'Marketing', icon: Zap },
+  ]
 
   const filteredTemplates = useMemo(() => {
-    let filtered = SAMPLE_TEMPLATES.filter((template) => {
+    let filtered = SAMPLE_TEMPLATES.filter(template => {
       const matchesSearch =
         template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.description
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        template.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
 
-      const matchesCategory =
-        selectedCategory === "all" || template.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory
       const matchesDifficulty =
-        selectedDifficulty === "all" ||
-        template.difficulty === selectedDifficulty;
+        selectedDifficulty === 'all' || template.difficulty === selectedDifficulty
 
       // Check if required blocks are available
-      const hasRequiredBlocks = template.requiredBlocks.every((block) =>
-        availableBlocks.includes(block),
-      );
+      const hasRequiredBlocks = template.requiredBlocks.every(block =>
+        availableBlocks.includes(block)
+      )
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesDifficulty &&
-        hasRequiredBlocks
-      );
-    });
+      return matchesSearch && matchesCategory && matchesDifficulty && hasRequiredBlocks
+    })
 
     // Sort templates
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case "popular":
-          return b.downloads - a.downloads;
-        case "rating":
-          return b.rating - a.rating;
-        case "recent":
-          return 0; // For now, keep original order
+        case 'popular':
+          return b.downloads - a.downloads
+        case 'rating':
+          return b.rating - a.rating
+        case 'recent':
+          return 0 // For now, keep original order
         default:
-          return 0;
+          return 0
       }
-    });
+    })
 
-    return filtered;
-  }, [
-    searchQuery,
-    selectedCategory,
-    selectedDifficulty,
-    sortBy,
-    availableBlocks,
-  ]);
+    return filtered
+  }, [searchQuery, selectedCategory, selectedDifficulty, sortBy, availableBlocks])
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case "beginner":
-        return "bg-green-100 text-green-800";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800";
-      case "advanced":
-        return "bg-red-100 text-red-800";
+      case 'beginner':
+        return 'bg-green-100 text-green-800'
+      case 'intermediate':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'advanced':
+        return 'bg-red-100 text-red-800'
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
   const getCategoryIcon = (categoryId: string) => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category ? category.icon : Globe;
-  };
+    const category = categories.find(c => c.id === categoryId)
+    return category ? category.icon : Globe
+  }
 
   if (!isVisible) {
     return (
@@ -426,7 +391,7 @@ export default function TemplateGallery({
           <Globe className="w-5 h-5 text-gray-600" />
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -436,17 +401,12 @@ export default function TemplateGallery({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Workflow Templates
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">Workflow Templates</h2>
               <p className="text-gray-600 mt-1">
                 Choose from pre-built workflows to get started quickly
               </p>
             </div>
-            <button
-              onClick={onToggleVisibility}
-              className="p-2 text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onToggleVisibility} className="p-2 text-gray-400 hover:text-gray-600">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -462,7 +422,7 @@ export default function TemplateGallery({
                     type="text"
                     placeholder="Search templates..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -473,10 +433,10 @@ export default function TemplateGallery({
                 <Filter className="w-4 h-4 text-gray-500" />
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={e => setSelectedCategory(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {categories.map((category) => (
+                  {categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -487,7 +447,7 @@ export default function TemplateGallery({
               {/* Difficulty Filter */}
               <select
                 value={selectedDifficulty}
-                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                onChange={e => setSelectedDifficulty(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Levels</option>
@@ -499,7 +459,7 @@ export default function TemplateGallery({
               {/* Sort */}
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={e => setSortBy(e.target.value as any)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="popular">Most Popular</option>
@@ -514,33 +474,28 @@ export default function TemplateGallery({
             {filteredTemplates.length === 0 ? (
               <div className="text-center py-12">
                 <Globe className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No templates found
-                </h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
                 <p className="text-gray-600">
-                  Try adjusting your search or filters, or check if required
-                  blocks are available.
+                  Try adjusting your search or filters, or check if required blocks are available.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTemplates.map((template) => {
-                  const CategoryIcon = getCategoryIcon(template.category);
-                  const isAvailable = template.requiredBlocks.every((block) =>
-                    availableBlocks.includes(block),
-                  );
+                {filteredTemplates.map(template => {
+                  const CategoryIcon = getCategoryIcon(template.category)
+                  const isAvailable = template.requiredBlocks.every(block =>
+                    availableBlocks.includes(block)
+                  )
 
                   return (
                     <div
                       key={template.id}
                       className={`border rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer ${
                         template.featured
-                          ? "border-blue-300 bg-blue-50"
-                          : "border-gray-200 bg-white"
-                      } ${!isAvailable ? "opacity-60" : ""}`}
-                      onClick={() =>
-                        isAvailable && setSelectedTemplate(template)
-                      }
+                          ? 'border-blue-300 bg-blue-50'
+                          : 'border-gray-200 bg-white'
+                      } ${!isAvailable ? 'opacity-60' : ''}`}
+                      onClick={() => isAvailable && setSelectedTemplate(template)}
                     >
                       {/* Template Header */}
                       <div className="flex items-start justify-between mb-3">
@@ -558,16 +513,14 @@ export default function TemplateGallery({
                       </div>
 
                       {/* Template Info */}
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {template.name}
-                      </h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{template.name}</h3>
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {template.description}
                       </p>
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {template.tags.slice(0, 3).map((tag) => (
+                        {template.tags.slice(0, 3).map(tag => (
                           <span
                             key={tag}
                             className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
@@ -604,7 +557,7 @@ export default function TemplateGallery({
                       <div className="mb-3">
                         <p className="text-xs text-gray-600 mb-1">Use cases:</p>
                         <div className="flex flex-wrap gap-1">
-                          {template.useCases.slice(0, 2).map((useCase) => (
+                          {template.useCases.slice(0, 2).map(useCase => (
                             <span
                               key={useCase}
                               className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded"
@@ -626,22 +579,22 @@ export default function TemplateGallery({
                       <button
                         className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                           isAvailable
-                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                         disabled={!isAvailable}
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={e => {
+                          e.stopPropagation()
                           if (isAvailable) {
-                            onApplyTemplate(template);
-                            onToggleVisibility();
+                            onApplyTemplate(template)
+                            onToggleVisibility()
                           }
                         }}
                       >
                         Use Template
                       </button>
                     </div>
-                  );
+                  )
                 })}
               </div>
             )}
@@ -656,12 +609,8 @@ export default function TemplateGallery({
             {/* Preview Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {selectedTemplate.name}
-                </h3>
-                <p className="text-gray-600 mt-1">
-                  {selectedTemplate.description}
-                </p>
+                <h3 className="text-xl font-bold text-gray-900">{selectedTemplate.name}</h3>
+                <p className="text-gray-600 mt-1">{selectedTemplate.description}</p>
               </div>
               <button
                 onClick={() => setSelectedTemplate(null)}
@@ -706,17 +655,15 @@ export default function TemplateGallery({
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">
-                      Requirements
-                    </h4>
+                    <h4 className="font-medium text-gray-900 mb-2">Requirements</h4>
                     <div className="space-y-1">
-                      {selectedTemplate.requiredBlocks.map((block) => (
+                      {selectedTemplate.requiredBlocks.map(block => (
                         <div
                           key={block}
                           className={`text-sm px-2 py-1 rounded ${
                             availableBlocks.includes(block)
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
                           }`}
                         >
                           {block}
@@ -730,7 +677,7 @@ export default function TemplateGallery({
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Use Cases</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedTemplate.useCases.map((useCase) => (
+                    {selectedTemplate.useCases.map(useCase => (
                       <span
                         key={useCase}
                         className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
@@ -745,7 +692,7 @@ export default function TemplateGallery({
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Tags</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedTemplate.tags.map((tag) => (
+                    {selectedTemplate.tags.map(tag => (
                       <span
                         key={tag}
                         className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
@@ -758,27 +705,20 @@ export default function TemplateGallery({
 
                 {/* Workflow Preview */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    Workflow Preview
-                  </h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Workflow Preview</h4>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div className="text-sm text-gray-600 mb-2">
-                      {selectedTemplate.nodes.length} nodes •{" "}
-                      {selectedTemplate.edges.length} connections
+                      {selectedTemplate.nodes.length} nodes • {selectedTemplate.edges.length}{' '}
+                      connections
                     </div>
                     <div className="space-y-2">
                       {selectedTemplate.nodes.map((node, index) => (
-                        <div
-                          key={node.id}
-                          className="flex items-center space-x-3 text-sm"
-                        >
+                        <div key={node.id} className="flex items-center space-x-3 text-sm">
                           <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-xs font-medium">
                             {index + 1}
                           </div>
                           <span className="font-medium">{node.data.label}</span>
-                          <span className="text-gray-500">
-                            ({node.data.blockType})
-                          </span>
+                          <span className="text-gray-500">({node.data.blockType})</span>
                         </div>
                       ))}
                     </div>
@@ -798,9 +738,9 @@ export default function TemplateGallery({
                 </button>
                 <button
                   onClick={() => {
-                    onApplyTemplate(selectedTemplate);
-                    setSelectedTemplate(null);
-                    onToggleVisibility();
+                    onApplyTemplate(selectedTemplate)
+                    setSelectedTemplate(null)
+                    onToggleVisibility()
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
@@ -812,5 +752,5 @@ export default function TemplateGallery({
         </div>
       )}
     </>
-  );
+  )
 }

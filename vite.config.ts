@@ -13,37 +13,37 @@ export default defineConfig(({ mode }) => {
       allowedHosts: [
         'localhost',
         '127.0.0.1',
-        '.pankh.ai',  // Allows all pankh.ai subdomains
+        '.pankh.ai', // Allows all pankh.ai subdomains
         'portal-dev.pankh.ai',
         'backend-dev.pankh.ai',
       ],
       proxy: {
         '/api': {
-          target: env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
+          target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',
           changeOrigin: true,
           secure: false,
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
               // Add API key header if available
-              const apiKey = env.VITE_API_KEY;
+              const apiKey = env.VITE_API_KEY
               if (apiKey) {
-                proxyReq.setHeader('X-API-Key', apiKey);
+                proxyReq.setHeader('X-API-Key', apiKey)
               }
-            });
+            })
           },
         },
         '/health': {
-          target: env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
+          target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',
           changeOrigin: true,
           secure: false,
         },
         '/metrics': {
-          target: env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
+          target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',
           changeOrigin: true,
           secure: false,
         },
         '/ws': {
-          target: env.VITE_API_PROXY_TARGET?.replace('http', 'ws') || 'ws://localhost:8000',
+          target: env.VITE_API_PROXY_TARGET?.replace('http', 'ws') || 'ws://backend-dev.pankh.ai',
           changeOrigin: true,
           ws: true,
         },

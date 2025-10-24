@@ -1,4 +1,4 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test'
 
 // Test data for different button configurations
 const buttonVariants = [
@@ -6,29 +6,29 @@ const buttonVariants = [
   { variant: 'secondary', expected: 'bg-slate-800/80' },
   { variant: 'ghost', expected: 'text-gray-300' },
   { variant: 'glass', expected: 'bg-glass-300' },
-  { variant: 'destructive', expected: 'bg-red-500' }
-];
+  { variant: 'destructive', expected: 'bg-red-500' },
+]
 
 const buttonSizes = [
   { size: 'sm', expected: 'h-9' },
   { size: 'md', expected: 'h-10' },
   { size: 'lg', expected: 'h-12' },
-  { size: 'icon', expected: 'h-10 w-10' }
-];
+  { size: 'icon', expected: 'h-10 w-10' },
+]
 
 const viewports = [
   { name: 'mobile', width: 375, height: 667 },
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'desktop', width: 1280, height: 720 },
-  { name: 'large-desktop', width: 1920, height: 1080 }
-];
+  { name: 'large-desktop', width: 1920, height: 1080 },
+]
 
 test.describe('Button Component Tests', () => {
-  let page: Page;
-  let testButtons: Locator;
+  let page: Page
+  let testButtons: Locator
 
   test.beforeEach(async ({ page: testPage }) => {
-    page = testPage;
+    page = testPage
 
     // Create a test page with various button configurations
     await page.setContent(`
@@ -256,354 +256,356 @@ test.describe('Button Component Tests', () => {
         </div>
       </body>
       </html>
-    `);
+    `)
 
-    testButtons = page.locator('button');
-  });
+    testButtons = page.locator('button')
+  })
 
   // 🔹 Functional Test Cases
 
   test.describe('Button Click Actions', () => {
     test('should perform correct action when Next button is clicked', async () => {
-      await page.getByTestId('next-button').click();
-      await expect(page.getByTestId('action-result')).toHaveText('Next clicked');
-    });
+      await page.getByTestId('next-button').click()
+      await expect(page.getByTestId('action-result')).toHaveText('Next clicked')
+    })
 
     test('should perform correct action when Previous button is clicked', async () => {
-      await page.getByTestId('previous-button').click();
-      await expect(page.getByTestId('action-result')).toHaveText('Previous clicked');
-    });
+      await page.getByTestId('previous-button').click()
+      await expect(page.getByTestId('action-result')).toHaveText('Previous clicked')
+    })
 
     test('should perform correct action when Submit button is clicked', async () => {
-      await page.getByTestId('submit-button').click();
-      await expect(page.getByTestId('action-result')).toHaveText('Form submitted');
-    });
-  });
+      await page.getByTestId('submit-button').click()
+      await expect(page.getByTestId('action-result')).toHaveText('Form submitted')
+    })
+  })
 
   test.describe('Disabled State', () => {
     test('should not be clickable when disabled', async () => {
-      const disabledButton = page.getByTestId('next-disabled');
+      const disabledButton = page.getByTestId('next-disabled')
 
       // Verify button is disabled
-      await expect(disabledButton).toBeDisabled();
+      await expect(disabledButton).toBeDisabled()
 
       // Verify disabled styling
-      await expect(disabledButton).toHaveClass(/disabled:pointer-events-none/);
-      await expect(disabledButton).toHaveClass(/disabled:opacity-60/);
+      await expect(disabledButton).toHaveClass(/disabled:pointer-events-none/)
+      await expect(disabledButton).toHaveClass(/disabled:opacity-60/)
 
       // Try to click and verify no action occurs
-      await disabledButton.click({ force: true });
-      await expect(page.getByTestId('action-result')).not.toHaveText('Next clicked');
-    });
+      await disabledButton.click({ force: true })
+      await expect(page.getByTestId('action-result')).not.toHaveText('Next clicked')
+    })
 
     test('should be clickable when enabled', async () => {
-      const enabledButton = page.getByTestId('previous-enabled');
+      const enabledButton = page.getByTestId('previous-enabled')
 
       // Verify button is enabled
-      await expect(enabledButton).toBeEnabled();
+      await expect(enabledButton).toBeEnabled()
 
       // Verify button can be clicked
-      await enabledButton.click();
-    });
-  });
+      await enabledButton.click()
+    })
+  })
 
   test.describe('Multiple Clicks Prevention', () => {
     test('should prevent multiple clicks during processing', async () => {
-      const button = page.getByTestId('multi-click-button');
+      const button = page.getByTestId('multi-click-button')
 
       // Click the button
-      await button.click();
+      await button.click()
 
       // Verify button becomes disabled immediately
-      await expect(button).toBeDisabled();
-      await expect(button).toHaveText('Processing...');
+      await expect(button).toBeDisabled()
+      await expect(button).toHaveText('Processing...')
 
       // Try to click again while processing
-      await button.click({ force: true });
+      await button.click({ force: true })
 
       // Wait for processing to complete
-      await expect(page.getByTestId('multi-click-result')).toHaveText('Process completed', { timeout: 3000 });
+      await expect(page.getByTestId('multi-click-result')).toHaveText('Process completed', {
+        timeout: 3000,
+      })
 
       // Verify button becomes enabled again
-      await expect(button).toBeEnabled();
-      await expect(button).toHaveText('Click Me');
-    });
-  });
+      await expect(button).toBeEnabled()
+      await expect(button).toHaveText('Click Me')
+    })
+  })
 
   test.describe('Loading State', () => {
     test('should display loading spinner when in loading state', async () => {
-      const button = page.getByTestId('loading-button');
+      const button = page.getByTestId('loading-button')
 
       // Click to trigger loading state
-      await button.click();
+      await button.click()
 
       // Verify loading state
-      await expect(button).toBeDisabled();
-      await expect(button.locator('.animate-spin')).toBeVisible();
-      await expect(button.locator('.opacity-0')).toBeVisible();
+      await expect(button).toBeDisabled()
+      await expect(button.locator('.animate-spin')).toBeVisible()
+      await expect(button.locator('.opacity-0')).toBeVisible()
 
       // Wait for loading to complete
-      await expect(button).toBeEnabled({ timeout: 4000 });
-      await expect(button).toHaveText('Save Changes');
-    });
-  });
+      await expect(button).toBeEnabled({ timeout: 4000 })
+      await expect(button).toHaveText('Save Changes')
+    })
+  })
 
   test.describe('Keyboard Navigation', () => {
     test('should support Tab navigation', async () => {
       // Start from first tab button
-      await page.getByTestId('tab-1').focus();
-      await expect(page.getByTestId('tab-1')).toBeFocused();
+      await page.getByTestId('tab-1').focus()
+      await expect(page.getByTestId('tab-1')).toBeFocused()
 
       // Tab to next button
-      await page.keyboard.press('Tab');
-      await expect(page.getByTestId('tab-2')).toBeFocused();
+      await page.keyboard.press('Tab')
+      await expect(page.getByTestId('tab-2')).toBeFocused()
 
       // Tab to third button
-      await page.keyboard.press('Tab');
-      await expect(page.getByTestId('tab-3')).toBeFocused();
+      await page.keyboard.press('Tab')
+      await expect(page.getByTestId('tab-3')).toBeFocused()
 
       // Shift+Tab back
-      await page.keyboard.press('Shift+Tab');
-      await expect(page.getByTestId('tab-2')).toBeFocused();
-    });
+      await page.keyboard.press('Shift+Tab')
+      await expect(page.getByTestId('tab-2')).toBeFocused()
+    })
 
     test('should activate button with Enter key', async () => {
-      await page.getByTestId('next-button').focus();
-      await page.keyboard.press('Enter');
-      await expect(page.getByTestId('action-result')).toHaveText('Next clicked');
-    });
+      await page.getByTestId('next-button').focus()
+      await page.keyboard.press('Enter')
+      await expect(page.getByTestId('action-result')).toHaveText('Next clicked')
+    })
 
     test('should activate button with Spacebar', async () => {
-      await page.getByTestId('previous-button').focus();
-      await page.keyboard.press('Space');
-      await expect(page.getByTestId('action-result')).toHaveText('Previous clicked');
-    });
-  });
+      await page.getByTestId('previous-button').focus()
+      await page.keyboard.press('Space')
+      await expect(page.getByTestId('action-result')).toHaveText('Previous clicked')
+    })
+  })
 
   // 🔹 UI/UX & Layout Test Cases
 
   test.describe('Button Variants', () => {
     buttonVariants.forEach(({ variant, expected }) => {
       test(`should render ${variant} variant correctly`, async () => {
-        const button = page.getByTestId(`${variant}-button`);
-        await expect(button).toBeVisible();
+        const button = page.getByTestId(`${variant}-button`)
+        await expect(button).toBeVisible()
 
         // Take screenshot for visual verification
         await button.screenshot({
-          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-${variant}-variant.png`
-        });
-      });
-    });
+          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-${variant}-variant.png`,
+        })
+      })
+    })
 
     test('should have correct hover effects', async () => {
-      const primaryButton = page.getByTestId('primary-button');
+      const primaryButton = page.getByTestId('primary-button')
 
       // Hover over button
-      await primaryButton.hover();
+      await primaryButton.hover()
 
       // Take screenshot of hover state
       await primaryButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-primary-hover.png`
-      });
-    });
-  });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-primary-hover.png`,
+      })
+    })
+  })
 
   test.describe('Button Sizes', () => {
     buttonSizes.forEach(({ size, expected }) => {
       test(`should render ${size} size correctly`, async () => {
-        const button = page.getByTestId(`${size}-button`);
-        await expect(button).toBeVisible();
+        const button = page.getByTestId(`${size}-button`)
+        await expect(button).toBeVisible()
 
         // Take screenshot for size verification
         await button.screenshot({
-          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-${size}-size.png`
-        });
-      });
-    });
-  });
+          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-${size}-size.png`,
+        })
+      })
+    })
+  })
 
   test.describe('Button Alignment and Spacing', () => {
     test('should have consistent spacing between buttons', async () => {
-      const buttonRow = page.locator('.button-row').first();
+      const buttonRow = page.locator('.button-row').first()
 
       // Take screenshot of button row layout
       await buttonRow.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-spacing.png`
-      });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-spacing.png`,
+      })
 
       // Verify buttons are properly aligned
-      const buttons = buttonRow.locator('button');
-      const count = await buttons.count();
+      const buttons = buttonRow.locator('button')
+      const count = await buttons.count()
 
       for (let i = 0; i < count; i++) {
-        await expect(buttons.nth(i)).toBeVisible();
+        await expect(buttons.nth(i)).toBeVisible()
       }
-    });
+    })
 
     test('should handle long labels correctly', async () => {
-      const longLabelButton = page.getByTestId('long-label-button');
+      const longLabelButton = page.getByTestId('long-label-button')
 
       // Verify button is visible and text doesn't overflow container
-      await expect(longLabelButton).toBeVisible();
+      await expect(longLabelButton).toBeVisible()
 
       // Take screenshot for visual verification
       await longLabelButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-long-label.png`
-      });
-    });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-long-label.png`,
+      })
+    })
 
     test('should render full width button correctly', async () => {
-      const fullWidthButton = page.getByTestId('full-width-button');
+      const fullWidthButton = page.getByTestId('full-width-button')
 
       // Verify button takes full width
-      await expect(fullWidthButton).toBeVisible();
-      await expect(fullWidthButton).toHaveClass(/w-full/);
+      await expect(fullWidthButton).toBeVisible()
+      await expect(fullWidthButton).toHaveClass(/w-full/)
 
       // Take screenshot
       await fullWidthButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-full-width.png`
-      });
-    });
-  });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-full-width.png`,
+      })
+    })
+  })
 
   test.describe('Icon and Label Visibility', () => {
     test('should display icons and labels correctly', async () => {
-      const iconLeftButton = page.getByTestId('icon-left-button');
-      const iconRightButton = page.getByTestId('icon-right-button');
-      const iconOnlyButton = page.getByTestId('icon-button');
+      const iconLeftButton = page.getByTestId('icon-left-button')
+      const iconRightButton = page.getByTestId('icon-right-button')
+      const iconOnlyButton = page.getByTestId('icon-button')
 
       // Verify all icon buttons are visible
-      await expect(iconLeftButton).toBeVisible();
-      await expect(iconRightButton).toBeVisible();
-      await expect(iconOnlyButton).toBeVisible();
+      await expect(iconLeftButton).toBeVisible()
+      await expect(iconRightButton).toBeVisible()
+      await expect(iconOnlyButton).toBeVisible()
 
       // Take screenshots
       await iconLeftButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-left.png`
-      });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-left.png`,
+      })
       await iconRightButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-right.png`
-      });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-right.png`,
+      })
       await iconOnlyButton.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-only.png`
-      });
-    });
-  });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-icon-only.png`,
+      })
+    })
+  })
 
   // 🔹 Responsive Design Test Cases
 
   test.describe('Responsive Design', () => {
     viewports.forEach(({ name, width, height }) => {
       test(`should render correctly on ${name} (${width}x${height})`, async () => {
-        await page.setViewportSize({ width, height });
+        await page.setViewportSize({ width, height })
 
         // Take full page screenshot for each viewport
         await page.screenshot({
           path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\buttons-${name}-${width}x${height}.png`,
-          fullPage: true
-        });
+          fullPage: true,
+        })
 
         // Verify buttons are still visible and accessible
-        const primaryButton = page.getByTestId('primary-button');
-        await expect(primaryButton).toBeVisible();
+        const primaryButton = page.getByTestId('primary-button')
+        await expect(primaryButton).toBeVisible()
 
         // Test button interaction on different viewport
-        await primaryButton.click();
-      });
-    });
+        await primaryButton.click()
+      })
+    })
 
     test('should handle button stacking on mobile', async () => {
-      await page.setViewportSize({ width: 320, height: 568 });
+      await page.setViewportSize({ width: 320, height: 568 })
 
-      const buttonRow = page.locator('.button-row').first();
+      const buttonRow = page.locator('.button-row').first()
       await buttonRow.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-mobile-stacking.png`
-      });
-    });
-  });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-mobile-stacking.png`,
+      })
+    })
+  })
 
   // 🔹 Accessibility Test Cases
 
   test.describe('Accessibility', () => {
     test('should have proper focus indicators', async () => {
-      const button = page.getByTestId('tab-1');
+      const button = page.getByTestId('tab-1')
 
       // Focus the button
-      await button.focus();
+      await button.focus()
 
       // Verify focus ring is visible
-      await expect(button).toHaveClass(/focus-visible:ring-2/);
+      await expect(button).toHaveClass(/focus-visible:ring-2/)
 
       // Take screenshot of focused state
       await button.screenshot({
-        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-focus-indicator.png`
-      });
-    });
+        path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\button-focus-indicator.png`,
+      })
+    })
 
     test('should support ARIA labels', async () => {
-      const ariaButton = page.getByTestId('aria-button');
+      const ariaButton = page.getByTestId('aria-button')
 
       // Verify ARIA label exists
-      await expect(ariaButton).toHaveAttribute('aria-label', 'Save document to cloud storage');
-    });
+      await expect(ariaButton).toHaveAttribute('aria-label', 'Save document to cloud storage')
+    })
 
     test('should support aria-describedby', async () => {
-      const ariaDescribedByButton = page.getByTestId('aria-describedby');
+      const ariaDescribedByButton = page.getByTestId('aria-describedby')
 
       // Verify aria-describedby attribute
-      await expect(ariaDescribedByButton).toHaveAttribute('aria-describedby', 'delete-help');
+      await expect(ariaDescribedByButton).toHaveAttribute('aria-describedby', 'delete-help')
 
       // Verify the describing element exists
-      await expect(page.locator('#delete-help')).toBeVisible();
-    });
+      await expect(page.locator('#delete-help')).toBeVisible()
+    })
 
     test('should meet color contrast requirements', async () => {
       // Take screenshots of all button variants for manual contrast checking
       for (const { variant } of buttonVariants) {
-        const button = page.getByTestId(`${variant}-button`);
+        const button = page.getByTestId(`${variant}-button`)
         await button.screenshot({
-          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\contrast-${variant}.png`
-        });
+          path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\contrast-${variant}.png`,
+        })
       }
-    });
-  });
+    })
+  })
 
   // 🔹 Negative & Edge Cases
 
   test.describe('Edge Cases', () => {
     test('should not allow interaction with hidden buttons', async () => {
-      const hiddenButton = page.getByTestId('hidden-button');
-      const invisibleButton = page.getByTestId('invisible-button');
-      const zeroOpacityButton = page.getByTestId('zero-opacity-button');
+      const hiddenButton = page.getByTestId('hidden-button')
+      const invisibleButton = page.getByTestId('invisible-button')
+      const zeroOpacityButton = page.getByTestId('zero-opacity-button')
 
       // Verify buttons are not visible
-      await expect(hiddenButton).not.toBeVisible();
-      await expect(invisibleButton).not.toBeVisible();
-      await expect(zeroOpacityButton).not.toBeVisible();
+      await expect(hiddenButton).not.toBeVisible()
+      await expect(invisibleButton).not.toBeVisible()
+      await expect(zeroOpacityButton).not.toBeVisible()
 
       // Attempting to click should not work
-      await hiddenButton.click({ force: true, timeout: 1000 }).catch(() => {});
-      await invisibleButton.click({ force: true, timeout: 1000 }).catch(() => {});
-      await zeroOpacityButton.click({ force: true, timeout: 1000 }).catch(() => {});
-    });
+      await hiddenButton.click({ force: true, timeout: 1000 }).catch(() => {})
+      await invisibleButton.click({ force: true, timeout: 1000 }).catch(() => {})
+      await zeroOpacityButton.click({ force: true, timeout: 1000 }).catch(() => {})
+    })
 
     test('should handle slow network conditions', async () => {
       // Simulate slow network
       await page.route('**/*', route => {
-        setTimeout(() => route.continue(), 100);
-      });
+        setTimeout(() => route.continue(), 100)
+      })
 
-      const slowNetworkButton = page.getByTestId('slow-network-button');
+      const slowNetworkButton = page.getByTestId('slow-network-button')
 
       // Click button and verify loading state
-      await slowNetworkButton.click();
-      await expect(slowNetworkButton).toBeDisabled();
-      await expect(slowNetworkButton).toHaveText('Loading...');
+      await slowNetworkButton.click()
+      await expect(slowNetworkButton).toBeDisabled()
+      await expect(slowNetworkButton).toHaveText('Loading...')
 
       // Wait for completion
-      await expect(slowNetworkButton).toHaveText('Upload Complete', { timeout: 6000 });
-    });
-  });
+      await expect(slowNetworkButton).toHaveText('Upload Complete', { timeout: 6000 })
+    })
+  })
 
   // Error Screenshot Capture
   test.afterEach(async ({ page }, testInfo) => {
@@ -611,14 +613,14 @@ test.describe('Button Component Tests', () => {
       // Capture full page screenshot on failure
       const screenshot = await page.screenshot({
         path: `C:\\Users\\pkhar\\Documents\\Pankh\\pankh_ai_engine_poc_v4\\services\\webui\\tests\\screenshots\\error-${testInfo.title.replace(/\s+/g, '-')}-${Date.now()}.png`,
-        fullPage: true
-      });
+        fullPage: true,
+      })
 
       // Attach screenshot to test report
       await testInfo.attach('screenshot', {
         body: screenshot,
-        contentType: 'image/png'
-      });
+        contentType: 'image/png',
+      })
     }
-  });
-});
+  })
+})

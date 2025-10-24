@@ -3,6 +3,7 @@
 ## Overview
 
 This application includes a complete dark mode implementation with:
+
 - Light, Dark, and System (auto) themes
 - Persistent theme preference (localStorage)
 - CSS custom properties for easy theming
@@ -16,22 +17,18 @@ This application includes a complete dark mode implementation with:
 In your root `App.tsx` or `main.tsx`:
 
 ```tsx
-import { ThemeProvider } from './contexts/ThemeContext';
-import './styles/theme.css';
+import { ThemeProvider } from './contexts/ThemeContext'
+import './styles/theme.css'
 
 function App() {
-  return (
-    <ThemeProvider>
-      {/* Your app components */}
-    </ThemeProvider>
-  );
+  return <ThemeProvider>{/* Your app components */}</ThemeProvider>
 }
 ```
 
 ### 2. Add Theme Toggle to Header/Settings
 
 ```tsx
-import ThemeToggle from './components/common/ThemeToggle';
+import ThemeToggle from './components/common/ThemeToggle'
 
 function Header() {
   return (
@@ -47,7 +44,7 @@ function Header() {
       {/* Or full dropdown with all options */}
       <ThemeToggle variant="dropdown" />
     </header>
-  );
+  )
 }
 ```
 
@@ -56,11 +53,13 @@ function Header() {
 **Option A: Use CSS Custom Properties (Recommended)**
 
 ```tsx
-<div style={{
-  backgroundColor: 'var(--bg-primary)',
-  color: 'var(--text-primary)',
-  border: '1px solid var(--border-primary)',
-}}>
+<div
+  style={{
+    backgroundColor: 'var(--bg-primary)',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border-primary)',
+  }}
+>
   Content
 </div>
 ```
@@ -68,17 +67,13 @@ function Header() {
 **Option B: Use Utility Classes**
 
 ```tsx
-<div className="bg-primary text-primary border-primary">
-  Content
-</div>
+<div className="bg-primary text-primary border-primary">Content</div>
 ```
 
 **Option C: Use Tailwind with dark: prefix**
 
 ```tsx
-<div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-  Content
-</div>
+<div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">Content</div>
 ```
 
 ## Available Theme Variables
@@ -149,10 +144,10 @@ function Header() {
 ### Access Theme State
 
 ```tsx
-import { useTheme } from './contexts/ThemeContext';
+import { useTheme } from './contexts/ThemeContext'
 
 function MyComponent() {
-  const { theme, effectiveTheme, setTheme, toggleTheme } = useTheme();
+  const { theme, effectiveTheme, setTheme, toggleTheme } = useTheme()
 
   return (
     <div>
@@ -160,29 +155,27 @@ function MyComponent() {
       <p>Effective theme: {effectiveTheme}</p>
 
       {/* Toggle between light and dark */}
-      <button onClick={toggleTheme}>
-        Toggle Theme
-      </button>
+      <button onClick={toggleTheme}>Toggle Theme</button>
 
       {/* Set specific theme */}
       <button onClick={() => setTheme('light')}>Light</button>
       <button onClick={() => setTheme('dark')}>Dark</button>
       <button onClick={() => setTheme('system')}>System</button>
     </div>
-  );
+  )
 }
 ```
 
 ### Conditional Rendering Based on Theme
 
 ```tsx
-import { useTheme } from './contexts/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import { useTheme } from './contexts/ThemeContext'
+import { Sun, Moon } from 'lucide-react'
 
 function ThemeIcon() {
-  const { effectiveTheme } = useTheme();
+  const { effectiveTheme } = useTheme()
 
-  return effectiveTheme === 'dark' ? <Moon /> : <Sun />;
+  return effectiveTheme === 'dark' ? <Moon /> : <Sun />
 }
 ```
 
@@ -215,17 +208,13 @@ function ThemeIcon() {
 ### Method 3: Conditional Classes
 
 ```tsx
-import { useTheme } from './contexts/ThemeContext';
+import { useTheme } from './contexts/ThemeContext'
 
 function MyComponent() {
-  const { effectiveTheme } = useTheme();
-  const isDark = effectiveTheme === 'dark';
+  const { effectiveTheme } = useTheme()
+  const isDark = effectiveTheme === 'dark'
 
-  return (
-    <div className={isDark ? 'dark-mode-styles' : 'light-mode-styles'}>
-      Content
-    </div>
-  );
+  return <div className={isDark ? 'dark-mode-styles' : 'light-mode-styles'}>Content</div>
 }
 ```
 
@@ -234,6 +223,7 @@ function MyComponent() {
 ### 1. Always Use Theme Variables for Colors
 
 **Good:**
+
 ```css
 .my-button {
   background-color: var(--button-primary-bg);
@@ -242,6 +232,7 @@ function MyComponent() {
 ```
 
 **Bad:**
+
 ```css
 .my-button {
   background-color: #3b82f6; /* Hard-coded color */
@@ -256,6 +247,7 @@ Always test your components in both light and dark modes to ensure readability a
 ### 3. Consider Contrast Ratios
 
 Ensure text has sufficient contrast in both themes:
+
 - Light mode: Dark text on light backgrounds
 - Dark mode: Light text on dark backgrounds
 
@@ -290,7 +282,7 @@ module.exports = {
     },
   },
   // ... other config
-};
+}
 ```
 
 ## React Flow Dark Mode
@@ -298,29 +290,27 @@ module.exports = {
 For React Flow components (workflow canvas):
 
 ```tsx
-import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react';
-import { useTheme } from './contexts/ThemeContext';
+import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react'
+import { useTheme } from './contexts/ThemeContext'
 
 function WorkflowCanvas() {
-  const { effectiveTheme } = useTheme();
+  const { effectiveTheme } = useTheme()
 
   return (
-    <ReactFlow
-      {...props}
-      className={effectiveTheme === 'dark' ? 'dark' : 'light'}
-    >
+    <ReactFlow {...props} className={effectiveTheme === 'dark' ? 'dark' : 'light'}>
       <Background
         variant={BackgroundVariant.Dots}
         color={effectiveTheme === 'dark' ? '#404040' : '#e5e7eb'}
       />
     </ReactFlow>
-  );
+  )
 }
 ```
 
 ## Accessibility
 
 The theme system includes:
+
 - `prefers-color-scheme` media query support (system theme)
 - Proper ARIA labels on theme toggle buttons
 - Sufficient color contrast in both themes
@@ -331,6 +321,7 @@ The theme system includes:
 ### Theme Not Persisting
 
 Check that localStorage is available:
+
 ```tsx
 if (typeof window !== 'undefined' && window.localStorage) {
   // localStorage is available
@@ -343,12 +334,12 @@ Add initial theme script to `index.html` before React loads:
 
 ```html
 <script>
-  (function() {
-    const theme = localStorage.getItem('pankh-theme-preference') || 'system';
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const effectiveTheme = theme === 'system' ? systemTheme : theme;
-    document.documentElement.classList.add(effectiveTheme);
-  })();
+  ;(function () {
+    const theme = localStorage.getItem('pankh-theme-preference') || 'system'
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    const effectiveTheme = theme === 'system' ? systemTheme : theme
+    document.documentElement.classList.add(effectiveTheme)
+  })()
 </script>
 ```
 
@@ -361,25 +352,21 @@ Ensure you're using theme variables or dark: classes consistently across all com
 ### Themed Card Component
 
 ```tsx
-import React from 'react';
+import React from 'react'
 
 interface Props {
-  title: string;
-  children: React.ReactNode;
+  title: string
+  children: React.ReactNode
 }
 
 const Card: React.FC<Props> = ({ title, children }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-        {title}
-      </h3>
-      <div className="text-gray-700 dark:text-gray-300">
-        {children}
-      </div>
+      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{title}</h3>
+      <div className="text-gray-700 dark:text-gray-300">{children}</div>
     </div>
-  );
-};
+  )
+}
 ```
 
 ### Themed Input Component
@@ -399,31 +386,29 @@ const Input: React.FC<Props> = ({ ...props }) => {
         focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900
       "
     />
-  );
-};
+  )
+}
 ```
 
 ### Themed Button Component
 
 ```tsx
 const Button: React.FC<Props> = ({ children, variant = 'primary', ...props }) => {
-  const baseClasses = "px-4 py-2 rounded-lg font-medium transition-colors";
+  const baseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors'
 
   const variantClasses = {
-    primary: "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white",
-    secondary: "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white",
-    danger: "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white",
-  };
+    primary: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
+    secondary:
+      'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white',
+    danger: 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white',
+  }
 
   return (
-    <button
-      {...props}
-      className={`${baseClasses} ${variantClasses[variant]}`}
-    >
+    <button {...props} className={`${baseClasses} ${variantClasses[variant]}`}>
       {children}
     </button>
-  );
-};
+  )
+}
 ```
 
 ## Resources

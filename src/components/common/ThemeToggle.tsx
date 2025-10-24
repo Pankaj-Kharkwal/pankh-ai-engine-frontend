@@ -4,27 +4,28 @@
  * Allows users to switch between light, dark, and system themes.
  */
 
-import React, { useState } from 'react';
-import { Sun, Moon, Monitor, Check } from 'lucide-react';
-import { useTheme, Theme } from '../../contexts/ThemeContext';
+import React, { useState } from 'react'
+import { Sun, Moon, Monitor, Check } from 'lucide-react'
+import { useTheme, Theme } from '../../contexts/ThemeContext'
 
 interface Props {
-  variant?: 'icon' | 'dropdown' | 'compact';
-  className?: string;
+  variant?: 'icon' | 'dropdown' | 'compact'
+  className?: string
 }
 
 const ThemeToggle: React.FC<Props> = ({ variant = 'icon', className = '' }) => {
-  const { theme, effectiveTheme, setTheme } = useTheme();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const { theme, effectiveTheme, setTheme } = useTheme()
+  const [showDropdown, setShowDropdown] = useState(false)
 
   const themes: Array<{ value: Theme; label: string; icon: React.ReactNode }> = [
     { value: 'light', label: 'Light', icon: <Sun className="w-4 h-4" /> },
     { value: 'dark', label: 'Dark', icon: <Moon className="w-4 h-4" /> },
     { value: 'system', label: 'System', icon: <Monitor className="w-4 h-4" /> },
-  ];
+  ]
 
-  const currentTheme = themes.find((t) => t.value === theme);
-  const effectiveIcon = effectiveTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />;
+  const currentTheme = themes.find(t => t.value === theme)
+  const effectiveIcon =
+    effectiveTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />
 
   // Icon-only variant (simple toggle)
   if (variant === 'icon') {
@@ -37,7 +38,7 @@ const ThemeToggle: React.FC<Props> = ({ variant = 'icon', className = '' }) => {
       >
         {effectiveIcon}
       </button>
-    );
+    )
   }
 
   // Compact variant (shows current theme with icon)
@@ -53,7 +54,7 @@ const ThemeToggle: React.FC<Props> = ({ variant = 'icon', className = '' }) => {
           {currentTheme?.label || 'Theme'}
         </span>
       </button>
-    );
+    )
   }
 
   // Dropdown variant (full theme selector)
@@ -90,12 +91,12 @@ const ThemeToggle: React.FC<Props> = ({ variant = 'icon', className = '' }) => {
 
           {/* Dropdown menu */}
           <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
-            {themes.map((themeOption) => (
+            {themes.map(themeOption => (
               <button
                 key={themeOption.value}
                 onClick={() => {
-                  setTheme(themeOption.value);
-                  setShowDropdown(false);
+                  setTheme(themeOption.value)
+                  setShowDropdown(false)
                 }}
                 className={`
                   w-full flex items-center justify-between px-4 py-3 text-sm
@@ -107,16 +108,14 @@ const ThemeToggle: React.FC<Props> = ({ variant = 'icon', className = '' }) => {
                   {themeOption.icon}
                   <span className="font-medium">{themeOption.label}</span>
                 </div>
-                {theme === themeOption.value && (
-                  <Check className="w-4 h-4" />
-                )}
+                {theme === themeOption.value && <Check className="w-4 h-4" />}
               </button>
             ))}
           </div>
         </>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ThemeToggle;
+export default ThemeToggle

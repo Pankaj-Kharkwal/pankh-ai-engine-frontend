@@ -1,74 +1,76 @@
-import React, { useState } from 'react';
-import { ArrowRight, Copy, Check, FileJson, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react'
+import { ArrowRight, Copy, Check, FileJson, AlertCircle } from 'lucide-react'
 
 interface BlockIOSchemaProps {
-  block: any;
-  schema?: any;
+  block: any
+  schema?: any
 }
 
 export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
-  const [copiedInput, setCopiedInput] = useState(false);
-  const [copiedOutput, setCopiedOutput] = useState(false);
+  const [copiedInput, setCopiedInput] = useState(false)
+  const [copiedOutput, setCopiedOutput] = useState(false)
 
   const copyToClipboard = (text: string, type: 'input' | 'output') => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text)
     if (type === 'input') {
-      setCopiedInput(true);
-      setTimeout(() => setCopiedInput(false), 2000);
+      setCopiedInput(true)
+      setTimeout(() => setCopiedInput(false), 2000)
     } else {
-      setCopiedOutput(true);
-      setTimeout(() => setCopiedOutput(false), 2000);
+      setCopiedOutput(true)
+      setTimeout(() => setCopiedOutput(false), 2000)
     }
-  };
+  }
 
   // Generate sample input based on config schema
   const generateSampleInput = () => {
     if (!schema?.manifest?.config_schema?.properties) {
-      return null;
+      return null
     }
 
-    const sample: any = {};
-    Object.entries(schema.manifest.config_schema.properties).forEach(([key, fieldSchema]: [string, any]) => {
-      switch (fieldSchema.type) {
-        case 'string':
-          sample[key] = fieldSchema.default || `example_${key}`;
-          break;
-        case 'number':
-        case 'integer':
-          sample[key] = fieldSchema.default || 42;
-          break;
-        case 'boolean':
-          sample[key] = fieldSchema.default !== undefined ? fieldSchema.default : true;
-          break;
-        case 'array':
-          sample[key] = fieldSchema.default || ['item1', 'item2'];
-          break;
-        case 'object':
-          sample[key] = fieldSchema.default || {};
-          break;
-        default:
-          sample[key] = null;
+    const sample: any = {}
+    Object.entries(schema.manifest.config_schema.properties).forEach(
+      ([key, fieldSchema]: [string, any]) => {
+        switch (fieldSchema.type) {
+          case 'string':
+            sample[key] = fieldSchema.default || `example_${key}`
+            break
+          case 'number':
+          case 'integer':
+            sample[key] = fieldSchema.default || 42
+            break
+          case 'boolean':
+            sample[key] = fieldSchema.default !== undefined ? fieldSchema.default : true
+            break
+          case 'array':
+            sample[key] = fieldSchema.default || ['item1', 'item2']
+            break
+          case 'object':
+            sample[key] = fieldSchema.default || {}
+            break
+          default:
+            sample[key] = null
+        }
       }
-    });
-    return sample;
-  };
+    )
+    return sample
+  }
 
   // Generate sample output based on block type
   const generateSampleOutput = () => {
-    const blockType = block?.type?.toLowerCase() || '';
+    const blockType = block?.type?.toLowerCase() || ''
 
     // Common output patterns based on block type
     if (blockType.includes('http') || blockType.includes('api')) {
       return {
         status: 200,
         headers: {
-          'content-type': 'application/json'
+          'content-type': 'application/json',
         },
         body: {
           data: 'Response data from API',
-          timestamp: new Date().toISOString()
-        }
-      };
+          timestamp: new Date().toISOString(),
+        },
+      }
     }
 
     if (blockType.includes('ai') || blockType.includes('llm') || blockType.includes('chat')) {
@@ -78,43 +80,43 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
         usage: {
           prompt_tokens: 50,
           completion_tokens: 100,
-          total_tokens: 150
-        }
-      };
+          total_tokens: 150,
+        },
+      }
     }
 
     if (blockType.includes('database') || blockType.includes('sql')) {
       return {
         rows: [
           { id: 1, name: 'Example 1' },
-          { id: 2, name: 'Example 2' }
+          { id: 2, name: 'Example 2' },
         ],
-        rowCount: 2
-      };
+        rowCount: 2,
+      }
     }
 
     if (blockType.includes('email') || blockType.includes('mail')) {
       return {
         messageId: '<unique-message-id@example.com>',
         status: 'sent',
-        recipients: ['user@example.com']
-      };
+        recipients: ['user@example.com'],
+      }
     }
 
     // Default generic output
     return {
       success: true,
       result: 'Block execution completed successfully',
-      data: null
-    };
-  };
+      data: null,
+    }
+  }
 
-  const sampleInput = generateSampleInput();
-  const sampleOutput = generateSampleOutput();
+  const sampleInput = generateSampleInput()
+  const sampleOutput = generateSampleOutput()
 
   // Extract input schema details
-  const inputSchema = schema?.manifest?.config_schema?.properties || {};
-  const inputProperties = Object.entries(inputSchema);
+  const inputSchema = schema?.manifest?.config_schema?.properties || {}
+  const inputProperties = Object.entries(inputSchema)
 
   return (
     <div className="space-y-6">
@@ -180,7 +182,10 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
                           {fieldSchema.description || 'No description'}
                           {fieldSchema.default !== undefined && (
                             <div className="mt-1 text-xs text-gray-500">
-                              Default: <code className="bg-gray-100 px-1 rounded">{JSON.stringify(fieldSchema.default)}</code>
+                              Default:{' '}
+                              <code className="bg-gray-100 px-1 rounded">
+                                {JSON.stringify(fieldSchema.default)}
+                              </code>
                             </div>
                           )}
                         </td>
@@ -252,7 +257,8 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-900">Output Format</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  The output format depends on the block's execution result. Below is a sample based on typical output for this block type.
+                  The output format depends on the block's execution result. Below is a sample based
+                  on typical output for this block type.
                 </p>
               </div>
             </div>
@@ -290,9 +296,7 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
             <div className="space-y-2">
               {Object.entries(sampleOutput).map(([key, value]) => (
                 <div key={key} className="flex items-start p-3 bg-gray-50 rounded-lg">
-                  <code className="flex-shrink-0 font-mono text-sm text-gray-900 mr-3">
-                    {key}
-                  </code>
+                  <code className="flex-shrink-0 font-mono text-sm text-gray-900 mr-3">{key}</code>
                   <div className="flex-1">
                     <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">
                       {typeof value}
@@ -309,11 +313,21 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
       <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-purple-900 mb-3">Usage in Workflow</h3>
         <div className="space-y-2 text-sm text-purple-800">
-          <p>• Access output in expressions using: <code className="bg-purple-100 px-2 py-1 rounded">$node["{block.manifest?.name || block.type}"].json</code></p>
-          <p>• Reference specific fields: <code className="bg-purple-100 px-2 py-1 rounded">$node["{block.manifest?.name || block.type}"].json.{Object.keys(sampleOutput)[0]}</code></p>
+          <p>
+            • Access output in expressions using:{' '}
+            <code className="bg-purple-100 px-2 py-1 rounded">
+              $node["{block.manifest?.name || block.type}"].json
+            </code>
+          </p>
+          <p>
+            • Reference specific fields:{' '}
+            <code className="bg-purple-100 px-2 py-1 rounded">
+              $node["{block.manifest?.name || block.type}"].json.{Object.keys(sampleOutput)[0]}
+            </code>
+          </p>
           <p>• Use in downstream blocks as parameter values or conditional logic</p>
         </div>
       </div>
     </div>
-  );
+  )
 }

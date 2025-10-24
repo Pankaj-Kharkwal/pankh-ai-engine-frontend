@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from 'react'
 import {
   Copy,
   Scissors,
@@ -10,69 +10,64 @@ import {
   EyeOff,
   Zap,
   MoreHorizontal,
-} from "lucide-react";
+} from 'lucide-react'
 
 interface ContextMenuItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  action: () => void;
-  disabled?: boolean;
-  separator?: boolean;
+  id: string
+  label: string
+  icon: React.ComponentType<any>
+  action: () => void
+  disabled?: boolean
+  separator?: boolean
 }
 
 interface ContextMenuProps {
-  x: number;
-  y: number;
-  items: ContextMenuItem[];
-  onClose: () => void;
+  x: number
+  y: number
+  items: ContextMenuItem[]
+  onClose: () => void
 }
 
-export default function ContextMenu({
-  x,
-  y,
-  items,
-  onClose,
-}: ContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
+export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
+      if (event.key === 'Escape') {
+        onClose()
       }
-    };
+    }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [onClose])
 
   // Position the menu within viewport bounds
   const menuStyle: React.CSSProperties = {
-    position: "fixed",
+    position: 'fixed',
     left: Math.min(x, window.innerWidth - 200),
     top: Math.min(y, window.innerHeight - (items.length * 40 + 20)),
     zIndex: 1000,
-  };
+  }
 
   const handleItemClick = (item: ContextMenuItem) => {
     if (!item.disabled) {
-      item.action();
-      onClose();
+      item.action()
+      onClose()
     }
-  };
+  }
 
   return (
     <div
@@ -82,9 +77,7 @@ export default function ContextMenu({
     >
       {items.map((item, index) => (
         <React.Fragment key={item.id}>
-          {item.separator && index > 0 && (
-            <div className="border-t border-gray-100 my-1" />
-          )}
+          {item.separator && index > 0 && <div className="border-t border-gray-100 my-1" />}
           <button
             onClick={() => handleItemClick(item)}
             disabled={item.disabled}
@@ -100,7 +93,7 @@ export default function ContextMenu({
         </React.Fragment>
       ))}
     </div>
-  );
+  )
 }
 
 // Predefined context menu configurations
@@ -114,108 +107,108 @@ export const createNodeContextMenu = (
   onCopy: (nodeId: string) => void,
   onCut: (nodeId: string) => void,
   onDisable: (nodeId: string) => void,
-  isDisabled: boolean = false,
+  isDisabled: boolean = false
 ): ContextMenuItem[] => [
   {
-    id: "configure",
-    label: "Configure",
+    id: 'configure',
+    label: 'Configure',
     icon: Settings,
     action: () => onConfigure(nodeId),
   },
   {
-    id: "execute",
-    label: "Execute Node",
+    id: 'execute',
+    label: 'Execute Node',
     icon: Play,
     action: () => onExecute(nodeId),
   },
   {
-    id: "separator1",
-    label: "",
+    id: 'separator1',
+    label: '',
     icon: MoreHorizontal,
     action: () => {},
     separator: true,
   },
   {
-    id: "duplicate",
-    label: "Duplicate",
+    id: 'duplicate',
+    label: 'Duplicate',
     icon: Copy,
     action: () => onDuplicate(nodeId),
   },
   {
-    id: "copy",
-    label: "Copy",
+    id: 'copy',
+    label: 'Copy',
     icon: Copy,
     action: () => onCopy(nodeId),
   },
   {
-    id: "cut",
-    label: "Cut",
+    id: 'cut',
+    label: 'Cut',
     icon: Scissors,
     action: () => onCut(nodeId),
   },
   {
-    id: "separator2",
-    label: "",
+    id: 'separator2',
+    label: '',
     icon: MoreHorizontal,
     action: () => {},
     separator: true,
   },
   {
-    id: "disable",
-    label: isDisabled ? "Enable" : "Disable",
+    id: 'disable',
+    label: isDisabled ? 'Enable' : 'Disable',
     icon: isDisabled ? Eye : EyeOff,
     action: () => onDisable(nodeId),
   },
   {
-    id: "delete",
-    label: "Delete",
+    id: 'delete',
+    label: 'Delete',
     icon: Trash2,
     action: () => onDelete(nodeId),
   },
-];
+]
 
 export const createCanvasContextMenu = (
   onPaste: () => void,
   onSelectAll: () => void,
   onClearSelection: () => void,
-  canPaste: boolean = false,
+  canPaste: boolean = false
 ): ContextMenuItem[] => [
   {
-    id: "paste",
-    label: "Paste",
+    id: 'paste',
+    label: 'Paste',
     icon: Copy,
     action: onPaste,
     disabled: !canPaste,
   },
   {
-    id: "separator1",
-    label: "",
+    id: 'separator1',
+    label: '',
     icon: MoreHorizontal,
     action: () => {},
     separator: true,
   },
   {
-    id: "select-all",
-    label: "Select All",
+    id: 'select-all',
+    label: 'Select All',
     icon: Square,
     action: onSelectAll,
   },
   {
-    id: "clear-selection",
-    label: "Clear Selection",
+    id: 'clear-selection',
+    label: 'Clear Selection',
     icon: Square,
     action: onClearSelection,
   },
-];
+]
 
 export const createEdgeContextMenu = (
   edgeId: string,
-  onDelete: (edgeId: string) => void,
+  onDelete: (edgeId: string) => void
 ): ContextMenuItem[] => [
   {
-    id: "delete",
-    label: "Delete Connection",
+    id: 'delete',
+    label: 'Delete Connection',
     icon: Trash2,
     action: () => onDelete(edgeId),
   },
-];
+]

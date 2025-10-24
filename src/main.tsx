@@ -28,7 +28,5 @@ if (connectionString) {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {reactPlugin ? reactPlugin.withAITracking(App, undefined) : <App />}
-  </StrictMode>,
+  <StrictMode>{reactPlugin ? reactPlugin.withAITracking(App, undefined) : <App />}</StrictMode>
 )

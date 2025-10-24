@@ -1,24 +1,32 @@
-import React from 'react';
-import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Activity, BarChart3 } from 'lucide-react';
+import React from 'react'
+import {
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Activity,
+  BarChart3,
+} from 'lucide-react'
 
 interface BlockMetricsProps {
-  blockType: string;
+  blockType: string
   metrics?: {
-    total_executions: number;
-    successful_executions: number;
-    failed_executions: number;
-    average_execution_time_ms: number;
-    min_execution_time_ms: number;
-    max_execution_time_ms: number;
-    last_execution_timestamp?: string;
-    success_rate: number;
+    total_executions: number
+    successful_executions: number
+    failed_executions: number
+    average_execution_time_ms: number
+    min_execution_time_ms: number
+    max_execution_time_ms: number
+    last_execution_timestamp?: string
+    success_rate: number
     recent_executions: Array<{
-      timestamp: string;
-      status: 'success' | 'failed';
-      execution_time_ms: number;
-      error?: string;
-    }>;
-  };
+      timestamp: string
+      status: 'success' | 'failed'
+      execution_time_ms: number
+      error?: string
+    }>
+  }
 }
 
 export default function BlockMetrics({ blockType, metrics }: BlockMetricsProps) {
@@ -29,11 +37,11 @@ export default function BlockMetrics({ blockType, metrics }: BlockMetricsProps) 
         <p className="text-sm">No metrics available</p>
         <p className="text-xs mt-1">This block hasn't been executed yet</p>
       </div>
-    );
+    )
   }
 
-  const successRate = metrics.success_rate * 100;
-  const failureRate = 100 - successRate;
+  const successRate = metrics.success_rate * 100
+  const failureRate = 100 - successRate
 
   return (
     <div className="space-y-6">
@@ -71,7 +79,8 @@ export default function BlockMetrics({ blockType, metrics }: BlockMetricsProps) 
             <Clock className="w-4 h-4 text-purple-600" />
           </div>
           <p className="text-2xl font-bold text-purple-900">
-            {metrics.average_execution_time_ms.toFixed(0)}<span className="text-sm">ms</span>
+            {metrics.average_execution_time_ms.toFixed(0)}
+            <span className="text-sm">ms</span>
           </p>
         </div>
       </div>
@@ -186,5 +195,5 @@ export default function BlockMetrics({ blockType, metrics }: BlockMetricsProps) 
         </div>
       </div>
     </div>
-  );
+  )
 }

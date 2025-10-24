@@ -5,51 +5,53 @@
  * with proper cleanup and prevention of conflicts.
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react'
 
 export interface KeyboardShortcut {
-  key: string;
-  ctrl?: boolean;
-  shift?: boolean;
-  alt?: boolean;
-  meta?: boolean;
-  description: string;
-  action: () => void;
-  preventDefault?: boolean;
+  key: string
+  ctrl?: boolean
+  shift?: boolean
+  alt?: boolean
+  meta?: boolean
+  description: string
+  action: () => void
+  preventDefault?: boolean
 }
 
 export interface KeyboardShortcutConfig {
-  shortcuts: KeyboardShortcut[];
-  enabled?: boolean;
+  shortcuts: KeyboardShortcut[]
+  enabled?: boolean
 }
 
 /**
  * Check if a keyboard event matches a shortcut definition
  */
 const matchesShortcut = (event: KeyboardEvent, shortcut: KeyboardShortcut): boolean => {
-  const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
-  const ctrlMatch = shortcut.ctrl ? event.ctrlKey || event.metaKey : !event.ctrlKey && !event.metaKey;
-  const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
-  const altMatch = shortcut.alt ? event.altKey : !event.altKey;
-  const metaMatch = shortcut.meta ? event.metaKey : true; // Meta is optional
+  const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase()
+  const ctrlMatch = shortcut.ctrl
+    ? event.ctrlKey || event.metaKey
+    : !event.ctrlKey && !event.metaKey
+  const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey
+  const altMatch = shortcut.alt ? event.altKey : !event.altKey
+  const metaMatch = shortcut.meta ? event.metaKey : true // Meta is optional
 
-  return keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch;
-};
+  return keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch
+}
 
 /**
  * Format shortcut for display (e.g., "Ctrl+S", "Ctrl+Shift+P")
  */
 export const formatShortcut = (shortcut: KeyboardShortcut): string => {
-  const parts: string[] = [];
+  const parts: string[] = []
 
-  if (shortcut.ctrl) parts.push('Ctrl');
-  if (shortcut.shift) parts.push('Shift');
-  if (shortcut.alt) parts.push('Alt');
-  if (shortcut.meta) parts.push('Meta');
-  parts.push(shortcut.key.toUpperCase());
+  if (shortcut.ctrl) parts.push('Ctrl')
+  if (shortcut.shift) parts.push('Shift')
+  if (shortcut.alt) parts.push('Alt')
+  if (shortcut.meta) parts.push('Meta')
+  parts.push(shortcut.key.toUpperCase())
 
-  return parts.join('+');
-};
+  return parts.join('+')
+}
 
 /**
  * Hook for registering keyboard shortcuts
@@ -76,73 +78,72 @@ export const formatShortcut = (shortcut: KeyboardShortcut): string => {
  * ```
  */
 export const useKeyboardShortcuts = ({ shortcuts, enabled = true }: KeyboardShortcutConfig) => {
-  const shortcutsRef = useRef(shortcuts);
+  const shortcutsRef = useRef(shortcuts)
 
   // Update ref when shortcuts change
   useEffect(() => {
-    shortcutsRef.current = shortcuts;
-  }, [shortcuts]);
+    shortcutsRef.current = shortcuts
+  }, [shortcuts])
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) return
 
-    // Don't intercept if user is typing in an input field
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable
-    ) {
-      return;
-    }
-
-    for (const shortcut of shortcutsRef.current) {
-      if (matchesShortcut(event, shortcut)) {
-        if (shortcut.preventDefault !== false) {
-          event.preventDefault();
-        }
-        shortcut.action();
-        break; // Only execute first matching shortcut
+      // Don't intercept if user is typing in an input field
+      const target = event.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return
       }
-    }
-  }, [enabled]);
+
+      for (const shortcut of shortcutsRef.current) {
+        if (matchesShortcut(event, shortcut)) {
+          if (shortcut.preventDefault !== false) {
+            event.preventDefault()
+          }
+          shortcut.action()
+          break // Only execute first matching shortcut
+        }
+      }
+    },
+    [enabled]
+  )
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) return
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown, enabled]);
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleKeyDown, enabled])
 
   return {
     shortcuts: shortcutsRef.current,
     formatShortcut,
-  };
-};
+  }
+}
 
 /**
  * Workflow Builder specific shortcuts
  */
 export const useWorkflowBuilderShortcuts = (actions: {
-  onSave?: () => void;
-  onRun?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  onDelete?: () => void;
-  onDuplicate?: () => void;
-  onSelectAll?: () => void;
-  onCopy?: () => void;
-  onPaste?: () => void;
-  onSearch?: () => void;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
-  onZoomReset?: () => void;
-  onTogglePanel?: () => void;
-  onHelp?: () => void;
+  onSave?: () => void
+  onRun?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  onDelete?: () => void
+  onDuplicate?: () => void
+  onSelectAll?: () => void
+  onCopy?: () => void
+  onPaste?: () => void
+  onSearch?: () => void
+  onZoomIn?: () => void
+  onZoomOut?: () => void
+  onZoomReset?: () => void
+  onTogglePanel?: () => void
+  onHelp?: () => void
 }) => {
-  const shortcuts: KeyboardShortcut[] = [];
+  const shortcuts: KeyboardShortcut[] = []
 
   if (actions.onSave) {
     shortcuts.push({
@@ -150,7 +151,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Save workflow',
       action: actions.onSave,
-    });
+    })
   }
 
   if (actions.onRun) {
@@ -159,7 +160,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Run workflow',
       action: actions.onRun,
-    });
+    })
   }
 
   if (actions.onUndo) {
@@ -168,7 +169,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Undo',
       action: actions.onUndo,
-    });
+    })
   }
 
   if (actions.onRedo) {
@@ -177,14 +178,14 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Redo',
       action: actions.onRedo,
-    });
+    })
     shortcuts.push({
       key: 'z',
       ctrl: true,
       shift: true,
       description: 'Redo (alternative)',
       action: actions.onRedo,
-    });
+    })
   }
 
   if (actions.onDelete) {
@@ -193,13 +194,13 @@ export const useWorkflowBuilderShortcuts = (actions: {
       description: 'Delete selected nodes',
       action: actions.onDelete,
       preventDefault: true,
-    });
+    })
     shortcuts.push({
       key: 'Backspace',
       description: 'Delete selected nodes (alternative)',
       action: actions.onDelete,
       preventDefault: true,
-    });
+    })
   }
 
   if (actions.onDuplicate) {
@@ -208,7 +209,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Duplicate selected nodes',
       action: actions.onDuplicate,
-    });
+    })
   }
 
   if (actions.onSelectAll) {
@@ -217,7 +218,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Select all nodes',
       action: actions.onSelectAll,
-    });
+    })
   }
 
   if (actions.onCopy) {
@@ -226,7 +227,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Copy selected nodes',
       action: actions.onCopy,
-    });
+    })
   }
 
   if (actions.onPaste) {
@@ -235,7 +236,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Paste nodes',
       action: actions.onPaste,
-    });
+    })
   }
 
   if (actions.onSearch) {
@@ -244,13 +245,13 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Search blocks',
       action: actions.onSearch,
-    });
+    })
     shortcuts.push({
       key: 'k',
       ctrl: true,
       description: 'Command palette',
       action: actions.onSearch,
-    });
+    })
   }
 
   if (actions.onZoomIn) {
@@ -259,13 +260,13 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Zoom in',
       action: actions.onZoomIn,
-    });
+    })
     shortcuts.push({
       key: '+',
       ctrl: true,
       description: 'Zoom in (alternative)',
       action: actions.onZoomIn,
-    });
+    })
   }
 
   if (actions.onZoomOut) {
@@ -274,7 +275,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Zoom out',
       action: actions.onZoomOut,
-    });
+    })
   }
 
   if (actions.onZoomReset) {
@@ -283,7 +284,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Reset zoom',
       action: actions.onZoomReset,
-    });
+    })
   }
 
   if (actions.onTogglePanel) {
@@ -292,7 +293,7 @@ export const useWorkflowBuilderShortcuts = (actions: {
       ctrl: true,
       description: 'Toggle side panel',
       action: actions.onTogglePanel,
-    });
+    })
   }
 
   if (actions.onHelp) {
@@ -301,36 +302,37 @@ export const useWorkflowBuilderShortcuts = (actions: {
       shift: true,
       description: 'Show keyboard shortcuts',
       action: actions.onHelp,
-    });
+    })
   }
 
-  return useKeyboardShortcuts({ shortcuts });
-};
+  return useKeyboardShortcuts({ shortcuts })
+}
 
 /**
  * Command palette entry
  */
 export interface Command {
-  id: string;
-  label: string;
-  shortcut?: KeyboardShortcut;
-  category?: string;
-  action: () => void;
-  icon?: React.ReactNode;
+  id: string
+  label: string
+  shortcut?: KeyboardShortcut
+  category?: string
+  action: () => void
+  icon?: React.ReactNode
 }
 
 /**
  * Search and filter commands
  */
 export const filterCommands = (commands: Command[], query: string): Command[] => {
-  if (!query) return commands;
+  if (!query) return commands
 
-  const lowerQuery = query.toLowerCase();
-  return commands.filter((cmd) => {
-    const labelMatch = cmd.label.toLowerCase().includes(lowerQuery);
-    const categoryMatch = cmd.category?.toLowerCase().includes(lowerQuery);
-    const shortcutMatch = cmd.shortcut && formatShortcut(cmd.shortcut).toLowerCase().includes(lowerQuery);
+  const lowerQuery = query.toLowerCase()
+  return commands.filter(cmd => {
+    const labelMatch = cmd.label.toLowerCase().includes(lowerQuery)
+    const categoryMatch = cmd.category?.toLowerCase().includes(lowerQuery)
+    const shortcutMatch =
+      cmd.shortcut && formatShortcut(cmd.shortcut).toLowerCase().includes(lowerQuery)
 
-    return labelMatch || categoryMatch || shortcutMatch;
-  });
-};
+    return labelMatch || categoryMatch || shortcutMatch
+  })
+}

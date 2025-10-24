@@ -93,9 +93,7 @@ export default function Debug() {
                 <button className="text-red-400 text-xs">Remove</button>
               </div>
             </div>
-            <button className="glass-button w-full mt-3 text-sm">
-              Add Breakpoint
-            </button>
+            <button className="glass-button w-full mt-3 text-sm">Add Breakpoint</button>
           </div>
 
           <div className="glass-card p-6">

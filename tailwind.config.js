@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       fontFamily: {
@@ -12,7 +9,7 @@ export default {
       colors: {
         glass: {
           50: 'rgba(255, 255, 255, 0.9)',
-          100: 'rgba(255, 255, 255, 0.8)', 
+          100: 'rgba(255, 255, 255, 0.8)',
           200: 'rgba(255, 255, 255, 0.6)',
           300: 'rgba(255, 255, 255, 0.4)',
           400: 'rgba(255, 255, 255, 0.3)',
@@ -24,7 +21,7 @@ export default {
         },
         primary: {
           50: '#eff6ff',
-          100: '#dbeafe', 
+          100: '#dbeafe',
           500: '#3b82f6',
           600: '#2563eb',
           900: '#1e3a8a',
@@ -52,4 +49,3 @@ export default {
   },
   plugins: [],
 }
-

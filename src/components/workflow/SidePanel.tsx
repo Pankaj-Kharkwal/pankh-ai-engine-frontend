@@ -1,17 +1,17 @@
-import React from 'react';
-import type { Node } from '@xyflow/react';
-import BlockParameterForm from '../blocks/BlockParameterForm';
+import React from 'react'
+import type { Node } from '@xyflow/react'
+import BlockParameterForm from '../blocks/BlockParameterForm'
 
 interface SidePanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedBlock: Node | null;
-  onSave: (parameters: any) => void;
+  isOpen: boolean
+  onClose: () => void
+  selectedBlock: Node | null
+  onSave: (parameters: any) => void
 }
 
 const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, selectedBlock, onSave }) => {
   if (!isOpen || !selectedBlock) {
-    return null;
+    return null
   }
 
   return (
@@ -27,10 +27,10 @@ const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, selectedBlock, o
           <BlockParameterForm
             schema={selectedBlock.data.schema.config.properties}
             values={selectedBlock.data.parameters}
-            onChange={(newParams) => {
+            onChange={newParams => {
               // This should ideally be handled by a state management library
               // For now, we'll just log the changes
-              console.log(newParams);
+              console.log(newParams)
             }}
           />
         ) : (
@@ -46,7 +46,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ isOpen, onClose, selectedBlock, o
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SidePanel;
+export default SidePanel

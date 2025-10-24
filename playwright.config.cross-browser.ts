@@ -1,6 +1,6 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
-const APP_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3001';
+const APP_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3001'
 
 /**
  * Cross-browser configuration for UI component testing
@@ -155,7 +155,8 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
         // Force prefers-reduced-motion for accessibility testing
         extraHTTPHeaders: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
       },
       testMatch: 'tests/ui-components/**/*.spec.ts',
@@ -187,20 +188,29 @@ export default defineConfig({
     ['list'],
 
     // HTML report
-    ['html', {
-      outputFolder: 'playwright-report',
-      open: 'never'
-    }],
+    [
+      'html',
+      {
+        outputFolder: 'playwright-report',
+        open: 'never',
+      },
+    ],
 
     // JUnit XML for CI
-    ['junit', {
-      outputFile: 'test-results/junit.xml'
-    }],
+    [
+      'junit',
+      {
+        outputFile: 'test-results/junit.xml',
+      },
+    ],
 
     // JSON report
-    ['json', {
-      outputFile: 'test-results/results.json'
-    }],
+    [
+      'json',
+      {
+        outputFile: 'test-results/results.json',
+      },
+    ],
 
     // Allure reporter (if installed)
     // ['allure-playwright'],
@@ -213,4 +223,4 @@ export default defineConfig({
     environment: process.env.NODE_ENV || 'development',
     buildNumber: process.env.BUILD_NUMBER || 'local',
   },
-});
+})

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react'
 import {
   BarChart3,
   TrendingUp,
@@ -13,43 +13,43 @@ import {
   Play,
   CheckCircle,
   X,
-} from "lucide-react";
-import type { Node, Edge } from "@xyflow/react";
+} from 'lucide-react'
+import type { Node, Edge } from '@xyflow/react'
 
 interface ExecutionMonitorProps {
-  nodes: Node[];
-  edges: Edge[];
-  executionData?: any;
-  isVisible: boolean;
-  onToggleVisibility: () => void;
+  nodes: Node[]
+  edges: Edge[]
+  executionData?: any
+  isVisible: boolean
+  onToggleVisibility: () => void
 }
 
 interface PerformanceMetrics {
-  totalExecutionTime: number;
-  averageNodeTime: number;
+  totalExecutionTime: number
+  averageNodeTime: number
   slowestNode: {
-    id: string;
-    name: string;
-    time: number;
-  } | null;
+    id: string
+    name: string
+    time: number
+  } | null
   fastestNode: {
-    id: string;
-    name: string;
-    time: number;
-  } | null;
-  nodeCount: number;
-  edgeCount: number;
-  successRate: number;
+    id: string
+    name: string
+    time: number
+  } | null
+  nodeCount: number
+  edgeCount: number
+  successRate: number
 }
 
 interface TimelineEvent {
-  id: string;
-  nodeId: string;
-  nodeName: string;
-  type: "start" | "complete" | "error";
-  timestamp: Date;
-  duration?: number;
-  dataSize?: number;
+  id: string
+  nodeId: string
+  nodeName: string
+  type: 'start' | 'complete' | 'error'
+  timestamp: Date
+  duration?: number
+  dataSize?: number
 }
 
 export default function ExecutionMonitor({
@@ -60,11 +60,9 @@ export default function ExecutionMonitor({
   onToggleVisibility,
 }: ExecutionMonitorProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["metrics", "timeline"]), // Expand metrics by default too
-  );
-  const [selectedTimeframe, setSelectedTimeframe] = useState<
-    "all" | "last5" | "last10"
-  >("all");
+    new Set(['metrics', 'timeline']) // Expand metrics by default too
+  )
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | 'last5' | 'last10'>('all')
 
   // Calculate performance metrics (no change to logic)
   const metrics: PerformanceMetrics = useMemo(() => {
@@ -77,31 +75,24 @@ export default function ExecutionMonitor({
         nodeCount: nodes.length,
         edgeCount: edges.length,
         successRate: 0,
-      };
+      }
     }
 
-    const results = Object.values(executionData.nodeResults) as any[];
-    const successfulResults = results.filter((r) => r.success);
-    const totalTime = results.reduce(
-      (sum, r) => sum + (r.executionTime || 0),
-      0,
-    );
-    const avgTime = results.length > 0 ? totalTime / results.length : 0;
+    const results = Object.values(executionData.nodeResults) as any[]
+    const successfulResults = results.filter(r => r.success)
+    const totalTime = results.reduce((sum, r) => sum + (r.executionTime || 0), 0)
+    const avgTime = results.length > 0 ? totalTime / results.length : 0
 
-    const timedResults = results.filter((r) => r.executionTime);
+    const timedResults = results.filter(r => r.executionTime)
     const slowest =
       timedResults.length > 0
-        ? timedResults.reduce((max, r) =>
-            r.executionTime > max.executionTime ? r : max,
-          )
-        : null;
+        ? timedResults.reduce((max, r) => (r.executionTime > max.executionTime ? r : max))
+        : null
 
     const fastest =
       timedResults.length > 0
-        ? timedResults.reduce((min, r) =>
-            r.executionTime < min.executionTime ? r : min,
-          )
-        : null;
+        ? timedResults.reduce((min, r) => (r.executionTime < min.executionTime ? r : min))
+        : null
 
     return {
       totalExecutionTime: totalTime,
@@ -109,126 +100,115 @@ export default function ExecutionMonitor({
       slowestNode: slowest
         ? {
             id: slowest.nodeId,
-            name:
-              nodes.find((n) => n.id === slowest.nodeId)?.data.label ||
-              slowest.nodeId,
+            name: nodes.find(n => n.id === slowest.nodeId)?.data.label || slowest.nodeId,
             time: slowest.executionTime,
           }
         : null,
       fastestNode: fastest
         ? {
             id: fastest.nodeId,
-            name:
-              nodes.find((n) => n.id === fastest.nodeId)?.data.label ||
-              fastest.nodeId,
+            name: nodes.find(n => n.id === fastest.nodeId)?.data.label || fastest.nodeId,
             time: fastest.executionTime,
           }
         : null,
       nodeCount: nodes.length,
       edgeCount: edges.length,
-      successRate:
-        results.length > 0
-          ? (successfulResults.length / results.length) * 100
-          : 0,
-    };
-  }, [executionData, nodes, edges]);
+      successRate: results.length > 0 ? (successfulResults.length / results.length) * 100 : 0,
+    }
+  }, [executionData, nodes, edges])
 
   // Generate timeline events (no change to logic)
   const timelineEvents: TimelineEvent[] = useMemo(() => {
-    if (!executionData?.nodeResults) return [];
+    if (!executionData?.nodeResults) return []
 
-    const events: TimelineEvent[] = [];
-    const nodeResults = executionData.nodeResults;
+    const events: TimelineEvent[] = []
+    const nodeResults = executionData.nodeResults
 
     Object.entries(nodeResults).forEach(([nodeId, result]: [string, any]) => {
-      const node = nodes.find((n) => n.id === nodeId);
-      const nodeName = node?.data.label || nodeId;
+      const node = nodes.find(n => n.id === nodeId)
+      const nodeName = node?.data.label || nodeId
 
       // Add start event (estimated)
-      const startTime = new Date(result.timestamp || Date.now());
-      startTime.setMilliseconds(
-        startTime.getMilliseconds() - (result.executionTime || 0),
-      );
+      const startTime = new Date(result.timestamp || Date.now())
+      startTime.setMilliseconds(startTime.getMilliseconds() - (result.executionTime || 0))
 
       events.push({
         id: `${nodeId}-start`,
         nodeId,
         nodeName,
-        type: "start",
+        type: 'start',
         timestamp: startTime,
-      });
+      })
 
       // Add completion/error event
       events.push({
-        id: `${nodeId}-${result.success ? "complete" : "error"}`,
+        id: `${nodeId}-${result.success ? 'complete' : 'error'}`,
         nodeId,
         nodeName,
-        type: result.success ? "complete" : "error",
+        type: result.success ? 'complete' : 'error',
         timestamp: new Date(result.timestamp || Date.now()),
         duration: result.executionTime,
-        dataSize: result.outputData
-          ? JSON.stringify(result.outputData).length
-          : 0,
-      });
-    });
+        dataSize: result.outputData ? JSON.stringify(result.outputData).length : 0,
+      })
+    })
 
     // Sort by timestamp
-    return events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  }, [executionData, nodes]);
+    return events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  }, [executionData, nodes])
 
   // Filter events based on timeframe (no change to logic)
   const filteredEvents = useMemo(() => {
-    if (selectedTimeframe === "all") return timelineEvents;
+    if (selectedTimeframe === 'all') return timelineEvents
 
-    const limit = selectedTimeframe === "last5" ? 5 : 10;
-    return timelineEvents.slice(-limit);
-  }, [timelineEvents, selectedTimeframe]);
+    const limit = selectedTimeframe === 'last5' ? 5 : 10
+    return timelineEvents.slice(-limit)
+  }, [timelineEvents, selectedTimeframe])
 
   const toggleSection = (section: string) => {
-    setExpandedSections((prev) => {
-      const newSet = new Set(prev);
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
       if (newSet.has(section)) {
-        newSet.delete(section);
+        newSet.delete(section)
       } else {
-        newSet.add(section);
+        newSet.add(section)
       }
-      return newSet;
-    });
-  };
+      return newSet
+    })
+  }
 
   const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
+    if (ms < 1000) return `${ms}ms`
+    return `${(ms / 1000).toFixed(2)}s`
+  }
 
   const formatDataSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
 
-  const getEventIcon = (type: TimelineEvent["type"]) => {
+  const getEventIcon = (type: TimelineEvent['type']) => {
     switch (type) {
-      case "start":
-        return <Play className="w-4 h-4 text-blue-600" />;
-      case "complete":
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case "error":
-        return <X className="w-4 h-4 text-red-600" />;
+      case 'start':
+        return <Play className="w-4 h-4 text-blue-600" />
+      case 'complete':
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case 'error':
+        return <X className="w-4 h-4 text-red-600" />
     }
-  };
+  }
 
   // IMPROVEMENT: Use border-l-4 for a strong color accent and cleaner white background
-  const getEventColor = (type: TimelineEvent["type"]) => {
+  const getEventColor = (type: TimelineEvent['type']) => {
     switch (type) {
-      case "start":
-        return "border-l-4 border-blue-500 bg-white hover:bg-blue-50/50 transition-colors";
-      case "complete":
-        return "border-l-4 border-green-500 bg-white hover:bg-green-50/50 transition-colors";
-      case "error":
-        return "border-l-4 border-red-500 bg-white hover:bg-red-50/50 transition-colors";
+      case 'start':
+        return 'border-l-4 border-blue-500 bg-white hover:bg-blue-50/50 transition-colors'
+      case 'complete':
+        return 'border-l-4 border-green-500 bg-white hover:bg-green-50/50 transition-colors'
+      case 'error':
+        return 'border-l-4 border-red-500 bg-white hover:bg-red-50/50 transition-colors'
     }
-  };
+  }
 
   if (!isVisible) {
     return (
@@ -242,16 +222,14 @@ export default function ExecutionMonitor({
           <BarChart3 className="w-5 h-5 text-gray-600" />
         </button>
       </div>
-    );
+    )
   }
 
   return (
     <div className="fixed bottom-4 right-4 w-96 max-h-[70vh] bg-white border border-gray-200 rounded-xl shadow-2xl z-40 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h3 className="text-xl font-bold text-gray-800">
-          Execution Monitor
-        </h3>
+        <h3 className="text-xl font-bold text-gray-800">Execution Monitor</h3>
         <button
           onClick={onToggleVisibility}
           // IMPROVEMENT: Full-round hover for better target
@@ -267,31 +245,27 @@ export default function ExecutionMonitor({
         {/* Performance Metrics */}
         <div className="space-y-3 border-b border-gray-100 pb-4">
           <button
-            onClick={() => toggleSection("metrics")}
+            onClick={() => toggleSection('metrics')}
             // IMPROVEMENT: Full-width clickable area with hover state
             className="flex items-center space-x-2 w-full text-left py-2 -mx-2 px-2 hover:bg-gray-50 rounded-md transition-colors"
           >
-            {expandedSections.has("metrics") ? (
+            {expandedSections.has('metrics') ? (
               <ChevronDown className="w-4 h-4 text-gray-500" />
             ) : (
               <ChevronRight className="w-4 h-4 text-gray-500" />
             )}
             <BarChart3 className="w-4 h-4 text-gray-600" />
-            <span className="font-semibold text-gray-900 text-base">
-              Performance Metrics
-            </span>
+            <span className="font-semibold text-gray-900 text-base">Performance Metrics</span>
           </button>
 
-          {expandedSections.has("metrics") && (
+          {expandedSections.has('metrics') && (
             <div className="ml-6 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 {/* Total Time Card */}
                 <div className="bg-white p-3 rounded-xl border border-blue-200 shadow-sm">
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-medium text-blue-800">
-                      Total Time
-                    </span>
+                    <span className="text-xs font-medium text-blue-800">Total Time</span>
                   </div>
                   <div className="text-xl font-extrabold text-blue-800 mt-1">
                     {formatDuration(metrics.totalExecutionTime)}
@@ -302,9 +276,7 @@ export default function ExecutionMonitor({
                 <div className="bg-white p-3 rounded-xl border border-green-200 shadow-sm">
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span className="text-xs font-medium text-green-800">
-                      Avg/Node
-                    </span>
+                    <span className="text-xs font-medium text-green-800">Avg/Node</span>
                   </div>
                   <div className="text-xl font-extrabold text-green-800 mt-1">
                     {formatDuration(metrics.averageNodeTime)}
@@ -315,9 +287,7 @@ export default function ExecutionMonitor({
                 <div className="bg-white p-3 rounded-xl border border-purple-200 shadow-sm">
                   <div className="flex items-center space-x-2">
                     <Zap className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-800">
-                      Success Rate
-                    </span>
+                    <span className="text-xs font-medium text-purple-800">Success Rate</span>
                   </div>
                   <div className="text-xl font-extrabold text-purple-800 mt-1">
                     {metrics.successRate.toFixed(1)}%
@@ -328,9 +298,7 @@ export default function ExecutionMonitor({
                 <div className="bg-white p-3 rounded-xl border border-orange-200 shadow-sm">
                   <div className="flex items-center space-x-2">
                     <Database className="w-4 h-4 text-orange-600" />
-                    <span className="text-xs font-medium text-orange-800">
-                      Nodes/Edges
-                    </span>
+                    <span className="text-xs font-medium text-orange-800">Nodes/Edges</span>
                   </div>
                   <div className="text-xl font-extrabold text-orange-800 mt-1">
                     {metrics.nodeCount}/{metrics.edgeCount}
@@ -341,9 +309,7 @@ export default function ExecutionMonitor({
               {/* Slowest Node */}
               {metrics.slowestNode && (
                 <div className="bg-white p-3 rounded-xl border border-red-200 shadow-sm">
-                  <div className="text-xs font-medium text-red-700 mb-1">
-                    Slowest Node
-                  </div>
+                  <div className="text-xs font-medium text-red-700 mb-1">Slowest Node</div>
                   <div className="text-sm text-gray-700 font-medium">
                     {metrics.slowestNode.name}
                   </div>
@@ -356,9 +322,7 @@ export default function ExecutionMonitor({
               {/* Fastest Node */}
               {metrics.fastestNode && (
                 <div className="bg-white p-3 rounded-xl border border-green-200 shadow-sm">
-                  <div className="text-xs font-medium text-green-700 mb-1">
-                    Fastest Node
-                  </div>
+                  <div className="text-xs font-medium text-green-700 mb-1">Fastest Node</div>
                   <div className="text-sm text-gray-700 font-medium">
                     {metrics.fastestNode.name}
                   </div>
@@ -370,28 +334,26 @@ export default function ExecutionMonitor({
             </div>
           )}
         </div>
-        
+
         {/* Execution Timeline */}
         <div className="space-y-3 border-b border-gray-100 pb-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => toggleSection("timeline")}
+              onClick={() => toggleSection('timeline')}
               className="flex items-center space-x-2 text-left py-2 -mx-2 px-2 hover:bg-gray-50 rounded-md transition-colors"
             >
-              {expandedSections.has("timeline") ? (
+              {expandedSections.has('timeline') ? (
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               ) : (
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               )}
               <Activity className="w-4 h-4 text-gray-600" />
-              <span className="font-semibold text-gray-900 text-base">
-                Execution Timeline
-              </span>
+              <span className="font-semibold text-gray-900 text-base">Execution Timeline</span>
             </button>
 
             <select
               value={selectedTimeframe}
-              onChange={(e) => setSelectedTimeframe(e.target.value as any)}
+              onChange={e => setSelectedTimeframe(e.target.value as any)}
               className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-white hover:border-blue-400 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Events</option>
@@ -400,26 +362,22 @@ export default function ExecutionMonitor({
             </select>
           </div>
 
-          {expandedSections.has("timeline") && (
+          {expandedSections.has('timeline') && (
             <div className="ml-6 space-y-3 max-h-72 overflow-y-auto">
               {filteredEvents.length === 0 ? (
                 <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                   <Activity className="w-6 h-6 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm font-medium">No execution events yet</p>
-                  <p className="text-xs mt-1">
-                    Run the workflow to see the live timeline.
-                  </p>
+                  <p className="text-xs mt-1">Run the workflow to see the live timeline.</p>
                 </div>
               ) : (
-                filteredEvents.map((event) => (
+                filteredEvents.map(event => (
                   <div
                     key={event.id}
                     // IMPROVEMENT: Uses the new getEventColor for a left border accent
                     className={`flex items-start space-x-3 p-3 rounded-lg border ${getEventColor(event.type)}`}
                   >
-                    <div className="pt-1 flex-shrink-0">
-                        {getEventIcon(event.type)}
-                    </div>
+                    <div className="pt-1 flex-shrink-0">{getEventIcon(event.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-gray-800 truncate">
                         {event.nodeName}
@@ -452,10 +410,10 @@ export default function ExecutionMonitor({
         {/* Resource Usage */}
         <div className="space-y-3">
           <button
-            onClick={() => toggleSection("resources")}
+            onClick={() => toggleSection('resources')}
             className="flex items-center space-x-2 w-full text-left py-2 -mx-2 px-2 hover:bg-gray-50 rounded-md transition-colors"
           >
-            {expandedSections.has("resources") ? (
+            {expandedSections.has('resources') ? (
               <ChevronDown className="w-4 h-4 text-gray-500" />
             ) : (
               <ChevronRight className="w-4 h-4 text-gray-500" />
@@ -464,14 +422,14 @@ export default function ExecutionMonitor({
             <span className="font-semibold text-gray-900 text-base">Resource Usage</span>
           </button>
 
-          {expandedSections.has("resources") && (
+          {expandedSections.has('resources') && (
             <div className="ml-6 space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600 space-y-1">
                 <div className="font-medium text-gray-800">Data Metrics</div>
                 <ul className="list-disc list-inside ml-2 text-xs space-y-0.5">
-                    <li>Memory usage tracking coming soon...</li>
-                    <li>API call metrics coming soon...</li>
-                    <li>Network usage coming soon...</li>
+                  <li>Memory usage tracking coming soon...</li>
+                  <li>API call metrics coming soon...</li>
+                  <li>Network usage coming soon...</li>
                 </ul>
               </div>
             </div>
@@ -490,5 +448,5 @@ export default function ExecutionMonitor({
         </div>
       </div>
     </div>
-  );
+  )
 }

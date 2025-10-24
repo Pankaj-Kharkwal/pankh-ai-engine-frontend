@@ -3,16 +3,16 @@
  * Displays conversation, handles streaming responses, shows block execution status
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { Send, Loader, CheckCircle, AlertCircle, Zap } from 'lucide-react';
-import { ChatMessage, ChatStream, createSession, sendMessage } from '../../services/chatService';
+import { useState, useEffect, useRef } from 'react'
+import { Send, Loader, CheckCircle, AlertCircle, Zap } from 'lucide-react'
+import { ChatMessage, ChatStream, createSession, sendMessage } from '../../services/chatService'
 
 interface ChatInterfaceProps {
-  chatbotId: string;
-  chatbotName?: string;
-  greetingMessage?: string;
-  onSessionCreated?: (sessionId: string) => void;
-  className?: string;
+  chatbotId: string
+  chatbotName?: string
+  greetingMessage?: string
+  onSessionCreated?: (sessionId: string) => void
+  className?: string
 }
 
 export default function ChatInterface({
@@ -22,48 +22,48 @@ export default function ChatInterface({
   onSessionCreated,
   className = '',
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [streamingResponse, setStreamingResponse] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [inputMessage, setInputMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [streamingResponse, setStreamingResponse] = useState('')
   const [currentBlockStatus, setCurrentBlockStatus] = useState<{
-    blockId: string;
-    blockType: string;
-    status: 'running' | 'completed' | 'failed';
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    blockId: string
+    blockType: string
+    status: 'running' | 'completed' | 'failed'
+  } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatStreamRef = useRef<ChatStream | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatStreamRef = useRef<ChatStream | null>(null)
 
   // Initialize session and add greeting
   useEffect(() => {
-    initializeSession();
+    initializeSession()
     return () => {
       // Cleanup: disconnect stream on unmount
       if (chatStreamRef.current) {
-        chatStreamRef.current.disconnect();
+        chatStreamRef.current.disconnect()
       }
-    };
-  }, [chatbotId]);
+    }
+  }, [chatbotId])
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingResponse]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, streamingResponse])
 
   async function initializeSession() {
     try {
       const session = await createSession(chatbotId, {
         source: 'web_ui',
         user_agent: navigator.userAgent,
-      });
+      })
 
-      setSessionId(session.session_id);
+      setSessionId(session.session_id)
 
       if (onSessionCreated) {
-        onSessionCreated(session.session_id);
+        onSessionCreated(session.session_id)
       }
 
       // Add greeting message
@@ -73,125 +73,124 @@ export default function ChatInterface({
           content: greetingMessage,
           timestamp: new Date().toISOString(),
         },
-      ]);
+      ])
     } catch (err) {
-      console.error('Failed to create session:', err);
-      setError('Failed to initialize chat session');
+      console.error('Failed to create session:', err)
+      setError('Failed to initialize chat session')
     }
   }
 
   async function handleSendMessage() {
-    if (!inputMessage.trim() || !sessionId || isLoading) return;
+    if (!inputMessage.trim() || !sessionId || isLoading) return
 
     const userMessage: ChatMessage = {
       role: 'user',
       content: inputMessage,
       timestamp: new Date().toISOString(),
-    };
+    }
 
     // Add user message to UI
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage('');
-    setIsLoading(true);
-    setError(null);
-    setStreamingResponse('');
-    setCurrentBlockStatus(null);
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage('')
+    setIsLoading(true)
+    setError(null)
+    setStreamingResponse('')
+    setCurrentBlockStatus(null)
 
     try {
       // Setup SSE streaming
-      const stream = new ChatStream(chatbotId, sessionId);
-      chatStreamRef.current = stream;
+      const stream = new ChatStream(chatbotId, sessionId)
+      chatStreamRef.current = stream
 
       // Setup event handlers
       stream.on('connected', () => {
-        console.log('Connected to chat stream');
-      });
+        console.log('Connected to chat stream')
+      })
 
-      stream.on('message_received', (event) => {
-        console.log('Message received by server:', event.data);
-      });
+      stream.on('message_received', event => {
+        console.log('Message received by server:', event.data)
+      })
 
-      stream.on('block_started', (event) => {
+      stream.on('block_started', event => {
         setCurrentBlockStatus({
           blockId: event.data.block_id,
           blockType: event.data.block_type,
           status: 'running',
-        });
-      });
+        })
+      })
 
-      stream.on('block_completed', (event) => {
-        setCurrentBlockStatus((prev) =>
+      stream.on('block_completed', event => {
+        setCurrentBlockStatus(prev =>
           prev?.blockId === event.data.block_id
             ? { ...prev, status: event.data.status === 'completed' ? 'completed' : 'failed' }
             : prev
-        );
-      });
+        )
+      })
 
-      stream.on('token', (event) => {
-        setStreamingResponse((prev) => prev + event.data.token);
-      });
+      stream.on('token', event => {
+        setStreamingResponse(prev => prev + event.data.token)
+      })
 
-      stream.on('response_complete', (event) => {
+      stream.on('response_complete', event => {
         // Finalize streaming response
         const assistantMessage: ChatMessage = {
           role: 'assistant',
           content: event.data.message || streamingResponse,
           timestamp: new Date().toISOString(),
-        };
+        }
 
-        setMessages((prev) => [...prev, assistantMessage]);
-        setStreamingResponse('');
-        setCurrentBlockStatus(null);
-        setIsLoading(false);
+        setMessages(prev => [...prev, assistantMessage])
+        setStreamingResponse('')
+        setCurrentBlockStatus(null)
+        setIsLoading(false)
 
         // Disconnect stream
-        stream.disconnect();
-      });
+        stream.disconnect()
+      })
 
-      stream.on('error', (event) => {
-        console.error('Stream error:', event.data);
-        setError(event.data.error || 'An error occurred');
-        setIsLoading(false);
-        setStreamingResponse('');
-        stream.disconnect();
-      });
+      stream.on('error', event => {
+        console.error('Stream error:', event.data)
+        setError(event.data.error || 'An error occurred')
+        setIsLoading(false)
+        setStreamingResponse('')
+        stream.disconnect()
+      })
 
       stream.on('timeout', () => {
-        setError('Request timed out');
-        setIsLoading(false);
-        stream.disconnect();
-      });
+        setError('Request timed out')
+        setIsLoading(false)
+        stream.disconnect()
+      })
 
       // Connect to stream
-      await stream.connect();
+      await stream.connect()
 
       // Send message to trigger workflow execution
-      await sendMessage(chatbotId, sessionId, inputMessage);
-
+      await sendMessage(chatbotId, sessionId, inputMessage)
     } catch (err: any) {
-      console.error('Failed to send message:', err);
-      setError(err.message || 'Failed to send message');
-      setIsLoading(false);
+      console.error('Failed to send message:', err)
+      setError(err.message || 'Failed to send message')
+      setIsLoading(false)
 
       if (chatStreamRef.current) {
-        chatStreamRef.current.disconnect();
+        chatStreamRef.current.disconnect()
       }
     }
   }
 
   function handleKeyPress(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      e.preventDefault()
+      handleSendMessage()
     }
   }
 
   function formatTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
+    const date = new Date(timestamp)
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-    });
+    })
   }
 
   return (
@@ -204,9 +203,7 @@ export default function ChatInterface({
           </div>
           <div>
             <h3 className="font-semibold">{chatbotName}</h3>
-            <p className="text-xs text-gray-400">
-              {sessionId ? 'Connected' : 'Connecting...'}
-            </p>
+            <p className="text-xs text-gray-400">{sessionId ? 'Connected' : 'Connecting...'}</p>
           </div>
         </div>
       </div>
@@ -220,9 +217,7 @@ export default function ChatInterface({
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-glass-300 text-white'
+                message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-glass-300 text-white'
               }`}
             >
               <div className="whitespace-pre-wrap break-words">{message.content}</div>
@@ -257,25 +252,19 @@ export default function ChatInterface({
               {currentBlockStatus.status === 'running' && (
                 <>
                   <Loader className="w-4 h-4 animate-spin text-blue-400" />
-                  <span className="text-gray-300">
-                    Executing {currentBlockStatus.blockType}...
-                  </span>
+                  <span className="text-gray-300">Executing {currentBlockStatus.blockType}...</span>
                 </>
               )}
               {currentBlockStatus.status === 'completed' && (
                 <>
                   <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-gray-300">
-                    {currentBlockStatus.blockType} completed
-                  </span>
+                  <span className="text-gray-300">{currentBlockStatus.blockType} completed</span>
                 </>
               )}
               {currentBlockStatus.status === 'failed' && (
                 <>
                   <AlertCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-gray-300">
-                    {currentBlockStatus.blockType} failed
-                  </span>
+                  <span className="text-gray-300">{currentBlockStatus.blockType} failed</span>
                 </>
               )}
             </div>
@@ -300,7 +289,7 @@ export default function ChatInterface({
         <div className="flex items-end space-x-2">
           <textarea
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            onChange={e => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             className="glass-input flex-1 resize-none min-h-[44px] max-h-[120px]"
@@ -316,11 +305,7 @@ export default function ChatInterface({
                 : 'bg-blue-600 hover:bg-blue-700 hover:animate-glow'
             }`}
           >
-            {isLoading ? (
-              <Loader className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
 
@@ -330,5 +315,5 @@ export default function ChatInterface({
         </div>
       </div>
     </div>
-  );
+  )
 }

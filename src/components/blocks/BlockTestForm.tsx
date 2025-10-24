@@ -1,107 +1,102 @@
-import React, { useState, useEffect } from "react";
-import { Loader2, Play, Eye, Clock, Zap } from "lucide-react";
-import { apiClient } from "../../services/api";
-import BlockParameterForm from "./BlockParameterForm";
+import React, { useState, useEffect } from 'react'
+import { Loader2, Play, Eye, Clock, Zap } from 'lucide-react'
+import { apiClient } from '../../services/api'
+import BlockParameterForm from './BlockParameterForm'
 
 interface BlockTestFormProps {
-  block: any;
-  onTestComplete: (result: any) => void;
+  block: any
+  onTestComplete: (result: any) => void
 }
 
-export const BlockTestForm: React.FC<BlockTestFormProps> = ({
-  block,
-  onTestComplete,
-}) => {
-  const [testParams, setTestParams] = useState<any>({});
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
-  const [schema, setSchema] = useState<any>(null);
-  const [loadingSchema, setLoadingSchema] = useState(false);
-  const [schemaError, setSchemaError] = useState<string | null>(null);
-  const [dryRun, setDryRun] = useState(false);
-  const [executionTime, setExecutionTime] = useState<number | null>(null);
+export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestComplete }) => {
+  const [testParams, setTestParams] = useState<any>({})
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<any>(null)
+  const [schema, setSchema] = useState<any>(null)
+  const [loadingSchema, setLoadingSchema] = useState(false)
+  const [schemaError, setSchemaError] = useState<string | null>(null)
+  const [dryRun, setDryRun] = useState(false)
+  const [executionTime, setExecutionTime] = useState<number | null>(null)
 
   // Load block schema on mount
   useEffect(() => {
     const loadSchema = async () => {
-      if (!block?.type) return;
+      if (!block?.type) return
 
-      setLoadingSchema(true);
-      setSchemaError(null);
+      setLoadingSchema(true)
+      setSchemaError(null)
 
       try {
-        const schemaData = await apiClient.getBlockSchema(block.type);
-        setSchema(schemaData);
+        const schemaData = await apiClient.getBlockSchema(block.type)
+        setSchema(schemaData)
 
         // Initialize parameters with default values
-        const defaultParams: any = {};
-        const configSchema = schemaData?.manifest?.config_schema;
+        const defaultParams: any = {}
+        const configSchema = schemaData?.manifest?.config_schema
         if (configSchema?.properties) {
-          Object.entries(configSchema.properties).forEach(
-            ([key, fieldSchema]: [string, any]) => {
-              if (fieldSchema.default !== undefined) {
-                defaultParams[key] = fieldSchema.default;
-              }
+          Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+            if (fieldSchema.default !== undefined) {
+              defaultParams[key] = fieldSchema.default
             }
-          );
+          })
         }
-        setTestParams(defaultParams);
+        setTestParams(defaultParams)
       } catch (err) {
-        console.error("Failed to load block schema:", err);
-        setSchemaError("Failed to load block schema");
+        console.error('Failed to load block schema:', err)
+        setSchemaError('Failed to load block schema')
       } finally {
-        setLoadingSchema(false);
+        setLoadingSchema(false)
       }
-    };
+    }
 
-    loadSchema();
-  }, [block?.type]);
+    loadSchema()
+  }, [block?.type])
 
   const runBlockTest = async () => {
-    setTesting(true);
-    setTestResult(null);
-    setExecutionTime(null);
+    setTesting(true)
+    setTestResult(null)
+    setExecutionTime(null)
 
-    const startTime = performance.now();
+    const startTime = performance.now()
 
     try {
       const result = await apiClient.validateBlock({
         block_type: block.type,
         parameters: testParams,
-        dry_run: dryRun
-      });
+        dry_run: dryRun,
+      })
 
-      const endTime = performance.now();
-      const execTime = endTime - startTime;
-      setExecutionTime(execTime);
+      const endTime = performance.now()
+      const execTime = endTime - startTime
+      setExecutionTime(execTime)
 
       const enhancedResult = {
         ...result,
         execution_time_ms: execTime,
         dry_run: dryRun,
-        timestamp: new Date().toISOString()
-      };
+        timestamp: new Date().toISOString(),
+      }
 
-      setTestResult(enhancedResult);
-      onTestComplete(enhancedResult);
+      setTestResult(enhancedResult)
+      onTestComplete(enhancedResult)
     } catch (error: any) {
-      const endTime = performance.now();
-      const execTime = endTime - startTime;
-      setExecutionTime(execTime);
+      const endTime = performance.now()
+      const execTime = endTime - startTime
+      setExecutionTime(execTime)
 
       const errorResult = {
         success: false,
-        error: error.message || "Test failed",
+        error: error.message || 'Test failed',
         execution_time_ms: execTime,
         dry_run: dryRun,
-        timestamp: new Date().toISOString()
-      };
-      setTestResult(errorResult);
-      onTestComplete(errorResult);
+        timestamp: new Date().toISOString(),
+      }
+      setTestResult(errorResult)
+      onTestComplete(errorResult)
     } finally {
-      setTesting(false);
+      setTesting(false)
     }
-  };
+  }
 
   if (loadingSchema) {
     return (
@@ -109,7 +104,7 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({
         <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         <span className="ml-3 text-gray-600">Loading block schema...</span>
       </div>
-    );
+    )
   }
 
   if (schemaError) {
@@ -117,14 +112,12 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({
       <div className="text-center py-8 text-red-600">
         <p>{schemaError}</p>
       </div>
-    );
+    )
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">
-        Test Block: {block.manifest?.name || block.type}
-      </h3>
+      <h3 className="text-lg font-semibold">Test Block: {block.manifest?.name || block.type}</h3>
 
       {/* Parameter Form using BlockParameterForm for full feature support */}
       {schema?.manifest?.config_schema?.properties ? (
@@ -135,9 +128,7 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({
           disabled={testing}
         />
       ) : (
-        <div className="text-gray-500 text-sm py-4">
-          No parameters required for this block
-        </div>
+        <div className="text-gray-500 text-sm py-4">No parameters required for this block</div>
       )}
 
       {/* Dry Run Toggle */}
@@ -190,9 +181,13 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({
       {testResult && (
         <div className="space-y-4">
           {/* Status Header */}
-          <div className={`rounded-lg p-4 ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          <div
+            className={`rounded-lg p-4 ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+          >
             <div className="flex items-center justify-between">
-              <h4 className={`font-medium flex items-center ${testResult.success ? 'text-green-900' : 'text-red-900'}`}>
+              <h4
+                className={`font-medium flex items-center ${testResult.success ? 'text-green-900' : 'text-red-900'}`}
+              >
                 {testResult.success ? '✓ Test Passed' : '✗ Test Failed'}
                 {testResult.dry_run && (
                   <span className="ml-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
@@ -219,5 +214,5 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}

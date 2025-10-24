@@ -1,92 +1,86 @@
-import React, { useState, useEffect } from "react";
-import { X, Play, Loader2, CheckCircle, XCircle } from "lucide-react";
-import { apiClient } from "../../services/api";
-import BlockParameterForm from "../blocks/BlockParameterForm";
+import React, { useState, useEffect } from 'react'
+import { X, Play, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { apiClient } from '../../services/api'
+import BlockParameterForm from '../blocks/BlockParameterForm'
 
 interface NodeTestModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
   node: {
-    id: string;
-    type: string;
+    id: string
+    type: string
     data: {
-      label?: string;
-      parameters?: Record<string, any>;
-    };
-  };
+      label?: string
+      parameters?: Record<string, any>
+    }
+  }
 }
 
-export const NodeTestModal: React.FC<NodeTestModalProps> = ({
-  isOpen,
-  onClose,
-  node,
-}) => {
-  const [testParams, setTestParams] = useState<Record<string, any>>({});
-  const [schema, setSchema] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
+export const NodeTestModal: React.FC<NodeTestModalProps> = ({ isOpen, onClose, node }) => {
+  const [testParams, setTestParams] = useState<Record<string, any>>({})
+  const [schema, setSchema] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<any>(null)
 
   // Load block schema when modal opens
   useEffect(() => {
     if (isOpen && node) {
-      loadSchema();
+      loadSchema()
     }
-  }, [isOpen, node?.type]);
+  }, [isOpen, node?.type])
 
   const loadSchema = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const schemaData = await apiClient.getBlockSchema(node.type);
-      setSchema(schemaData);
+      const schemaData = await apiClient.getBlockSchema(node.type)
+      setSchema(schemaData)
 
       // Initialize with node's existing parameters or defaults
-      const configSchema = schemaData?.manifest?.config_schema;
-      const defaultParams: Record<string, any> = {};
+      const configSchema = schemaData?.manifest?.config_schema
+      const defaultParams: Record<string, any> = {}
 
       if (configSchema?.properties) {
-        Object.entries(configSchema.properties).forEach(
-          ([key, fieldSchema]: [string, any]) => {
-            // Use existing parameter value, or fall back to default from schema
-            if (node.data.parameters && key in node.data.parameters) {
-              defaultParams[key] = node.data.parameters[key];
-            } else if (fieldSchema.default !== undefined) {
-              defaultParams[key] = fieldSchema.default;
-            }
+        Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+          // Use existing parameter value, or fall back to default from schema
+          if (node.data.parameters && key in node.data.parameters) {
+            defaultParams[key] = node.data.parameters[key]
+          } else if (fieldSchema.default !== undefined) {
+            defaultParams[key] = fieldSchema.default
           }
-        );
+        })
       }
 
-      setTestParams(defaultParams);
+      setTestParams(defaultParams)
     } catch (err) {
-      console.error("Failed to load block schema:", err);
+      console.error('Failed to load block schema:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const runTest = async () => {
-    setTesting(true);
-    setTestResult(null);
+    setTesting(true)
+    setTestResult(null)
 
     try {
       const result = await apiClient.testNode({
         block_type: node.type,
         parameters: testParams,
-      });
+      })
 
-      setTestResult(result);
+      setTestResult(result)
     } catch (error: any) {
       setTestResult({
         success: false,
-        error: error.message || "Test failed",
-      });
+        error: error.message || 'Test failed',
+      })
     } finally {
-      setTesting(false);
+      setTesting(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -99,10 +93,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
               {node.data.label || node.type} ({node.id})
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -118,9 +109,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
             <>
               {/* Parameter Form */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Test Parameters
-                </h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Test Parameters</h3>
                 {schema?.manifest?.config_schema?.properties ? (
                   <BlockParameterForm
                     schema={schema.manifest.config_schema.properties}
@@ -129,23 +118,19 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
                     disabled={testing}
                   />
                 ) : (
-                  <p className="text-sm text-gray-500">
-                    No parameters required for this block
-                  </p>
+                  <p className="text-sm text-gray-500">No parameters required for this block</p>
                 )}
               </div>
 
               {/* Test Results */}
               {testResult && (
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Test Results
-                  </h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Test Results</h3>
                   <div
                     className={`rounded-lg p-4 border-2 ${
                       testResult.success
-                        ? "bg-green-50 border-green-200"
-                        : "bg-red-50 border-red-200"
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
                     }`}
                   >
                     {/* Status Header */}
@@ -157,10 +142,10 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
                       )}
                       <span
                         className={`font-semibold ${
-                          testResult.success ? "text-green-900" : "text-red-900"
+                          testResult.success ? 'text-green-900' : 'text-red-900'
                         }`}
                       >
-                        {testResult.success ? "Test Passed" : "Test Failed"}
+                        {testResult.success ? 'Test Passed' : 'Test Failed'}
                       </span>
                       {testResult.execution_time_ms && (
                         <span className="text-sm text-gray-600 ml-auto">
@@ -172,9 +157,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
                     {/* Output */}
                     {testResult.success && testResult.output && (
                       <div className="mb-3">
-                        <div className="text-xs font-medium text-gray-700 mb-1">
-                          Output:
-                        </div>
+                        <div className="text-xs font-medium text-gray-700 mb-1">Output:</div>
                         <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-40">
                           {JSON.stringify(testResult.output, null, 2)}
                         </pre>
@@ -184,9 +167,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
                     {/* Error */}
                     {!testResult.success && testResult.error && (
                       <div className="mb-3">
-                        <div className="text-xs font-medium text-red-700 mb-1">
-                          Error:
-                        </div>
+                        <div className="text-xs font-medium text-red-700 mb-1">Error:</div>
                         <pre className="text-xs bg-white p-2 rounded border text-red-700 overflow-auto">
                           {testResult.error}
                         </pre>
@@ -196,9 +177,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
                     {/* Logs */}
                     {testResult.logs && testResult.logs.length > 0 && (
                       <div>
-                        <div className="text-xs font-medium text-gray-700 mb-1">
-                          Logs:
-                        </div>
+                        <div className="text-xs font-medium text-gray-700 mb-1">Logs:</div>
                         <div className="text-xs bg-white p-2 rounded border max-h-32 overflow-auto font-mono">
                           {testResult.logs.map((log: string, idx: number) => (
                             <div key={idx} className="text-gray-700">
@@ -244,7 +223,7 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default NodeTestModal;
+export default NodeTestModal

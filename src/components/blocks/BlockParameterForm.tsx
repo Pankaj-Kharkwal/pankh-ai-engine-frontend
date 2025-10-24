@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react'
 import {
   ChevronDown,
   ChevronRight,
@@ -13,38 +13,38 @@ import {
   Plus,
   X,
   AlertCircle,
-} from "lucide-react";
-import ExpressionInput from "../expression/ExpressionInput";
+} from 'lucide-react'
+import ExpressionInput from '../expression/ExpressionInput'
 
 interface ParameterSchema {
-  type: string;
-  title?: string;
-  description?: string;
-  default?: any;
-  required?: boolean;
-  enum?: string[];
-  minimum?: number;
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  format?: string;
-  properties?: { [key: string]: ParameterSchema };
-  items?: ParameterSchema;
+  type: string
+  title?: string
+  description?: string
+  default?: any
+  required?: boolean
+  enum?: string[]
+  minimum?: number
+  maximum?: number
+  minLength?: number
+  maxLength?: number
+  pattern?: string
+  format?: string
+  properties?: { [key: string]: ParameterSchema }
+  items?: ParameterSchema
 }
 
 interface BlockParameterFormProps {
-  schema: { [key: string]: ParameterSchema };
-  values: { [key: string]: any };
-  onChange: (values: { [key: string]: any }) => void;
-  disabled?: boolean;
+  schema: { [key: string]: ParameterSchema }
+  values: { [key: string]: any }
+  onChange: (values: { [key: string]: any }) => void
+  disabled?: boolean
   availableNodes?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    data?: any;
-  }>;
-  contextData?: Record<string, any>;
+    id: string
+    name: string
+    type: string
+    data?: any
+  }>
+  contextData?: Record<string, any>
 }
 
 const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
@@ -55,110 +55,92 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
   availableNodes = [],
   contextData = {},
 }) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(),
-  );
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   const toggleSection = (key: string) => {
-    const newExpanded = new Set(expandedSections);
+    const newExpanded = new Set(expandedSections)
     if (newExpanded.has(key)) {
-      newExpanded.delete(key);
+      newExpanded.delete(key)
     } else {
-      newExpanded.add(key);
+      newExpanded.add(key)
     }
-    setExpandedSections(newExpanded);
-  };
+    setExpandedSections(newExpanded)
+  }
 
-  const validateField = (
-    key: string,
-    value: any,
-    fieldSchema: ParameterSchema,
-  ): string | null => {
-    if (
-      fieldSchema.required &&
-      (value === undefined || value === null || value === "")
-    ) {
-      return `${fieldSchema.title || key} is required`;
+  const validateField = (key: string, value: any, fieldSchema: ParameterSchema): string | null => {
+    if (fieldSchema.required && (value === undefined || value === null || value === '')) {
+      return `${fieldSchema.title || key} is required`
     }
 
-    if (value !== undefined && value !== null && value !== "") {
-      if (fieldSchema.type === "string") {
+    if (value !== undefined && value !== null && value !== '') {
+      if (fieldSchema.type === 'string') {
         if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-          return `Minimum length is ${fieldSchema.minLength}`;
+          return `Minimum length is ${fieldSchema.minLength}`
         }
         if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-          return `Maximum length is ${fieldSchema.maxLength}`;
+          return `Maximum length is ${fieldSchema.maxLength}`
         }
-        if (
-          fieldSchema.pattern &&
-          !new RegExp(fieldSchema.pattern).test(value)
-        ) {
-          return "Invalid format";
+        if (fieldSchema.pattern && !new RegExp(fieldSchema.pattern).test(value)) {
+          return 'Invalid format'
         }
       }
 
-      if (fieldSchema.type === "number" || fieldSchema.type === "integer") {
-        const numValue = Number(value);
+      if (fieldSchema.type === 'number' || fieldSchema.type === 'integer') {
+        const numValue = Number(value)
         if (isNaN(numValue)) {
-          return "Must be a valid number";
+          return 'Must be a valid number'
         }
-        if (
-          fieldSchema.minimum !== undefined &&
-          numValue < fieldSchema.minimum
-        ) {
-          return `Minimum value is ${fieldSchema.minimum}`;
+        if (fieldSchema.minimum !== undefined && numValue < fieldSchema.minimum) {
+          return `Minimum value is ${fieldSchema.minimum}`
         }
-        if (
-          fieldSchema.maximum !== undefined &&
-          numValue > fieldSchema.maximum
-        ) {
-          return `Maximum value is ${fieldSchema.maximum}`;
+        if (fieldSchema.maximum !== undefined && numValue > fieldSchema.maximum) {
+          return `Maximum value is ${fieldSchema.maximum}`
         }
       }
 
       if (fieldSchema.enum && !fieldSchema.enum.includes(value)) {
-        return `Must be one of: ${fieldSchema.enum.join(", ")}`;
+        return `Must be one of: ${fieldSchema.enum.join(', ')}`
       }
     }
 
-    return null;
-  };
+    return null
+  }
 
   const updateValue = (key: string, value: any) => {
-    const newValues = { ...values, [key]: value };
-    onChange(newValues);
+    const newValues = { ...values, [key]: value }
+    onChange(newValues)
 
     // Validate the field
-    const fieldSchema = schema[key];
+    const fieldSchema = schema[key]
     if (fieldSchema) {
-      const error = validateField(key, value, fieldSchema);
-      setErrors((prev) => ({
+      const error = validateField(key, value, fieldSchema)
+      setErrors(prev => ({
         ...prev,
-        [key]: error || "",
-      }));
+        [key]: error || '',
+      }))
     }
-  };
+  }
 
   const renderArrayField = (key: string, fieldSchema: ParameterSchema) => {
-    const arrayValue = values[key] || [];
-    const isExpanded = expandedSections.has(key);
+    const arrayValue = values[key] || []
+    const isExpanded = expandedSections.has(key)
 
     const addItem = () => {
-      const newItem = fieldSchema.items?.type === "object" ? {} : "";
-      updateValue(key, [...arrayValue, newItem]);
-    };
+      const newItem = fieldSchema.items?.type === 'object' ? {} : ''
+      updateValue(key, [...arrayValue, newItem])
+    }
 
     const removeItem = (index: number) => {
-      const newArray = arrayValue.filter((_: any, i: number) => i !== index);
-      updateValue(key, newArray);
-    };
+      const newArray = arrayValue.filter((_: any, i: number) => i !== index)
+      updateValue(key, newArray)
+    }
 
     const updateItem = (index: number, itemValue: any) => {
-      const newArray = [...arrayValue];
-      newArray[index] = itemValue;
-      updateValue(key, newArray);
-    };
+      const newArray = [...arrayValue]
+      newArray[index] = itemValue
+      updateValue(key, newArray)
+    }
 
     return (
       <div className="space-y-2">
@@ -173,15 +155,13 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           )}
           <label className="text-sm font-medium text-gray-700">
             {fieldSchema.title || key}
-            {fieldSchema.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {fieldSchema.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem();
+            onClick={e => {
+              e.stopPropagation()
+              addItem()
             }}
             disabled={disabled}
             className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
@@ -199,21 +179,21 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             {arrayValue.map((item: any, index: number) => (
               <div key={index} className="flex items-center space-x-2">
                 <div className="flex-1">
-                  {fieldSchema.items?.type === "object" ? (
+                  {fieldSchema.items?.type === 'object' ? (
                     <div className="p-3 border border-gray-200 rounded-lg">
                       <BlockParameterForm
                         schema={fieldSchema.items.properties || {}}
                         values={item}
-                        onChange={(newValues) => updateItem(index, newValues)}
+                        onChange={newValues => updateItem(index, newValues)}
                         disabled={disabled}
                       />
                     </div>
                   ) : (
                     renderBasicField(
                       `${key}[${index}]`,
-                      fieldSchema.items || { type: "string" },
+                      fieldSchema.items || { type: 'string' },
                       item,
-                      (value) => updateItem(index, value),
+                      value => updateItem(index, value)
                     )
                   )}
                 </div>
@@ -237,12 +217,12 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   const renderObjectField = (key: string, fieldSchema: ParameterSchema) => {
-    const isExpanded = expandedSections.has(key);
-    const objectValue = values[key] || {};
+    const isExpanded = expandedSections.has(key)
+    const objectValue = values[key] || {}
 
     return (
       <div className="space-y-2">
@@ -257,9 +237,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           )}
           <label className="text-sm font-medium text-gray-700">
             {fieldSchema.title || key}
-            {fieldSchema.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {fieldSchema.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         </div>
 
@@ -272,7 +250,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             <BlockParameterForm
               schema={fieldSchema.properties || {}}
               values={objectValue}
-              onChange={(newValues) => updateValue(key, newValues)}
+              onChange={newValues => updateValue(key, newValues)}
               disabled={disabled}
             />
           </div>
@@ -285,58 +263,51 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   const renderBasicField = (
     key: string,
     fieldSchema: ParameterSchema,
     value?: any,
-    onUpdate?: (value: any) => void,
+    onUpdate?: (value: any) => void
   ) => {
-    const fieldValue =
-      value !== undefined ? value : (values[key] ?? fieldSchema.default ?? "");
-    const updateFn =
-      onUpdate || ((newValue: any) => updateValue(key, newValue));
+    const fieldValue = value !== undefined ? value : (values[key] ?? fieldSchema.default ?? '')
+    const updateFn = onUpdate || ((newValue: any) => updateValue(key, newValue))
 
     const getInputIcon = () => {
       switch (fieldSchema.type) {
-        case "string":
-          if (fieldSchema.format === "date")
-            return <Calendar className="w-4 h-4" />;
-          if (fieldSchema.format === "time")
-            return <Clock className="w-4 h-4" />;
-          if (fieldSchema.format === "password")
-            return <Eye className="w-4 h-4" />;
-          return <Type className="w-4 h-4" />;
-        case "number":
-        case "integer":
-          return <Hash className="w-4 h-4" />;
+        case 'string':
+          if (fieldSchema.format === 'date') return <Calendar className="w-4 h-4" />
+          if (fieldSchema.format === 'time') return <Clock className="w-4 h-4" />
+          if (fieldSchema.format === 'password') return <Eye className="w-4 h-4" />
+          return <Type className="w-4 h-4" />
+        case 'number':
+        case 'integer':
+          return <Hash className="w-4 h-4" />
         default:
-          return null;
+          return null
       }
-    };
+    }
 
     if (fieldSchema.enum) {
       return (
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">
             {fieldSchema.title || key}
-            {fieldSchema.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {fieldSchema.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           {fieldSchema.description && (
             <p className="text-xs text-gray-500">{fieldSchema.description}</p>
           )}
           <select
             value={fieldValue}
-            onChange={(e) => updateFn(e.target.value)}
+            onChange={e => updateFn(e.target.value)}
             disabled={disabled}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
           >
             <option value="">Select an option</option>
-            {fieldSchema.enum.map((option) => (
+            {fieldSchema.enum.map(option => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -349,17 +320,15 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             </div>
           )}
         </div>
-      );
+      )
     }
 
-    if (fieldSchema.type === "boolean") {
+    if (fieldSchema.type === 'boolean') {
       return (
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">
             {fieldSchema.title || key}
-            {fieldSchema.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {fieldSchema.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           {fieldSchema.description && (
             <p className="text-xs text-gray-500">{fieldSchema.description}</p>
@@ -376,9 +345,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
               ) : (
                 <ToggleLeft className="w-5 h-5 text-gray-400" />
               )}
-              <span className="text-sm">
-                {fieldValue ? "Enabled" : "Disabled"}
-              </span>
+              <span className="text-sm">{fieldValue ? 'Enabled' : 'Disabled'}</span>
             </button>
           </div>
           {errors[key] && (
@@ -388,18 +355,16 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             </div>
           )}
         </div>
-      );
+      )
     }
 
     // Use ExpressionInput for string fields
-    if (fieldSchema.type === "string" && !fieldSchema.enum) {
+    if (fieldSchema.type === 'string' && !fieldSchema.enum) {
       return (
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">
             {fieldSchema.title || key}
-            {fieldSchema.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {fieldSchema.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           {fieldSchema.description && (
             <p className="text-xs text-gray-500">{fieldSchema.description}</p>
@@ -419,19 +384,19 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             </div>
           )}
         </div>
-      );
+      )
     }
 
     const inputType =
-      fieldSchema.format === "password"
-        ? "password"
-        : fieldSchema.format === "date"
-          ? "date"
-          : fieldSchema.format === "time"
-            ? "time"
-            : fieldSchema.type === "number" || fieldSchema.type === "integer"
-              ? "number"
-              : "text";
+      fieldSchema.format === 'password'
+        ? 'password'
+        : fieldSchema.format === 'date'
+          ? 'date'
+          : fieldSchema.format === 'time'
+            ? 'time'
+            : fieldSchema.type === 'number' || fieldSchema.type === 'integer'
+              ? 'number'
+              : 'text'
 
     return (
       <div className="space-y-1">
@@ -449,15 +414,12 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           <input
             type={inputType}
             value={fieldValue}
-            onChange={(e) => {
-              let newValue = e.target.value;
-              if (
-                fieldSchema.type === "number" ||
-                fieldSchema.type === "integer"
-              ) {
-                newValue = newValue === "" ? "" : Number(newValue);
+            onChange={e => {
+              let newValue = e.target.value
+              if (fieldSchema.type === 'number' || fieldSchema.type === 'integer') {
+                newValue = newValue === '' ? '' : Number(newValue)
               }
-              updateFn(newValue);
+              updateFn(newValue)
             }}
             disabled={disabled}
             min={fieldSchema.minimum}
@@ -476,8 +438,8 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   if (!schema || Object.keys(schema).length === 0) {
     return (
@@ -485,21 +447,20 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
         <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p>No parameters configured for this block</p>
       </div>
-    );
+    )
   }
 
   return (
     <div className="space-y-4">
       {Object.entries(schema).map(([key, fieldSchema]) => (
         <div key={key}>
-          {fieldSchema.type === "array" && renderArrayField(key, fieldSchema)}
-          {fieldSchema.type === "object" && renderObjectField(key, fieldSchema)}
-          {!["array", "object"].includes(fieldSchema.type) &&
-            renderBasicField(key, fieldSchema)}
+          {fieldSchema.type === 'array' && renderArrayField(key, fieldSchema)}
+          {fieldSchema.type === 'object' && renderObjectField(key, fieldSchema)}
+          {!['array', 'object'].includes(fieldSchema.type) && renderBasicField(key, fieldSchema)}
         </div>
       ))}
     </div>
-  );
-};
+  )
+}
 
-export default BlockParameterForm;
+export default BlockParameterForm

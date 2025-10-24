@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'
 import {
   MessageSquare,
   Send,
@@ -10,49 +10,49 @@ import {
   User,
   Loader2,
   Lightbulb,
-  Wand2
-} from 'lucide-react';
-import { apiClient } from '../../services/api';
+  Wand2,
+} from 'lucide-react'
+import { apiClient } from '../../services/api'
 
 interface Message {
-  id: string;
-  type: 'user' | 'ai';
-  content: string;
-  timestamp: Date;
-  loading?: boolean;
-  error?: string;
+  id: string
+  type: 'user' | 'ai'
+  content: string
+  timestamp: Date
+  loading?: boolean
+  error?: string
 }
 
 interface AIAssistantProps {
-  context?: string;
-  contextType?: 'workflow' | 'block' | 'general';
-  suggestions?: string[];
-  onSuggestionApplied?: (suggestion: string) => void;
+  context?: string
+  contextType?: 'workflow' | 'block' | 'general'
+  suggestions?: string[]
+  onSuggestionApplied?: (suggestion: string) => void
 }
 
 export default function AIAssistant({
   context,
   contextType = 'general',
   suggestions = [],
-  onSuggestionApplied
+  onSuggestionApplied,
 }: AIAssistantProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   useEffect(() => {
     if (isOpen && !isMinimized && inputRef.current) {
-      inputRef.current.focus();
+      inputRef.current.focus()
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized])
 
   const addMessage = (content: string, type: 'user' | 'ai', loading = false, error?: string) => {
     const message: Message = {
@@ -61,95 +61,93 @@ export default function AIAssistant({
       content,
       timestamp: new Date(),
       loading,
-      error
-    };
-    setMessages(prev => [...prev, message]);
-    return message.id;
-  };
+      error,
+    }
+    setMessages(prev => [...prev, message])
+    return message.id
+  }
 
   const updateMessage = (id: string, updates: Partial<Message>) => {
-    setMessages(prev => prev.map(msg =>
-      msg.id === id ? { ...msg, ...updates } : msg
-    ));
-  };
+    setMessages(prev => prev.map(msg => (msg.id === id ? { ...msg, ...updates } : msg)))
+  }
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isLoading) return
 
-    const userMessage = inputValue.trim();
-    setInputValue('');
+    const userMessage = inputValue.trim()
+    setInputValue('')
 
     // Add user message
-    addMessage(userMessage, 'user');
+    addMessage(userMessage, 'user')
 
     // Add loading AI message
-    const aiMessageId = addMessage('', 'ai', true);
-    setIsLoading(true);
+    const aiMessageId = addMessage('', 'ai', true)
+    setIsLoading(true)
 
     try {
       // Get AI response based on context
-      let response;
-      const systemPrompt = getSystemPrompt(contextType);
+      let response
+      const systemPrompt = getSystemPrompt(contextType)
 
-      response = await apiClient.chatWithAI(userMessage, context, systemPrompt);
+      response = await apiClient.chatWithAI(userMessage, context, systemPrompt)
 
       if (response.success && response.result?.azure_chat?.text) {
         updateMessage(aiMessageId, {
           content: response.result.azure_chat.text,
-          loading: false
-        });
+          loading: false,
+        })
       } else {
         updateMessage(aiMessageId, {
           content: "I'm sorry, I couldn't process your request right now. Please try again.",
           loading: false,
-          error: "Failed to get AI response"
-        });
+          error: 'Failed to get AI response',
+        })
       }
     } catch (error) {
       updateMessage(aiMessageId, {
-        content: "I encountered an error while processing your request. Please try again.",
+        content: 'I encountered an error while processing your request. Please try again.',
         loading: false,
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const getSystemPrompt = (type: string) => {
     switch (type) {
       case 'workflow':
         return `You are an AI assistant specialized in workflow automation. Help users create, optimize, and troubleshoot workflows.
         Focus on practical advice about connecting blocks, setting parameters, and achieving automation goals.
-        Keep responses concise but helpful.`;
+        Keep responses concise but helpful.`
       case 'block':
         return `You are an AI assistant specialized in workflow blocks. Help users understand how blocks work,
         configure parameters correctly, and use blocks effectively in their workflows.
-        Provide clear, actionable guidance.`;
+        Provide clear, actionable guidance.`
       default:
         return `You are a helpful AI assistant for PankhAI workflow automation platform.
         Help users with workflow creation, block configuration, and automation best practices.
-        Be concise, practical, and friendly.`;
+        Be concise, practical, and friendly.`
     }
-  };
+  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      e.preventDefault()
+      handleSendMessage()
     }
-  };
+  }
 
   const applySuggestion = (suggestion: string) => {
-    setInputValue(suggestion);
+    setInputValue(suggestion)
     if (onSuggestionApplied) {
-      onSuggestionApplied(suggestion);
+      onSuggestionApplied(suggestion)
     }
-  };
+  }
 
   const clearConversation = () => {
-    setMessages([]);
-  };
+    setMessages([])
+  }
 
   if (!isOpen) {
     return (
@@ -163,13 +161,15 @@ export default function AIAssistant({
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
         </div>
       </button>
-    );
+    )
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border border-gray-200 transition-all duration-300 ${
-      isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
-    }`}>
+    <div
+      className={`fixed bottom-6 right-6 z-50 bg-white rounded-lg shadow-2xl border border-gray-200 transition-all duration-300 ${
+        isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
+      }`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
         <div className="flex items-center space-x-2">
@@ -180,8 +180,11 @@ export default function AIAssistant({
             <h3 className="font-semibold text-gray-800">AI Assistant</h3>
             {!isMinimized && (
               <p className="text-xs text-gray-500">
-                {contextType === 'workflow' ? 'Workflow help' :
-                 contextType === 'block' ? 'Block assistance' : 'General help'}
+                {contextType === 'workflow'
+                  ? 'Workflow help'
+                  : contextType === 'block'
+                    ? 'Block assistance'
+                    : 'General help'}
               </p>
             )}
           </div>
@@ -190,7 +193,7 @@ export default function AIAssistant({
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title={isMinimized ? "Expand" : "Minimize"}
+            title={isMinimized ? 'Expand' : 'Minimize'}
           >
             {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
           </button>
@@ -239,32 +242,32 @@ export default function AIAssistant({
               </div>
             )}
 
-            {messages.map((message) => (
+            {messages.map(message => (
               <div
                 key={message.id}
                 className={`flex items-start space-x-2 ${
                   message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                 }`}
               >
-                <div className={`p-2 rounded-lg ${
-                  message.type === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <div
+                  className={`p-2 rounded-lg ${
+                    message.type === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {message.type === 'user' ? (
                     <User className="w-4 h-4" />
                   ) : (
                     <Bot className="w-4 h-4" />
                   )}
                 </div>
-                <div className={`flex-1 max-w-xs ${
-                  message.type === 'user' ? 'text-right' : ''
-                }`}>
-                  <div className={`p-3 rounded-lg ${
-                    message.type === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                <div className={`flex-1 max-w-xs ${message.type === 'user' ? 'text-right' : ''}`}>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      message.type === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
                     {message.loading ? (
                       <div className="flex items-center space-x-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -293,7 +296,7 @@ export default function AIAssistant({
                 ref={inputRef}
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={e => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about workflows, blocks, or automation..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -323,5 +326,5 @@ export default function AIAssistant({
         </>
       )}
     </div>
-  );
+  )
 }

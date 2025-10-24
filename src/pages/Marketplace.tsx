@@ -11,7 +11,7 @@ const workflows = [
     downloads: 1234,
     tags: ['Analytics', 'E-commerce', 'Dashboard'],
     image: '🛒',
-    featured: true
+    featured: true,
   },
   {
     id: 2,
@@ -23,7 +23,7 @@ const workflows = [
     downloads: 2567,
     tags: ['Social Media', 'Automation', 'Marketing'],
     image: '📱',
-    featured: false
+    featured: false,
   },
   {
     id: 3,
@@ -35,7 +35,7 @@ const workflows = [
     downloads: 892,
     tags: ['AI', 'Customer Support', 'NLP'],
     image: '🤖',
-    featured: true
+    featured: true,
   },
   {
     id: 4,
@@ -47,7 +47,7 @@ const workflows = [
     downloads: 1567,
     tags: ['Document', 'OCR', 'Processing'],
     image: '📄',
-    featured: false
+    featured: false,
   },
   {
     id: 5,
@@ -59,7 +59,7 @@ const workflows = [
     downloads: 743,
     tags: ['Finance', 'Data', 'Real-time'],
     image: '💰',
-    featured: false
+    featured: false,
   },
   {
     id: 6,
@@ -71,8 +71,8 @@ const workflows = [
     downloads: 1891,
     tags: ['Email', 'Marketing', 'Campaigns'],
     image: '✉️',
-    featured: false
-  }
+    featured: false,
+  },
 ]
 
 export default function Marketplace() {
@@ -105,7 +105,7 @@ export default function Marketplace() {
             <span>Filters</span>
           </button>
         </div>
-        
+
         <div className="flex gap-2 mt-4">
           <button className="glass-button px-3 py-1 text-sm bg-blue-600">All</button>
           <button className="glass-button px-3 py-1 text-sm">Free</button>
@@ -122,49 +122,54 @@ export default function Marketplace() {
           Featured Workflows
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {workflows.filter(w => w.featured).map((workflow) => (
-            <div key={workflow.id} className="glass-card p-6 hover:animate-glow transition-all duration-300 cursor-pointer">
-              <div className="flex justify-between items-start mb-4">
-                <div className="text-4xl">{workflow.image}</div>
-                <div className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4 text-gray-400 hover:text-red-400 cursor-pointer" />
-                  <span className="text-xs text-gray-400">Save</span>
+          {workflows
+            .filter(w => w.featured)
+            .map(workflow => (
+              <div
+                key={workflow.id}
+                className="glass-card p-6 hover:animate-glow transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-4xl">{workflow.image}</div>
+                  <div className="flex items-center space-x-1">
+                    <Heart className="w-4 h-4 text-gray-400 hover:text-red-400 cursor-pointer" />
+                    <span className="text-xs text-gray-400">Save</span>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-2">{workflow.name}</h3>
+                <p className="text-sm text-gray-400 mb-3">{workflow.description}</p>
+
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className="flex items-center">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    <span className="text-sm text-gray-300 ml-1">{workflow.rating}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Download className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-300 ml-1">{workflow.downloads}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {workflow.tags.map(tag => (
+                    <span key={tag} className="px-2 py-1 bg-glass-300 text-xs rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm text-gray-400">by {workflow.author}</div>
+                    <div className="text-lg font-bold text-blue-400">{workflow.price}</div>
+                  </div>
+                  <button className="glass-button px-4 py-2 bg-blue-600 hover:bg-blue-700">
+                    Get Workflow
+                  </button>
                 </div>
               </div>
-              
-              <h3 className="text-lg font-semibold mb-2">{workflow.name}</h3>
-              <p className="text-sm text-gray-400 mb-3">{workflow.description}</p>
-              
-              <div className="flex items-center space-x-2 mb-3">
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-gray-300 ml-1">{workflow.rating}</span>
-                </div>
-                <div className="flex items-center">
-                  <Download className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-300 ml-1">{workflow.downloads}</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-1 mb-4">
-                {workflow.tags.map((tag) => (
-                  <span key={tag} className="px-2 py-1 bg-glass-300 text-xs rounded-full">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-sm text-gray-400">by {workflow.author}</div>
-                  <div className="text-lg font-bold text-blue-400">{workflow.price}</div>
-                </div>
-                <button className="glass-button px-4 py-2 bg-blue-600 hover:bg-blue-700">
-                  Get Workflow
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 
@@ -172,8 +177,11 @@ export default function Marketplace() {
       <div>
         <h2 className="text-xl font-semibold mb-6">All Workflows</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {workflows.map((workflow) => (
-            <div key={workflow.id} className="glass-card p-6 hover:animate-glow transition-all duration-300 cursor-pointer">
+          {workflows.map(workflow => (
+            <div
+              key={workflow.id}
+              className="glass-card p-6 hover:animate-glow transition-all duration-300 cursor-pointer"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="text-4xl">{workflow.image}</div>
                 <div className="flex items-center space-x-1">
@@ -181,10 +189,10 @@ export default function Marketplace() {
                   <span className="text-xs text-gray-400">Save</span>
                 </div>
               </div>
-              
+
               <h3 className="text-lg font-semibold mb-2">{workflow.name}</h3>
               <p className="text-sm text-gray-400 mb-3">{workflow.description}</p>
-              
+
               <div className="flex items-center space-x-2 mb-3">
                 <div className="flex items-center">
                   <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -195,15 +203,15 @@ export default function Marketplace() {
                   <span className="text-sm text-gray-300 ml-1">{workflow.downloads}</span>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap gap-1 mb-4">
-                {workflow.tags.map((tag) => (
+                {workflow.tags.map(tag => (
                   <span key={tag} className="px-2 py-1 bg-glass-300 text-xs rounded-full">
                     {tag}
                   </span>
                 ))}
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <div>
                   <div className="text-sm text-gray-400">by {workflow.author}</div>

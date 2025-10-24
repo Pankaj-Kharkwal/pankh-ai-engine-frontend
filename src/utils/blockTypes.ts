@@ -1,10 +1,57 @@
 import {
-  Search, Globe, MessageSquare, Volume2, Plus, Hash, Mail, Database, FileText,
-  Code, Filter, Upload, Download, Calendar, Clock, Zap, Brain, Eye, Lock,
-  Workflow, GitBranch, Settings, BarChart, PieChart, Image, Video, Music,
-  Smartphone, Monitor, Server, Cloud, Key, Shield, User, Users, Heart,
-  Star, Flag, Tag, Bookmark, Link, Share, Copy, Scissors, RotateCw,
-  RefreshCw, Play, Pause, Square, FastForward, Rewind, Volume1, VolumeX
+  Search,
+  Globe,
+  MessageSquare,
+  Volume2,
+  Plus,
+  Hash,
+  Mail,
+  Database,
+  FileText,
+  Code,
+  Filter,
+  Upload,
+  Download,
+  Calendar,
+  Clock,
+  Zap,
+  Brain,
+  Eye,
+  Lock,
+  Workflow,
+  GitBranch,
+  Settings,
+  BarChart,
+  PieChart,
+  Image,
+  Video,
+  Music,
+  Smartphone,
+  Monitor,
+  Server,
+  Cloud,
+  Key,
+  Shield,
+  User,
+  Users,
+  Heart,
+  Star,
+  Flag,
+  Tag,
+  Bookmark,
+  Link,
+  Share,
+  Copy,
+  Scissors,
+  RotateCw,
+  RefreshCw,
+  Play,
+  Pause,
+  Square,
+  FastForward,
+  Rewind,
+  Volume1,
+  VolumeX,
 } from 'lucide-react'
 
 export interface BlockType {
@@ -30,8 +77,8 @@ export const availableBlockTypes: BlockType[] = [
       system: 'You are a helpful assistant',
       prompt: 'Hello, how can I help you?',
       temperature: 0.7,
-      max_tokens: 1000
-    }
+      max_tokens: 1000,
+    },
   },
   {
     type: 'gpt_analyze',
@@ -43,8 +90,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       text: '',
       analysis_type: 'sentiment',
-      detail_level: 'medium'
-    }
+      detail_level: 'medium',
+    },
   },
   {
     type: 'ai_summarize',
@@ -56,8 +103,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       text: '',
       max_length: 500,
-      style: 'concise'
-    }
+      style: 'concise',
+    },
   },
   {
     type: 'ai_translate',
@@ -69,8 +116,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       text: '',
       source_language: 'auto',
-      target_language: 'en'
-    }
+      target_language: 'en',
+    },
   },
 
   // Data Processing
@@ -84,8 +131,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       query: '',
       limit: 10,
-      timeout_sec: 30
-    }
+      timeout_sec: 30,
+    },
   },
   {
     type: 'scrape_urls',
@@ -97,8 +144,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       urls: [],
       max_chars_per_doc: 5000,
-      timeout_sec: 30
-    }
+      timeout_sec: 30,
+    },
   },
   {
     type: 'json_parse',
@@ -110,8 +157,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       json_data: '{}',
       path: '$',
-      default_value: null
-    }
+      default_value: null,
+    },
   },
   {
     type: 'csv_parser',
@@ -123,8 +170,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       csv_data: '',
       delimiter: ',',
-      has_header: true
-    }
+      has_header: true,
+    },
   },
   {
     type: 'filter_array',
@@ -136,8 +183,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       array: [],
       condition: 'length > 0',
-      field: null
-    }
+      field: null,
+    },
   },
   {
     type: 'sort_array',
@@ -149,8 +196,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       array: [],
       field: null,
-      direction: 'asc'
-    }
+      direction: 'asc',
+    },
   },
 
   // Network & HTTP
@@ -164,8 +211,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       url: '',
       headers: {},
-      timeout: 30
-    }
+      timeout: 30,
+    },
   },
   {
     type: 'http_post',
@@ -178,8 +225,8 @@ export const availableBlockTypes: BlockType[] = [
       url: '',
       data: {},
       headers: {},
-      timeout: 30
-    }
+      timeout: 30,
+    },
   },
   {
     type: 'webhook_receive',
@@ -191,8 +238,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       path: '/webhook',
       method: 'POST',
-      auth_required: false
-    }
+      auth_required: false,
+    },
   },
   {
     type: 'api_request',
@@ -205,8 +252,8 @@ export const availableBlockTypes: BlockType[] = [
       url: '',
       method: 'GET',
       auth_type: 'bearer',
-      api_key: ''
-    }
+      api_key: '',
+    },
   },
 
   // Communication
@@ -221,8 +268,8 @@ export const availableBlockTypes: BlockType[] = [
       to: '',
       subject: '',
       body: '',
-      html: false
-    }
+      html: false,
+    },
   },
   {
     type: 'slack_webhook',
@@ -235,8 +282,8 @@ export const availableBlockTypes: BlockType[] = [
       webhook_url: '',
       text: '',
       channel: '#general',
-      username: 'Bot'
-    }
+      username: 'Bot',
+    },
   },
   {
     type: 'discord_webhook',
@@ -248,8 +295,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       webhook_url: '',
       content: '',
-      username: 'Bot'
-    }
+      username: 'Bot',
+    },
   },
   {
     type: 'sms_send',
@@ -261,8 +308,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       to: '',
       message: '',
-      provider: 'twilio'
-    }
+      provider: 'twilio',
+    },
   },
 
   // Utility Functions
@@ -274,8 +321,8 @@ export const availableBlockTypes: BlockType[] = [
     category: 'utility',
     description: 'Output text or data',
     defaultParams: {
-      message: 'Hello World!'
-    }
+      message: 'Hello World!',
+    },
   },
   {
     type: 'delay',
@@ -286,8 +333,8 @@ export const availableBlockTypes: BlockType[] = [
     description: 'Wait for specified time',
     defaultParams: {
       seconds: 5,
-      unit: 'seconds'
-    }
+      unit: 'seconds',
+    },
   },
   {
     type: 'variable_set',
@@ -299,8 +346,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       name: 'my_variable',
       value: '',
-      type: 'string'
-    }
+      type: 'string',
+    },
   },
   {
     type: 'variable_get',
@@ -311,8 +358,8 @@ export const availableBlockTypes: BlockType[] = [
     description: 'Retrieve stored variables',
     defaultParams: {
       name: 'my_variable',
-      default_value: null
-    }
+      default_value: null,
+    },
   },
   {
     type: 'condition',
@@ -325,8 +372,8 @@ export const availableBlockTypes: BlockType[] = [
       condition: 'equals',
       value1: '',
       value2: '',
-      case_sensitive: true
-    }
+      case_sensitive: true,
+    },
   },
 
   // Math Operations
@@ -338,8 +385,8 @@ export const availableBlockTypes: BlockType[] = [
     category: 'math',
     description: 'Add numbers together',
     defaultParams: {
-      numbers: [1, 2, 3, 4, 5]
-    }
+      numbers: [1, 2, 3, 4, 5],
+    },
   },
   {
     type: 'math',
@@ -351,8 +398,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       operation: 'add',
       operand1: 0,
-      operand2: 0
-    }
+      operand2: 0,
+    },
   },
   {
     type: 'statistics',
@@ -363,8 +410,8 @@ export const availableBlockTypes: BlockType[] = [
     description: 'Calculate statistical measures',
     defaultParams: {
       data: [],
-      metrics: ['mean', 'median', 'std']
-    }
+      metrics: ['mean', 'median', 'std'],
+    },
   },
   {
     type: 'random_number',
@@ -377,8 +424,8 @@ export const availableBlockTypes: BlockType[] = [
       min: 1,
       max: 100,
       count: 1,
-      integer: true
-    }
+      integer: true,
+    },
   },
 
   // File Operations
@@ -392,8 +439,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       file_path: '',
       encoding: 'utf-8',
-      binary: false
-    }
+      binary: false,
+    },
   },
   {
     type: 'file_write',
@@ -406,8 +453,8 @@ export const availableBlockTypes: BlockType[] = [
       file_path: '',
       content: '',
       mode: 'write',
-      encoding: 'utf-8'
-    }
+      encoding: 'utf-8',
+    },
   },
   {
     type: 'pdf_extract',
@@ -419,8 +466,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       file_path: '',
       page_range: 'all',
-      output_format: 'text'
-    }
+      output_format: 'text',
+    },
   },
   {
     type: 'image_process',
@@ -433,8 +480,8 @@ export const availableBlockTypes: BlockType[] = [
       image_path: '',
       operation: 'resize',
       width: 800,
-      height: 600
-    }
+      height: 600,
+    },
   },
 
   // Security
@@ -448,8 +495,8 @@ export const availableBlockTypes: BlockType[] = [
     defaultParams: {
       text: '',
       algorithm: 'sha256',
-      encoding: 'hex'
-    }
+      encoding: 'hex',
+    },
   },
   {
     type: 'encrypt',
@@ -462,8 +509,8 @@ export const availableBlockTypes: BlockType[] = [
       data: '',
       algorithm: 'AES',
       key: '',
-      iv: ''
-    }
+      iv: '',
+    },
   },
   {
     type: 'jwt_generate',
@@ -476,8 +523,8 @@ export const availableBlockTypes: BlockType[] = [
       payload: {},
       secret: '',
       algorithm: 'HS256',
-      expires_in: '1h'
-    }
+      expires_in: '1h',
+    },
   },
   {
     type: 'password_generate',
@@ -490,8 +537,8 @@ export const availableBlockTypes: BlockType[] = [
       length: 12,
       include_symbols: true,
       include_numbers: true,
-      include_uppercase: true
-    }
+      include_uppercase: true,
+    },
   },
 
   // Integrations
@@ -506,8 +553,8 @@ export const availableBlockTypes: BlockType[] = [
       endpoint: '/user',
       method: 'GET',
       token: '',
-      data: {}
-    }
+      data: {},
+    },
   },
   {
     type: 'google_sheets',
@@ -520,8 +567,8 @@ export const availableBlockTypes: BlockType[] = [
       spreadsheet_id: '',
       range: 'A1:Z100',
       operation: 'read',
-      credentials: {}
-    }
+      credentials: {},
+    },
   },
   {
     type: 'aws_s3',
@@ -535,8 +582,8 @@ export const availableBlockTypes: BlockType[] = [
       key: '',
       operation: 'upload',
       access_key: '',
-      secret_key: ''
-    }
+      secret_key: '',
+    },
   },
   {
     type: 'docker_run',
@@ -549,8 +596,8 @@ export const availableBlockTypes: BlockType[] = [
       image: '',
       command: '',
       environment: {},
-      volumes: []
-    }
+      volumes: [],
+    },
   },
   {
     type: 'k8s_deploy',
@@ -563,22 +610,22 @@ export const availableBlockTypes: BlockType[] = [
       namespace: 'default',
       manifest: {},
       kubeconfig: '',
-      operation: 'apply'
-    }
-  }
+      operation: 'apply',
+    },
+  },
 ]
 
 export const getCategoryColor = (category: string): string => {
   const colorMap: { [key: string]: string } = {
-    'ai': 'text-purple-400',
-    'data': 'text-blue-400',
-    'network': 'text-green-400',
-    'communication': 'text-yellow-400',
-    'utility': 'text-gray-400',
-    'math': 'text-orange-400',
-    'document': 'text-indigo-400',
-    'security': 'text-red-400',
-    'integration': 'text-cyan-400'
+    ai: 'text-purple-400',
+    data: 'text-blue-400',
+    network: 'text-green-400',
+    communication: 'text-yellow-400',
+    utility: 'text-gray-400',
+    math: 'text-orange-400',
+    document: 'text-indigo-400',
+    security: 'text-red-400',
+    integration: 'text-cyan-400',
   }
   return colorMap[category?.toLowerCase()] || 'text-gray-400'
 }

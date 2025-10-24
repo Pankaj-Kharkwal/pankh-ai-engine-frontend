@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Sparkles,
   ArrowRight,
@@ -9,99 +9,104 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  RefreshCw
-} from 'lucide-react';
-import { apiClient } from '../../services/api';
+  RefreshCw,
+} from 'lucide-react'
+import { apiClient } from '../../services/api'
 
 interface GeneratedWorkflow {
-  description: string;
+  description: string
   nodes: Array<{
-    id: string;
-    type: string;
-    label: string;
-    parameters: Record<string, any>;
-    position?: { x: number; y: number };
-  }>;
+    id: string
+    type: string
+    label: string
+    parameters: Record<string, any>
+    position?: { x: number; y: number }
+  }>
   connections: Array<{
-    from: string;
-    to: string;
-    description?: string;
-  }>;
-  explanation: string;
-  estimatedTime?: string;
-  complexity?: 'simple' | 'medium' | 'complex';
+    from: string
+    to: string
+    description?: string
+  }>
+  explanation: string
+  estimatedTime?: string
+  complexity?: 'simple' | 'medium' | 'complex'
 }
 
 interface AIWorkflowGeneratorProps {
-  onWorkflowGenerated?: (workflow: GeneratedWorkflow) => void;
-  onApplyToCanvas?: (workflow: GeneratedWorkflow) => void;
-  isOpen: boolean;
-  onClose: () => void;
+  onWorkflowGenerated?: (workflow: GeneratedWorkflow) => void
+  onApplyToCanvas?: (workflow: GeneratedWorkflow) => void
+  isOpen: boolean
+  onClose: () => void
 }
 
 export default function AIWorkflowGenerator({
   onWorkflowGenerated,
   onApplyToCanvas,
   isOpen,
-  onClose
+  onClose,
 }: AIWorkflowGeneratorProps) {
-  const [description, setDescription] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedWorkflow, setGeneratedWorkflow] = useState<GeneratedWorkflow | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [description, setDescription] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedWorkflow, setGeneratedWorkflow] = useState<GeneratedWorkflow | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const examplePrompts = [
-    "Create a workflow that monitors website uptime and sends alerts",
-    "Build an automation to process customer feedback and generate reports",
-    "Design a workflow that extracts data from PDFs and stores in a database",
-    "Create a chatbot that answers questions using web search results",
-    "Build a content moderation system using AI analysis",
-    "Design a workflow that processes images and generates descriptions"
-  ];
+    'Create a workflow that monitors website uptime and sends alerts',
+    'Build an automation to process customer feedback and generate reports',
+    'Design a workflow that extracts data from PDFs and stores in a database',
+    'Create a chatbot that answers questions using web search results',
+    'Build a content moderation system using AI analysis',
+    'Design a workflow that processes images and generates descriptions',
+  ]
 
   const handleGenerateWorkflow = async () => {
-    if (!description.trim()) return;
+    if (!description.trim()) return
 
-    setIsGenerating(true);
-    setError(null);
-    setGeneratedWorkflow(null);
+    setIsGenerating(true)
+    setError(null)
+    setGeneratedWorkflow(null)
 
     try {
-      const response = await apiClient.generateWorkflowSuggestions(description.trim());
+      const response = await apiClient.generateWorkflowSuggestions(description.trim())
 
       if (response.success && response.result?.azure_chat?.text) {
-        const aiResponse = response.result.azure_chat.text;
+        const aiResponse = response.result.azure_chat.text
 
         // Try to parse the AI response to extract workflow structure
-        const workflow = parseAIWorkflowResponse(aiResponse, description);
-        setGeneratedWorkflow(workflow);
+        const workflow = parseAIWorkflowResponse(aiResponse, description)
+        setGeneratedWorkflow(workflow)
 
         if (onWorkflowGenerated) {
-          onWorkflowGenerated(workflow);
+          onWorkflowGenerated(workflow)
         }
       } else {
-        setError("Failed to generate workflow suggestions. Please try again.");
+        setError('Failed to generate workflow suggestions. Please try again.')
       }
     } catch (err) {
-      console.error('Workflow generation error:', err);
-      setError(err instanceof Error ? err.message : "An error occurred while generating the workflow.");
+      console.error('Workflow generation error:', err)
+      setError(
+        err instanceof Error ? err.message : 'An error occurred while generating the workflow.'
+      )
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(false)
     }
-  };
+  }
 
-  const parseAIWorkflowResponse = (aiResponse: string, userDescription: string): GeneratedWorkflow => {
+  const parseAIWorkflowResponse = (
+    aiResponse: string,
+    userDescription: string
+  ): GeneratedWorkflow => {
     // Extract JSON if present, otherwise create a structured workflow from the text
-    let parsedJson = null;
+    let parsedJson = null
 
     try {
       // Look for JSON structure in the response
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        parsedJson = JSON.parse(jsonMatch[0]);
+        parsedJson = JSON.parse(jsonMatch[0])
       }
     } catch (e) {
-      console.log('No valid JSON found, creating workflow from text');
+      console.log('No valid JSON found, creating workflow from text')
     }
 
     if (parsedJson && parsedJson.nodes) {
@@ -112,33 +117,33 @@ export default function AIWorkflowGenerator({
           type: node.type || 'echo',
           label: node.label || node.name || `Node ${index + 1}`,
           parameters: node.parameters || {},
-          position: node.position || { x: index * 200, y: 100 }
+          position: node.position || { x: index * 200, y: 100 },
         })),
         connections: parsedJson.connections || [],
         explanation: aiResponse,
-        complexity: parsedJson.complexity || 'medium'
-      };
+        complexity: parsedJson.complexity || 'medium',
+      }
     }
 
     // Fallback: Create a simple workflow based on common patterns
-    const nodes = createDefaultWorkflowNodes(userDescription, aiResponse);
+    const nodes = createDefaultWorkflowNodes(userDescription, aiResponse)
 
     return {
       description: userDescription,
       nodes,
       connections: generateDefaultConnections(nodes),
       explanation: aiResponse,
-      complexity: nodes.length > 5 ? 'complex' : nodes.length > 2 ? 'medium' : 'simple'
-    };
-  };
+      complexity: nodes.length > 5 ? 'complex' : nodes.length > 2 ? 'medium' : 'simple',
+    }
+  }
 
   const createDefaultWorkflowNodes = (description: string, aiResponse: string) => {
-    const nodes = [];
-    let nodeId = 1;
+    const nodes = []
+    let nodeId = 1
 
     // Analyze description and AI response to suggest appropriate blocks
-    const lowerDesc = description.toLowerCase();
-    const lowerResponse = aiResponse.toLowerCase();
+    const lowerDesc = description.toLowerCase()
+    const lowerResponse = aiResponse.toLowerCase()
 
     // Start node
     nodes.push({
@@ -146,26 +151,35 @@ export default function AIWorkflowGenerator({
       type: 'echo',
       label: 'Start',
       parameters: { message: 'Workflow started' },
-      position: { x: 100, y: 100 }
-    });
+      position: { x: 100, y: 100 },
+    })
 
     // Add AI/search blocks based on content
-    if (lowerDesc.includes('search') || lowerDesc.includes('web') || lowerResponse.includes('search')) {
+    if (
+      lowerDesc.includes('search') ||
+      lowerDesc.includes('web') ||
+      lowerResponse.includes('search')
+    ) {
       nodes.push({
         id: `node_${nodeId++}`,
         type: 'searxng_search',
         label: 'Web Search',
         parameters: {
           query: 'search query here',
-          limit: 5
+          limit: 5,
         },
-        position: { x: 300, y: 100 }
-      });
+        position: { x: 300, y: 100 },
+      })
     }
 
     // Add AI processing if mentioned
-    if (lowerDesc.includes('ai') || lowerDesc.includes('analyze') || lowerDesc.includes('chat') ||
-        lowerResponse.includes('azure_chat') || lowerResponse.includes('ai')) {
+    if (
+      lowerDesc.includes('ai') ||
+      lowerDesc.includes('analyze') ||
+      lowerDesc.includes('chat') ||
+      lowerResponse.includes('azure_chat') ||
+      lowerResponse.includes('ai')
+    ) {
       nodes.push({
         id: `node_${nodeId++}`,
         type: 'azure_chat',
@@ -173,10 +187,10 @@ export default function AIWorkflowGenerator({
         parameters: {
           system: 'You are a helpful assistant.',
           prompt: 'Analyze the input data and provide insights.',
-          temperature: 0.7
+          temperature: 0.7,
         },
-        position: { x: 500, y: 100 }
-      });
+        position: { x: 500, y: 100 },
+      })
     }
 
     // Add HTTP call if API is mentioned
@@ -186,10 +200,10 @@ export default function AIWorkflowGenerator({
         type: 'http_get',
         label: 'API Call',
         parameters: {
-          url: 'https://api.example.com/data'
+          url: 'https://api.example.com/data',
         },
-        position: { x: 700, y: 100 }
-      });
+        position: { x: 700, y: 100 },
+      })
     }
 
     // Add PDF processing if mentioned
@@ -198,9 +212,9 @@ export default function AIWorkflowGenerator({
         id: `node_${nodeId++}`,
         type: 'pdf_extract',
         label: 'PDF Processing',
-        parameters: { },
-        position: { x: 300, y: 250 }
-      });
+        parameters: {},
+        position: { x: 300, y: 250 },
+      })
     }
 
     // End node
@@ -209,38 +223,38 @@ export default function AIWorkflowGenerator({
       type: 'echo',
       label: 'Complete',
       parameters: { message: 'Workflow completed successfully' },
-      position: { x: nodes.length * 150, y: 100 }
-    });
+      position: { x: nodes.length * 150, y: 100 },
+    })
 
-    return nodes;
-  };
+    return nodes
+  }
 
   const generateDefaultConnections = (nodes: any[]) => {
-    const connections = [];
+    const connections = []
     for (let i = 0; i < nodes.length - 1; i++) {
       connections.push({
         from: nodes[i].id,
         to: nodes[i + 1].id,
-        description: `Connect ${nodes[i].label} to ${nodes[i + 1].label}`
-      });
+        description: `Connect ${nodes[i].label} to ${nodes[i + 1].label}`,
+      })
     }
-    return connections;
-  };
+    return connections
+  }
 
   const handleApplyToCanvas = () => {
     if (generatedWorkflow && onApplyToCanvas) {
-      onApplyToCanvas(generatedWorkflow);
-      onClose();
+      onApplyToCanvas(generatedWorkflow)
+      onClose()
     }
-  };
+  }
 
   const copyWorkflowJSON = () => {
     if (generatedWorkflow) {
-      navigator.clipboard.writeText(JSON.stringify(generatedWorkflow, null, 2));
+      navigator.clipboard.writeText(JSON.stringify(generatedWorkflow, null, 2))
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -253,13 +267,12 @@ export default function AIWorkflowGenerator({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800">AI Workflow Generator</h2>
-              <p className="text-sm text-gray-600">Describe your automation goal and let AI design the workflow</p>
+              <p className="text-sm text-gray-600">
+                Describe your automation goal and let AI design the workflow
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -273,7 +286,7 @@ export default function AIWorkflowGenerator({
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
               placeholder="E.g., 'Create a workflow that monitors customer feedback, analyzes sentiment using AI, and sends alerts for negative reviews'"
               className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               disabled={isGenerating}
@@ -343,11 +356,15 @@ export default function AIWorkflowGenerator({
                   <span>Generated Workflow</span>
                 </h3>
                 <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    generatedWorkflow.complexity === 'simple' ? 'bg-green-100 text-green-700' :
-                    generatedWorkflow.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      generatedWorkflow.complexity === 'simple'
+                        ? 'bg-green-100 text-green-700'
+                        : generatedWorkflow.complexity === 'medium'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-red-100 text-red-700'
+                    }`}
+                  >
                     {generatedWorkflow.complexity} complexity
                   </span>
                 </div>
@@ -376,11 +393,13 @@ export default function AIWorkflowGenerator({
                       </div>
                       {Object.keys(node.parameters).length > 0 && (
                         <div className="text-xs text-gray-500">
-                          {Object.entries(node.parameters).slice(0, 2).map(([key, value]) => (
-                            <div key={key}>
-                              {key}: {String(value).substring(0, 30)}...
-                            </div>
-                          ))}
+                          {Object.entries(node.parameters)
+                            .slice(0, 2)
+                            .map(([key, value]) => (
+                              <div key={key}>
+                                {key}: {String(value).substring(0, 30)}...
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -396,7 +415,10 @@ export default function AIWorkflowGenerator({
                   </h4>
                   <div className="space-y-2">
                     {generatedWorkflow.connections.map((conn, index) => (
-                      <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                      <div
+                        key={index}
+                        className="flex items-center space-x-2 text-sm text-gray-600"
+                      >
                         <span>{conn.from}</span>
                         <ArrowRight className="w-4 h-4" />
                         <span>{conn.to}</span>
@@ -427,8 +449,8 @@ export default function AIWorkflowGenerator({
                 </button>
                 <button
                   onClick={() => {
-                    setGeneratedWorkflow(null);
-                    setError(null);
+                    setGeneratedWorkflow(null)
+                    setError(null)
                   }}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
                 >
@@ -441,5 +463,5 @@ export default function AIWorkflowGenerator({
         </div>
       </div>
     </div>
-  );
+  )
 }

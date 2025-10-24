@@ -22,7 +22,7 @@ export default function Analytics() {
             <Activity className="w-8 h-8 text-blue-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -36,7 +36,7 @@ export default function Analytics() {
             <BarChart3 className="w-8 h-8 text-green-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -50,7 +50,7 @@ export default function Analytics() {
             <TrendingUp className="w-8 h-8 text-yellow-400" />
           </div>
         </div>
-        
+
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
             <div>

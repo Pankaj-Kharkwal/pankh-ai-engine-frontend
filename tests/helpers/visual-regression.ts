@@ -1,16 +1,16 @@
-import { Page, Locator, expect } from '@playwright/test';
-import path from 'path';
+import { Page, Locator, expect } from '@playwright/test'
+import path from 'path'
 
 /**
  * Visual regression testing utilities for UI components
  */
 export class VisualRegressionHelper {
-  private page: Page;
-  private screenshotDir: string;
+  private page: Page
+  private screenshotDir: string
 
   constructor(page: Page) {
-    this.page = page;
-    this.screenshotDir = path.join(__dirname, '..', 'screenshots');
+    this.page = page
+    this.screenshotDir = path.join(__dirname, '..', 'screenshots')
   }
 
   /**
@@ -20,11 +20,11 @@ export class VisualRegressionHelper {
     locator: Locator,
     name: string,
     options: {
-      threshold?: number;
-      maxDiffPixels?: number;
-      animations?: 'disabled' | 'allow';
-      mask?: Locator[];
-      clip?: { x: number; y: number; width: number; height: number };
+      threshold?: number
+      maxDiffPixels?: number
+      animations?: 'disabled' | 'allow'
+      mask?: Locator[]
+      clip?: { x: number; y: number; width: number; height: number }
     } = {}
   ) {
     const {
@@ -32,11 +32,11 @@ export class VisualRegressionHelper {
       maxDiffPixels = 100,
       animations = 'disabled',
       mask = [],
-      clip
-    } = options;
+      clip,
+    } = options
 
     // Wait for component to be stable
-    await locator.waitFor({ state: 'visible' });
+    await locator.waitFor({ state: 'visible' })
 
     // Disable animations if requested
     if (animations === 'disabled') {
@@ -48,8 +48,8 @@ export class VisualRegressionHelper {
             transition-duration: 0s !important;
             transition-delay: 0s !important;
           }
-        `
-      });
+        `,
+      })
     }
 
     // Take screenshot and compare
@@ -58,7 +58,7 @@ export class VisualRegressionHelper {
       maxDiffPixels,
       mask,
       clip,
-    });
+    })
   }
 
   /**
@@ -67,18 +67,13 @@ export class VisualRegressionHelper {
   async compareFullPage(
     name: string,
     options: {
-      threshold?: number;
-      maxDiffPixels?: number;
-      animations?: 'disabled' | 'allow';
-      mask?: Locator[];
+      threshold?: number
+      maxDiffPixels?: number
+      animations?: 'disabled' | 'allow'
+      mask?: Locator[]
     } = {}
   ) {
-    const {
-      threshold = 0.1,
-      maxDiffPixels = 500,
-      animations = 'disabled',
-      mask = []
-    } = options;
+    const { threshold = 0.1, maxDiffPixels = 500, animations = 'disabled', mask = [] } = options
 
     // Disable animations if requested
     if (animations === 'disabled') {
@@ -90,12 +85,12 @@ export class VisualRegressionHelper {
             transition-duration: 0s !important;
             transition-delay: 0s !important;
           }
-        `
-      });
+        `,
+      })
     }
 
     // Wait for page to be stable
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('networkidle')
 
     // Take full page screenshot and compare
     await expect(this.page).toHaveScreenshot(`${name}-fullpage.png`, {
@@ -103,7 +98,7 @@ export class VisualRegressionHelper {
       threshold,
       maxDiffPixels,
       mask,
-    });
+    })
   }
 
   /**
@@ -113,50 +108,53 @@ export class VisualRegressionHelper {
     locator: Locator,
     name: string,
     states: {
-      default?: boolean;
-      hover?: boolean;
-      focus?: boolean;
-      active?: boolean;
-      disabled?: boolean;
+      default?: boolean
+      hover?: boolean
+      focus?: boolean
+      active?: boolean
+      disabled?: boolean
     } = { default: true }
   ) {
     // Default state
     if (states.default) {
-      await this.compareComponent(locator, `${name}-default`);
+      await this.compareComponent(locator, `${name}-default`)
     }
 
     // Hover state
     if (states.hover) {
-      await locator.hover();
-      await this.page.waitForTimeout(100); // Wait for hover animation
-      await this.compareComponent(locator, `${name}-hover`);
+      await locator.hover()
+      await this.page.waitForTimeout(100) // Wait for hover animation
+      await this.compareComponent(locator, `${name}-hover`)
     }
 
     // Focus state
     if (states.focus) {
-      await locator.focus();
-      await this.page.waitForTimeout(100); // Wait for focus ring
-      await this.compareComponent(locator, `${name}-focus`);
+      await locator.focus()
+      await this.page.waitForTimeout(100) // Wait for focus ring
+      await this.compareComponent(locator, `${name}-focus`)
     }
 
     // Active state
     if (states.active) {
-      await locator.hover();
-      await this.page.mouse.down();
-      await this.page.waitForTimeout(100); // Wait for active state
-      await this.compareComponent(locator, `${name}-active`);
-      await this.page.mouse.up();
+      await locator.hover()
+      await this.page.mouse.down()
+      await this.page.waitForTimeout(100) // Wait for active state
+      await this.compareComponent(locator, `${name}-active`)
+      await this.page.mouse.up()
     }
 
     // Disabled state
     if (states.disabled) {
       // Note: This assumes the component can be disabled programmatically
-      await this.page.evaluate((element) => {
-        if (element instanceof HTMLButtonElement) {
-          element.disabled = true;
-        }
-      }, await locator.elementHandle());
-      await this.compareComponent(locator, `${name}-disabled`);
+      await this.page.evaluate(
+        element => {
+          if (element instanceof HTMLButtonElement) {
+            element.disabled = true
+          }
+        },
+        await locator.elementHandle()
+      )
+      await this.compareComponent(locator, `${name}-disabled`)
     }
   }
 
@@ -173,9 +171,12 @@ export class VisualRegressionHelper {
     ]
   ) {
     for (const viewport of viewports) {
-      await this.page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await this.page.waitForTimeout(200); // Wait for layout reflow
-      await this.compareComponent(locator, `${name}-${viewport.name}-${viewport.width}x${viewport.height}`);
+      await this.page.setViewportSize({ width: viewport.width, height: viewport.height })
+      await this.page.waitForTimeout(200) // Wait for layout reflow
+      await this.compareComponent(
+        locator,
+        `${name}-${viewport.name}-${viewport.width}x${viewport.height}`
+      )
     }
   }
 
@@ -192,12 +193,12 @@ export class VisualRegressionHelper {
   ) {
     for (const theme of themes) {
       // Apply theme class to body
-      await this.page.evaluate((className) => {
-        document.body.className = className;
-      }, theme.className);
+      await this.page.evaluate(className => {
+        document.body.className = className
+      }, theme.className)
 
-      await this.page.waitForTimeout(100); // Wait for theme to apply
-      await this.compareComponent(locator, `${name}-${theme.name}`);
+      await this.page.waitForTimeout(100) // Wait for theme to apply
+      await this.compareComponent(locator, `${name}-${theme.name}`)
     }
   }
 
@@ -208,30 +209,28 @@ export class VisualRegressionHelper {
     componentSelector: string,
     name: string,
     variants: {
-      [key: string]: string[];
+      [key: string]: string[]
     }
   ) {
-    const keys = Object.keys(variants);
-    const values = Object.values(variants);
+    const keys = Object.keys(variants)
+    const values = Object.values(variants)
 
     // Generate all combinations
-    const combinations = this.generateCombinations(values);
+    const combinations = this.generateCombinations(values)
 
     for (let i = 0; i < combinations.length; i++) {
-      const combination = combinations[i];
-      const variantName = keys.map((key, index) =>
-        `${key}-${combination[index]}`
-      ).join('-');
+      const combination = combinations[i]
+      const variantName = keys.map((key, index) => `${key}-${combination[index]}`).join('-')
 
       // Build selector with variant classes
-      const classes = combination.join(' ');
-      const selector = `${componentSelector}.${classes.replace(/\s+/g, '.')}`;
+      const classes = combination.join(' ')
+      const selector = `${componentSelector}.${classes.replace(/\s+/g, '.')}`
 
       try {
-        const locator = this.page.locator(selector);
-        await this.compareComponent(locator, `${name}-${variantName}`);
+        const locator = this.page.locator(selector)
+        await this.compareComponent(locator, `${name}-${variantName}`)
       } catch (error) {
-        console.warn(`Could not find component with selector: ${selector}`);
+        console.warn(`Could not find component with selector: ${selector}`)
       }
     }
   }
@@ -239,45 +238,41 @@ export class VisualRegressionHelper {
   /**
    * Test component loading states
    */
-  async compareLoadingStates(
-    locator: Locator,
-    name: string,
-    triggerLoading: () => Promise<void>
-  ) {
+  async compareLoadingStates(locator: Locator, name: string, triggerLoading: () => Promise<void>) {
     // Initial state
-    await this.compareComponent(locator, `${name}-initial`);
+    await this.compareComponent(locator, `${name}-initial`)
 
     // Trigger loading
-    await triggerLoading();
+    await triggerLoading()
 
     // Loading state
-    await this.compareComponent(locator, `${name}-loading`);
+    await this.compareComponent(locator, `${name}-loading`)
 
     // Wait for loading to complete
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForTimeout(3000)
 
     // Final state
-    await this.compareComponent(locator, `${name}-complete`);
+    await this.compareComponent(locator, `${name}-complete`)
   }
 
   /**
    * Helper: Generate all combinations from arrays
    */
   private generateCombinations(arrays: string[][]): string[][] {
-    if (arrays.length === 0) return [[]];
-    if (arrays.length === 1) return arrays[0].map(item => [item]);
+    if (arrays.length === 0) return [[]]
+    if (arrays.length === 1) return arrays[0].map(item => [item])
 
-    const result: string[][] = [];
-    const firstArray = arrays[0];
-    const restCombinations = this.generateCombinations(arrays.slice(1));
+    const result: string[][] = []
+    const firstArray = arrays[0]
+    const restCombinations = this.generateCombinations(arrays.slice(1))
 
     for (const item of firstArray) {
       for (const combination of restCombinations) {
-        result.push([item, ...combination]);
+        result.push([item, ...combination])
       }
     }
 
-    return result;
+    return result
   }
 
   /**
@@ -285,8 +280,8 @@ export class VisualRegressionHelper {
    */
   async waitForFonts() {
     await this.page.evaluate(() => {
-      return document.fonts.ready;
-    });
+      return document.fonts.ready
+    })
   }
 
   /**
@@ -299,18 +294,18 @@ export class VisualRegressionHelper {
         html {
           scroll-behavior: auto !important;
         }
-      `
-    });
+      `,
+    })
 
     // Wait for fonts
-    await this.waitForFonts();
+    await this.waitForFonts()
 
     // Set consistent date for screenshots (if date is displayed)
     await this.page.addInitScript(() => {
-      const constantDate = new Date('2024-01-15T12:00:00.000Z');
-      Date.now = () => constantDate.getTime();
-      Date.prototype.getTime = () => constantDate.getTime();
-    });
+      const constantDate = new Date('2024-01-15T12:00:00.000Z')
+      Date.now = () => constantDate.getTime()
+      Date.prototype.getTime = () => constantDate.getTime()
+    })
   }
 }
 
@@ -318,11 +313,11 @@ export class VisualRegressionHelper {
  * Screenshot comparison options
  */
 export interface ScreenshotOptions {
-  threshold?: number;
-  maxDiffPixels?: number;
-  animations?: 'disabled' | 'allow';
-  mask?: Locator[];
-  clip?: { x: number; y: number; width: number; height: number };
+  threshold?: number
+  maxDiffPixels?: number
+  animations?: 'disabled' | 'allow'
+  mask?: Locator[]
+  clip?: { x: number; y: number; width: number; height: number }
 }
 
 /**
@@ -333,9 +328,9 @@ export class VisualTestUtils {
    * Create a test page with controlled environment
    */
   static async createTestPage(page: Page) {
-    const helper = new VisualRegressionHelper(page);
-    await helper.setupTestEnvironment();
-    return helper;
+    const helper = new VisualRegressionHelper(page)
+    await helper.setupTestEnvironment()
+    return helper
   }
 
   /**
@@ -348,7 +343,7 @@ export class VisualTestUtils {
     tabletLarge: { width: 1024, height: 1366 },
     desktop: { width: 1280, height: 720 },
     desktopLarge: { width: 1920, height: 1080 },
-  };
+  }
 
   /**
    * Standard component states for testing
@@ -358,7 +353,7 @@ export class VisualTestUtils {
     interactive: { default: true, hover: true, focus: true },
     basic: { default: true, hover: true },
     staticOnly: { default: true },
-  };
+  }
 
   /**
    * Common button variants for testing
@@ -366,5 +361,5 @@ export class VisualTestUtils {
   static readonly BUTTON_VARIANTS = {
     variant: ['primary', 'secondary', 'ghost', 'glass', 'destructive'],
     size: ['sm', 'md', 'lg'],
-  };
+  }
 }

@@ -1,11 +1,11 @@
-import { test, expect } from '@playwright/test';
-import { VisualRegressionHelper, VisualTestUtils } from '../../helpers/visual-regression';
+import { test, expect } from '@playwright/test'
+import { VisualRegressionHelper, VisualTestUtils } from '../../helpers/visual-regression'
 
 test.describe('Button Visual Regression Tests', () => {
-  let visualHelper: VisualRegressionHelper;
+  let visualHelper: VisualRegressionHelper
 
   test.beforeEach(async ({ page }) => {
-    visualHelper = await VisualTestUtils.createTestPage(page);
+    visualHelper = await VisualTestUtils.createTestPage(page)
 
     // Create a minimal test page with button components
     await page.setContent(`
@@ -256,158 +256,158 @@ test.describe('Button Visual Regression Tests', () => {
         </div>
       </body>
       </html>
-    `);
+    `)
 
     // Wait for page to be stable
-    await page.waitForLoadState('networkidle');
-  });
+    await page.waitForLoadState('networkidle')
+  })
 
   test.describe('Button Variant Screenshots', () => {
     test('should capture all button variants', async () => {
-      const variants = ['primary', 'secondary', 'ghost', 'glass', 'destructive'];
+      const variants = ['primary', 'secondary', 'ghost', 'glass', 'destructive']
 
       for (const variant of variants) {
-        const button = page.getByTestId(`btn-${variant}`);
-        await visualHelper.compareComponent(button, `button-${variant}-default`);
+        const button = page.getByTestId(`btn-${variant}`)
+        await visualHelper.compareComponent(button, `button-${variant}-default`)
       }
-    });
+    })
 
     test('should capture button variants with hover states', async () => {
-      const variants = ['primary', 'secondary', 'ghost', 'glass', 'destructive'];
+      const variants = ['primary', 'secondary', 'ghost', 'glass', 'destructive']
 
       for (const variant of variants) {
-        const button = page.getByTestId(`btn-${variant}`);
+        const button = page.getByTestId(`btn-${variant}`)
         await visualHelper.compareComponentStates(button, `button-${variant}`, {
           default: true,
           hover: true,
-        });
+        })
       }
-    });
-  });
+    })
+  })
 
   test.describe('Button Size Screenshots', () => {
     test('should capture all button sizes', async () => {
-      const sizes = ['sm', 'md', 'lg', 'icon'];
+      const sizes = ['sm', 'md', 'lg', 'icon']
 
       for (const size of sizes) {
-        const button = page.getByTestId(`btn-${size}`);
-        await visualHelper.compareComponent(button, `button-size-${size}`);
+        const button = page.getByTestId(`btn-${size}`)
+        await visualHelper.compareComponent(button, `button-size-${size}`)
       }
-    });
+    })
 
     test('should capture size comparison', async () => {
-      const sizeSection = page.locator('.test-section').nth(1);
-      await visualHelper.compareComponent(sizeSection, 'button-sizes-comparison');
-    });
-  });
+      const sizeSection = page.locator('.test-section').nth(1)
+      await visualHelper.compareComponent(sizeSection, 'button-sizes-comparison')
+    })
+  })
 
   test.describe('Button State Screenshots', () => {
     test('should capture button states', async () => {
       // Normal state
-      const normalButton = page.getByTestId('btn-normal');
-      await visualHelper.compareComponent(normalButton, 'button-state-normal');
+      const normalButton = page.getByTestId('btn-normal')
+      await visualHelper.compareComponent(normalButton, 'button-state-normal')
 
       // Disabled state
-      const disabledButton = page.getByTestId('btn-disabled');
-      await visualHelper.compareComponent(disabledButton, 'button-state-disabled');
+      const disabledButton = page.getByTestId('btn-disabled')
+      await visualHelper.compareComponent(disabledButton, 'button-state-disabled')
 
       // Loading state
-      const loadingButton = page.getByTestId('btn-loading');
-      await visualHelper.compareComponent(loadingButton, 'button-state-loading');
-    });
+      const loadingButton = page.getByTestId('btn-loading')
+      await visualHelper.compareComponent(loadingButton, 'button-state-loading')
+    })
 
     test('should capture all interactive states', async () => {
-      const hoverButton = page.getByTestId('btn-hover-test');
+      const hoverButton = page.getByTestId('btn-hover-test')
       await visualHelper.compareComponentStates(hoverButton, 'button-interactive', {
         default: true,
         hover: true,
         focus: true,
         active: true,
-      });
-    });
-  });
+      })
+    })
+  })
 
   test.describe('Responsive Button Screenshots', () => {
     test('should capture buttons across different viewports', async () => {
-      const button = page.getByTestId('btn-primary');
+      const button = page.getByTestId('btn-primary')
 
       await visualHelper.compareResponsive(button, 'button-responsive', [
         { name: 'mobile', width: 375, height: 667 },
         { name: 'tablet', width: 768, height: 1024 },
         { name: 'desktop', width: 1280, height: 720 },
-      ]);
-    });
+      ])
+    })
 
     test('should capture full page layout on different viewports', async () => {
       const viewports = [
         { name: 'mobile', width: 375, height: 667 },
         { name: 'tablet', width: 768, height: 1024 },
         { name: 'desktop', width: 1280, height: 720 },
-      ];
+      ]
 
       for (const viewport of viewports) {
-        await page.setViewportSize(viewport);
-        await page.waitForTimeout(200);
-        await visualHelper.compareFullPage(`buttons-layout-${viewport.name}`);
+        await page.setViewportSize(viewport)
+        await page.waitForTimeout(200)
+        await visualHelper.compareFullPage(`buttons-layout-${viewport.name}`)
       }
-    });
-  });
+    })
+  })
 
   test.describe('Icon Button Screenshots', () => {
     test('should capture icon button variations', async () => {
-      const iconButtons = ['icon-left', 'icon-right', 'icon-only'];
+      const iconButtons = ['icon-left', 'icon-right', 'icon-only']
 
       for (const iconButton of iconButtons) {
-        const button = page.getByTestId(`btn-${iconButton}`);
-        await visualHelper.compareComponent(button, `button-${iconButton}`);
+        const button = page.getByTestId(`btn-${iconButton}`)
+        await visualHelper.compareComponent(button, `button-${iconButton}`)
       }
-    });
-  });
+    })
+  })
 
   test.describe('Text Overflow Screenshots', () => {
     test('should capture text overflow handling', async () => {
-      const longTextButton = page.getByTestId('btn-long-text');
-      await visualHelper.compareComponent(longTextButton, 'button-long-text');
+      const longTextButton = page.getByTestId('btn-long-text')
+      await visualHelper.compareComponent(longTextButton, 'button-long-text')
 
-      const veryLongButton = page.getByTestId('btn-very-long');
-      await visualHelper.compareComponent(veryLongButton, 'button-very-long-text');
-    });
-  });
+      const veryLongButton = page.getByTestId('btn-very-long')
+      await visualHelper.compareComponent(veryLongButton, 'button-very-long-text')
+    })
+  })
 
   test.describe('Button Focus and Accessibility', () => {
     test('should capture focus indicators', async () => {
-      const focusButton = page.getByTestId('btn-focus-test');
+      const focusButton = page.getByTestId('btn-focus-test')
 
       // Default state
-      await visualHelper.compareComponent(focusButton, 'button-focus-default');
+      await visualHelper.compareComponent(focusButton, 'button-focus-default')
 
       // Focused state
-      await focusButton.focus();
-      await page.waitForTimeout(100);
-      await visualHelper.compareComponent(focusButton, 'button-focus-focused');
-    });
+      await focusButton.focus()
+      await page.waitForTimeout(100)
+      await visualHelper.compareComponent(focusButton, 'button-focus-focused')
+    })
 
     test('should capture keyboard navigation sequence', async () => {
       // Take screenshot of initial state
-      await visualHelper.compareFullPage('keyboard-nav-initial');
+      await visualHelper.compareFullPage('keyboard-nav-initial')
 
       // Tab through buttons and capture each focus state
-      const buttons = ['btn-normal', 'btn-disabled', 'btn-loading'];
+      const buttons = ['btn-normal', 'btn-disabled', 'btn-loading']
 
       for (let i = 0; i < buttons.length; i++) {
-        await page.keyboard.press('Tab');
-        await page.waitForTimeout(100);
-        await visualHelper.compareFullPage(`keyboard-nav-step-${i + 1}`);
+        await page.keyboard.press('Tab')
+        await page.waitForTimeout(100)
+        await visualHelper.compareFullPage(`keyboard-nav-step-${i + 1}`)
       }
-    });
-  });
+    })
+  })
 
   test.describe('Theme Variations', () => {
     test('should capture buttons in different theme contexts', async () => {
-      const button = page.getByTestId('btn-primary');
+      const button = page.getByTestId('btn-primary')
 
       // Default theme (current gradient background)
-      await visualHelper.compareComponent(button, 'button-theme-default');
+      await visualHelper.compareComponent(button, 'button-theme-default')
 
       // Light background theme
       await page.addStyleTag({
@@ -415,10 +415,10 @@ test.describe('Button Visual Regression Tests', () => {
           body {
             background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
           }
-        `
-      });
-      await page.waitForTimeout(100);
-      await visualHelper.compareComponent(button, 'button-theme-light');
+        `,
+      })
+      await page.waitForTimeout(100)
+      await visualHelper.compareComponent(button, 'button-theme-light')
 
       // Dark background theme
       await page.addStyleTag({
@@ -426,30 +426,30 @@ test.describe('Button Visual Regression Tests', () => {
           body {
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
           }
-        `
-      });
-      await page.waitForTimeout(100);
-      await visualHelper.compareComponent(button, 'button-theme-dark');
-    });
-  });
+        `,
+      })
+      await page.waitForTimeout(100)
+      await visualHelper.compareComponent(button, 'button-theme-dark')
+    })
+  })
 
   test.describe('Performance and Loading States', () => {
     test('should capture loading animation sequence', async () => {
-      const loadingButton = page.getByTestId('btn-loading');
+      const loadingButton = page.getByTestId('btn-loading')
 
       // Capture multiple frames of the loading animation
       for (let i = 0; i < 5; i++) {
-        await visualHelper.compareComponent(loadingButton, `button-loading-frame-${i}`);
-        await page.waitForTimeout(200);
+        await visualHelper.compareComponent(loadingButton, `button-loading-frame-${i}`)
+        await page.waitForTimeout(200)
       }
-    });
-  });
+    })
+  })
 
   test.describe('Edge Cases', () => {
     test('should capture buttons with extreme content', async () => {
       // Add buttons with edge case content
       await page.evaluate(() => {
-        const testSection = document.querySelector('.test-section:last-child');
+        const testSection = document.querySelector('.test-section:last-child')
         if (testSection) {
           testSection.innerHTML += `
             <div class="size-row" style="margin-top: 1rem;">
@@ -458,16 +458,16 @@ test.describe('Button Visual Regression Tests', () => {
               <button data-testid="btn-numbers" class="btn-base btn-primary btn-md">1234567890</button>
               <button data-testid="btn-special-chars" class="btn-base btn-primary btn-md">!@#$%^&*()</button>
             </div>
-          `;
+          `
         }
-      });
+      })
 
-      const edgeCases = ['empty', 'single-char', 'numbers', 'special-chars'];
+      const edgeCases = ['empty', 'single-char', 'numbers', 'special-chars']
 
       for (const testCase of edgeCases) {
-        const button = page.getByTestId(`btn-${testCase}`);
-        await visualHelper.compareComponent(button, `button-edge-${testCase}`);
+        const button = page.getByTestId(`btn-${testCase}`)
+        await visualHelper.compareComponent(button, `button-edge-${testCase}`)
       }
-    });
-  });
-});
+    })
+  })
+})

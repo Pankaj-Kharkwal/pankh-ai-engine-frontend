@@ -1,32 +1,23 @@
-import React, { useState, useEffect } from "react";
-import {
-  X,
-  Play,
-  Eye,
-  Settings,
-  AlertCircle,
-  Loader2,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import BlockParameterForm from "./BlockParameterForm";
-import { BlockTestForm } from "./BlockTestForm";
-import { apiClient } from "../../services/api";
+import React, { useState, useEffect } from 'react'
+import { X, Play, Eye, Settings, AlertCircle, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import BlockParameterForm from './BlockParameterForm'
+import { BlockTestForm } from './BlockTestForm'
+import { apiClient } from '../../services/api'
 
 interface BlockModalProps {
-  block: any;
-  isOpen: boolean;
-  onClose: () => void;
-  mode: "view" | "test" | "configure";
-  initialParameters?: any;
-  onSave?: (parameters: any) => void;
+  block: any
+  isOpen: boolean
+  onClose: () => void
+  mode: 'view' | 'test' | 'configure'
+  initialParameters?: any
+  onSave?: (parameters: any) => void
   availableNodes?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    data?: any;
-  }>;
-  contextData?: Record<string, any>;
+    id: string
+    name: string
+    type: string
+    data?: any
+  }>
+  contextData?: Record<string, any>
 }
 
 const BlockModal: React.FC<BlockModalProps> = ({
@@ -39,99 +30,91 @@ const BlockModal: React.FC<BlockModalProps> = ({
   contextData = {},
   onSave,
 }) => {
-  const [activeTab, setActiveTab] = useState<
-    "details" | "parameters" | "test" | "results"
-  >("details");
-  const [schema, setSchema] = useState<any>(null);
-  const [parameters, setParameters] = useState<any>({});
-  const [testResults, setTestResults] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'details' | 'parameters' | 'test' | 'results'>(
+    'details'
+  )
+  const [schema, setSchema] = useState<any>(null)
+  const [parameters, setParameters] = useState<any>({})
+  const [testResults, setTestResults] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && block) {
-      setActiveTab(
-        mode === "view"
-          ? "details"
-          : mode === "test"
-            ? "parameters"
-            : "parameters",
-      );
-      loadBlockSchema();
+      setActiveTab(mode === 'view' ? 'details' : mode === 'test' ? 'parameters' : 'parameters')
+      loadBlockSchema()
       // Initialize parameters with initial values if provided
       if (initialParameters) {
-        setParameters(initialParameters);
+        setParameters(initialParameters)
       }
     }
-  }, [isOpen, block, mode, initialParameters]);
+  }, [isOpen, block, mode, initialParameters])
 
   const loadBlockSchema = async () => {
-    if (!block?.type) return;
+    if (!block?.type) return
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const schemaData = await apiClient.getBlockSchema(block.type);
-      setSchema(schemaData);
+      const schemaData = await apiClient.getBlockSchema(block.type)
+      setSchema(schemaData)
 
       // Initialize parameters with default values from the manifest's config_schema
-      const defaultParams: any = {};
-      const configSchema = schemaData?.manifest?.config_schema;
+      const defaultParams: any = {}
+      const configSchema = schemaData?.manifest?.config_schema
       if (configSchema?.properties) {
-        Object.entries(configSchema.properties).forEach(
-          ([key, fieldSchema]: [string, any]) => {
-            if (fieldSchema.default !== undefined) {
-              defaultParams[key] = fieldSchema.default;
-            }
-          },
-        );
+        Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+          if (fieldSchema.default !== undefined) {
+            defaultParams[key] = fieldSchema.default
+          }
+        })
       }
-      setParameters(defaultParams);
+      setParameters(defaultParams)
     } catch (err) {
-      console.error("Failed to load block schema:", err);
-      setError("Failed to load block configuration");
+      console.error('Failed to load block schema:', err)
+      setError('Failed to load block configuration')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleTestBlock = async () => {
-    if (!block?.type) return;
+    if (!block?.type) return
 
-    setIsLoading(true);
-    setError(null);
-    setTestResults(null);
+    setIsLoading(true)
+    setError(null)
+    setTestResults(null)
 
     try {
       const result = await apiClient.validateBlock({
         block_type: block.type,
         parameters: parameters,
-      });
-      setTestResults(result);
-      setActiveTab("results");
+      })
+      setTestResults(result)
+      setActiveTab('results')
     } catch (err) {
-      console.error("Block test failed:", err);
-      setError("Block test failed");
+      console.error('Block test failed:', err)
+      setError('Block test failed')
       setTestResults({
         success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: err instanceof Error ? err.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-      });
-      setActiveTab("results");
+      })
+      setActiveTab('results')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const tabs = [
-    { id: "details", label: "Details", icon: Eye },
-    { id: "parameters", label: "Parameters", icon: Settings },
-    { id: "test", label: "Test", icon: Play },
-    { id: "results", label: "Results", icon: CheckCircle },
-  ];
+    { id: 'details', label: 'Details', icon: Eye },
+    { id: 'parameters', label: 'Parameters', icon: Settings },
+    { id: 'test', label: 'Test', icon: Play },
+    { id: 'results', label: 'Results', icon: CheckCircle },
+  ]
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -144,13 +127,10 @@ const BlockModal: React.FC<BlockModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {block?.manifest?.name ||
-                  block?.type?.replace(/_/g, " ") ||
-                  "Block"}
+                {block?.manifest?.name || block?.type?.replace(/_/g, ' ') || 'Block'}
               </h2>
               <p className="text-sm text-gray-500">
-                {block?.manifest?.category || "Unknown"} •{" "}
-                {block?.enabled ? "Enabled" : "Disabled"}
+                {block?.manifest?.category || 'Unknown'} • {block?.enabled ? 'Enabled' : 'Disabled'}
               </p>
             </div>
           </div>
@@ -164,22 +144,22 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
+          {tabs.map(tab => {
+            const Icon = tab.icon
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
               </button>
-            );
+            )
           })}
         </div>
 
@@ -192,61 +172,49 @@ const BlockModal: React.FC<BlockModalProps> = ({
             </div>
           )}
 
-          {activeTab === "details" && (
+          {activeTab === 'details' && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium mb-3">Block Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        Type
-                      </label>
+                      <label className="text-sm font-medium text-gray-700">Type</label>
                       <p className="text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded">
                         {block?.type}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        Category
-                      </label>
+                      <label className="text-sm font-medium text-gray-700">Category</label>
                       <p className="text-sm text-gray-900">
-                        {block?.manifest?.category || "Unknown"}
+                        {block?.manifest?.category || 'Unknown'}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        Status
-                      </label>
+                      <label className="text-sm font-medium text-gray-700">Status</label>
                       <div className="flex items-center space-x-2">
                         <div
-                          className={`w-2 h-2 rounded-full ${block?.enabled ? "bg-green-500" : "bg-red-500"}`}
+                          className={`w-2 h-2 rounded-full ${block?.enabled ? 'bg-green-500' : 'bg-red-500'}`}
                         />
                         <span className="text-sm text-gray-900">
-                          {block?.enabled ? "Enabled" : "Disabled"}
+                          {block?.enabled ? 'Enabled' : 'Disabled'}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        Plugin Path
-                      </label>
+                      <label className="text-sm font-medium text-gray-700">Plugin Path</label>
                       <p className="text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded break-all">
-                        {block?.plugin_path || "Built-in"}
+                        {block?.plugin_path || 'Built-in'}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        Last Modified
-                      </label>
+                      <label className="text-sm font-medium text-gray-700">Last Modified</label>
                       <p className="text-sm text-gray-900">
                         {block?.last_modified
-                          ? new Date(
-                              block.last_modified * 1000,
-                            ).toLocaleString()
-                          : "Unknown"}
+                          ? new Date(block.last_modified * 1000).toLocaleString()
+                          : 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -264,9 +232,7 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
               {block?.load_error && (
                 <div>
-                  <h3 className="text-lg font-medium mb-3 text-red-600">
-                    Load Error
-                  </h3>
+                  <h3 className="text-lg font-medium mb-3 text-red-600">Load Error</h3>
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <pre className="text-sm text-red-700 whitespace-pre-wrap">
                       {block.load_error}
@@ -277,11 +243,11 @@ const BlockModal: React.FC<BlockModalProps> = ({
             </div>
           )}
 
-          {activeTab === "parameters" && (
+          {activeTab === 'parameters' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">Block Parameters</h3>
-                {mode === "test" && (
+                {mode === 'test' && (
                   <button
                     onClick={handleTestBlock}
                     disabled={isLoading}
@@ -317,17 +283,17 @@ const BlockModal: React.FC<BlockModalProps> = ({
             </div>
           )}
 
-          {activeTab === "test" && (
+          {activeTab === 'test' && (
             <BlockTestForm
               block={block}
-              onTestComplete={(result) => {
-                setTestResults(result);
-                setActiveTab("results");
+              onTestComplete={result => {
+                setTestResults(result)
+                setActiveTab('results')
               }}
             />
           )}
 
-          {activeTab === "results" && (
+          {activeTab === 'results' && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Test Results</h3>
 
@@ -343,8 +309,8 @@ const BlockModal: React.FC<BlockModalProps> = ({
                   <div
                     className={`p-4 rounded-lg border ${
                       testResults.success
-                        ? "bg-green-50 border-green-200"
-                        : "bg-red-50 border-red-200"
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -355,12 +321,10 @@ const BlockModal: React.FC<BlockModalProps> = ({
                       )}
                       <h4
                         className={`font-medium ${
-                          testResults.success
-                            ? "text-green-900"
-                            : "text-red-900"
+                          testResults.success ? 'text-green-900' : 'text-red-900'
                         }`}
                       >
-                        {testResults.success ? "Test Passed" : "Test Failed"}
+                        {testResults.success ? 'Test Passed' : 'Test Failed'}
                       </h4>
                     </div>
                     {testResults.timestamp && (
@@ -372,9 +336,7 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
                   {testResults.error && (
                     <div className="bg-gray-50 border rounded-lg p-4">
-                      <h5 className="font-medium text-gray-900 mb-2">
-                        Error Details
-                      </h5>
+                      <h5 className="font-medium text-gray-900 mb-2">Error Details</h5>
                       <pre className="text-sm text-red-600 whitespace-pre-wrap">
                         {testResults.error}
                       </pre>
@@ -383,11 +345,9 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
                   {testResults.output && (
                     <div className="bg-gray-50 border rounded-lg p-4">
-                      <h5 className="font-medium text-gray-900 mb-2">
-                        Test Output
-                      </h5>
+                      <h5 className="font-medium text-gray-900 mb-2">Test Output</h5>
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {typeof testResults.output === "string"
+                        {typeof testResults.output === 'string'
                           ? testResults.output
                           : JSON.stringify(testResults.output, null, 2)}
                       </pre>
@@ -396,9 +356,7 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
                   {testResults.result && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h5 className="font-medium text-blue-900 mb-2">
-                        Test Result
-                      </h5>
+                      <h5 className="font-medium text-blue-900 mb-2">Test Result</h5>
                       <pre className="text-sm text-blue-700 whitespace-pre-wrap">
                         {JSON.stringify(testResults.result, null, 2)}
                       </pre>
@@ -407,47 +365,36 @@ const BlockModal: React.FC<BlockModalProps> = ({
 
                   {testResults.validation_info && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h5 className="font-medium text-green-900 mb-2">
-                        Validation Details
-                      </h5>
+                      <h5 className="font-medium text-green-900 mb-2">Validation Details</h5>
                       <div className="text-sm text-green-800 space-y-1">
                         <div>
-                          <strong>Block Type:</strong>{" "}
-                          {testResults.validation_info.block_type}
+                          <strong>Block Type:</strong> {testResults.validation_info.block_type}
                         </div>
                         <div>
-                          <strong>Parameters Count:</strong>{" "}
+                          <strong>Parameters Count:</strong>{' '}
                           {testResults.validation_info.parameters_count}
                         </div>
                         <div>
-                          <strong>API Validation:</strong>{" "}
+                          <strong>API Validation:</strong>{' '}
                           {testResults.validation_info.api_validation}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {testResults.validation_errors &&
-                    testResults.validation_errors.length > 0 && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h5 className="font-medium text-yellow-900 mb-2">
-                          Validation Warnings
-                        </h5>
-                        <ul className="text-sm text-yellow-800 space-y-1">
-                          {testResults.validation_errors.map(
-                            (error: string, index: number) => (
-                              <li
-                                key={index}
-                                className="flex items-start space-x-2"
-                              >
-                                <span className="text-yellow-600">•</span>
-                                <span>{error}</span>
-                              </li>
-                            ),
-                          )}
-                        </ul>
-                      </div>
-                    )}
+                  {testResults.validation_errors && testResults.validation_errors.length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <h5 className="font-medium text-yellow-900 mb-2">Validation Warnings</h5>
+                      <ul className="text-sm text-yellow-800 space-y-1">
+                        {testResults.validation_errors.map((error: string, index: number) => (
+                          <li key={index} className="flex items-start space-x-2">
+                            <span className="text-yellow-600">•</span>
+                            <span>{error}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -462,18 +409,18 @@ const BlockModal: React.FC<BlockModalProps> = ({
           >
             Cancel
           </button>
-          {mode === "configure" && (
+          {mode === 'configure' && (
             <button
               onClick={() => {
-                onSave?.(parameters);
-                onClose();
+                onSave?.(parameters)
+                onClose()
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Save Parameters
             </button>
           )}
-          {mode === "test" && activeTab === "parameters" && (
+          {mode === 'test' && activeTab === 'parameters' && (
             <button
               onClick={handleTestBlock}
               disabled={isLoading}
@@ -490,7 +437,7 @@ const BlockModal: React.FC<BlockModalProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BlockModal;
+export default BlockModal

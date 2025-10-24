@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Eye, EyeOff, Edit2, Save, X } from 'lucide-react';
+import React, { useState } from 'react'
+import { Plus, Trash2, Eye, EyeOff, Edit2, Save, X } from 'lucide-react'
 
 export interface WorkflowVariable {
-  type: 'string' | 'number' | 'boolean' | 'secret' | 'json';
-  default?: any;
-  description?: string;
-  required?: boolean;
+  type: 'string' | 'number' | 'boolean' | 'secret' | 'json'
+  default?: any
+  description?: string
+  required?: boolean
 }
 
 interface VariablesPanelProps {
-  variables: Record<string, WorkflowVariable>;
-  onChange: (variables: Record<string, WorkflowVariable>) => void;
-  readOnly?: boolean;
+  variables: Record<string, WorkflowVariable>
+  onChange: (variables: Record<string, WorkflowVariable>) => void
+  readOnly?: boolean
 }
 
 export const VariablesPanel: React.FC<VariablesPanelProps> = ({
@@ -19,12 +19,12 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
   onChange,
   readOnly = false,
 }) => {
-  const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [newVarName, setNewVarName] = useState('');
-  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [newVarName, setNewVarName] = useState('')
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
 
   const addVariable = () => {
-    if (!newVarName || variables[newVarName]) return;
+    if (!newVarName || variables[newVarName]) return
 
     onChange({
       ...variables,
@@ -34,39 +34,39 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
         description: '',
         required: false,
       },
-    });
-    setNewVarName('');
-    setEditingKey(newVarName);
-  };
+    })
+    setNewVarName('')
+    setEditingKey(newVarName)
+  }
 
   const removeVariable = (key: string) => {
-    const { [key]: removed, ...rest } = variables;
-    onChange(rest);
-  };
+    const { [key]: removed, ...rest } = variables
+    onChange(rest)
+  }
 
   const updateVariable = (key: string, updates: Partial<WorkflowVariable>) => {
     onChange({
       ...variables,
       [key]: { ...variables[key], ...updates },
-    });
-  };
+    })
+  }
 
   const toggleSecretVisibility = (key: string) => {
-    setShowSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+    setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const getVariableValue = (key: string, variable: WorkflowVariable) => {
     if (variable.type === 'secret' && !showSecrets[key]) {
-      return '••••••••';
+      return '••••••••'
     }
     if (variable.type === 'boolean') {
-      return variable.default ? 'true' : 'false';
+      return variable.default ? 'true' : 'false'
     }
     if (variable.type === 'json') {
-      return JSON.stringify(variable.default, null, 2);
+      return JSON.stringify(variable.default, null, 2)
     }
-    return variable.default || '';
-  };
+    return variable.default || ''
+  }
 
   return (
     <div className="variables-panel">
@@ -79,10 +79,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
 
       <div className="variables-list mt-4 space-y-2">
         {Object.entries(variables).map(([key, variable]) => (
-          <div
-            key={key}
-            className="variable-item border rounded-lg p-3 bg-white dark:bg-gray-800"
-          >
+          <div key={key} className="variable-item border rounded-lg p-3 bg-white dark:bg-gray-800">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -91,7 +88,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
                   </code>
                   <select
                     value={variable.type}
-                    onChange={(e) =>
+                    onChange={e =>
                       updateVariable(key, {
                         type: e.target.value as WorkflowVariable['type'],
                       })
@@ -125,19 +122,17 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
                       <input
                         type="checkbox"
                         checked={variable.default || false}
-                        onChange={(e) =>
-                          updateVariable(key, { default: e.target.checked })
-                        }
+                        onChange={e => updateVariable(key, { default: e.target.checked })}
                         disabled={readOnly}
                         className="rounded"
                       />
                     ) : variable.type === 'json' ? (
                       <textarea
                         value={getVariableValue(key, variable)}
-                        onChange={(e) => {
+                        onChange={e => {
                           try {
-                            const parsed = JSON.parse(e.target.value);
-                            updateVariable(key, { default: parsed });
+                            const parsed = JSON.parse(e.target.value)
+                            updateVariable(key, { default: parsed })
                           } catch {
                             // Invalid JSON, don't update
                           }
@@ -153,11 +148,11 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
                             variable.type === 'number'
                               ? 'number'
                               : variable.type === 'secret' && !showSecrets[key]
-                              ? 'password'
-                              : 'text'
+                                ? 'password'
+                                : 'text'
                           }
                           value={getVariableValue(key, variable)}
-                          onChange={(e) =>
+                          onChange={e =>
                             updateVariable(key, {
                               default:
                                 variable.type === 'number'
@@ -190,9 +185,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
               {!readOnly && (
                 <div className="flex items-center gap-1 ml-2">
                   <button
-                    onClick={() =>
-                      setEditingKey(editingKey === key ? null : key)
-                    }
+                    onClick={() => setEditingKey(editingKey === key ? null : key)}
                     className="p-1 hover:bg-gray-100 rounded"
                     title="Edit variable"
                   >
@@ -216,9 +209,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
                   <input
                     type="text"
                     value={variable.description || ''}
-                    onChange={(e) =>
-                      updateVariable(key, { description: e.target.value })
-                    }
+                    onChange={e => updateVariable(key, { description: e.target.value })}
                     className="w-full text-sm border rounded px-2 py-1 mt-1"
                     placeholder="Describe this variable"
                   />
@@ -228,9 +219,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
                     type="checkbox"
                     id={`required-${key}`}
                     checked={variable.required || false}
-                    onChange={(e) =>
-                      updateVariable(key, { required: e.target.checked })
-                    }
+                    onChange={e => updateVariable(key, { required: e.target.checked })}
                     className="rounded"
                   />
                   <label
@@ -251,8 +240,8 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
           <input
             type="text"
             value={newVarName}
-            onChange={(e) => setNewVarName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addVariable()}
+            onChange={e => setNewVarName(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && addVariable()}
             placeholder="variable_name"
             className="flex-1 text-sm border rounded px-3 py-2 font-mono"
           />
@@ -274,7 +263,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default VariablesPanel;
+export default VariablesPanel

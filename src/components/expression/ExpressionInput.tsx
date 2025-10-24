@@ -1,47 +1,47 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Code, Edit3, Check, X } from "lucide-react";
-import ExpressionEditor from "./ExpressionEditor";
-import { evaluateExpression } from "../../utils/expressionEngine";
+import React, { useState, useRef, useEffect } from 'react'
+import { Code, Edit3, Check, X } from 'lucide-react'
+import ExpressionEditor from './ExpressionEditor'
+import { evaluateExpression } from '../../utils/expressionEngine'
 
 interface ExpressionInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
   availableNodes?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    data?: any;
-  }>;
-  contextData?: Record<string, any>;
-  className?: string;
-  disabled?: boolean;
+    id: string
+    name: string
+    type: string
+    data?: any
+  }>
+  contextData?: Record<string, any>
+  className?: string
+  disabled?: boolean
 }
 
 export default function ExpressionInput({
   value,
   onChange,
-  placeholder = "Enter value or expression...",
+  placeholder = 'Enter value or expression...',
   availableNodes = [],
   contextData = {},
-  className = "",
+  className = '',
   disabled = false,
 }: ExpressionInputProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempValue, setTempValue] = useState(value);
-  const [isExpression, setIsExpression] = useState(value.startsWith("$"));
+  const [isEditing, setIsEditing] = useState(false)
+  const [tempValue, setTempValue] = useState(value)
+  const [isExpression, setIsExpression] = useState(value.startsWith('$'))
   const [validationResult, setValidationResult] = useState<{
-    isValid: boolean;
-    error?: string;
-    result?: any;
-  }>({ isValid: true });
+    isValid: boolean
+    error?: string
+    result?: any
+  }>({ isValid: true })
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Auto-detect if input is an expression
   useEffect(() => {
-    setIsExpression(value.startsWith("$"));
-  }, [value]);
+    setIsExpression(value.startsWith('$'))
+  }, [value])
 
   // Validate expressions
   useEffect(() => {
@@ -51,73 +51,73 @@ export default function ExpressionInput({
         availableNodes,
         contextData.workflow,
         contextData.execution,
-        contextData.items,
-      );
+        contextData.items
+      )
       setValidationResult({
         isValid: result.success,
         error: result.error,
         result: result.result,
-      });
+      })
     } else {
-      setValidationResult({ isValid: true });
+      setValidationResult({ isValid: true })
     }
-  }, [value, isExpression, availableNodes, contextData]);
+  }, [value, isExpression, availableNodes, contextData])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setTempValue(newValue);
-    onChange(newValue);
-  };
+    const newValue = e.target.value
+    setTempValue(newValue)
+    onChange(newValue)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       // If it looks like an expression, mark it as such
-      if (tempValue.startsWith("$")) {
-        setIsExpression(true);
+      if (tempValue.startsWith('$')) {
+        setIsExpression(true)
       }
-    } else if (e.key === "Escape") {
-      setTempValue(value);
-      setIsEditing(false);
+    } else if (e.key === 'Escape') {
+      setTempValue(value)
+      setIsEditing(false)
     }
-  };
+  }
 
   const handleFocus = () => {
-    setIsEditing(true);
-    setTempValue(value);
-  };
+    setIsEditing(true)
+    setTempValue(value)
+  }
 
   const handleBlur = () => {
-    setIsEditing(false);
+    setIsEditing(false)
     // Keep the current value
-  };
+  }
 
   const openExpressionEditor = () => {
-    setTempValue(value);
-    setIsEditing(true);
-  };
+    setTempValue(value)
+    setIsEditing(true)
+  }
 
   const handleExpressionSave = (expression: string) => {
-    onChange(expression);
-    setIsExpression(true);
-    setIsEditing(false);
-  };
+    onChange(expression)
+    setIsExpression(true)
+    setIsEditing(false)
+  }
 
   const handleExpressionCancel = () => {
-    setIsEditing(false);
-  };
+    setIsEditing(false)
+  }
 
   const toggleExpressionMode = () => {
     if (isExpression) {
       // Switch to plain text
-      setIsExpression(false);
+      setIsExpression(false)
     } else {
       // Switch to expression mode
-      setIsExpression(true);
-      if (!value.startsWith("$")) {
-        onChange(`$${value}`);
+      setIsExpression(true)
+      if (!value.startsWith('$')) {
+        onChange(`$${value}`)
       }
     }
-  };
+  }
 
   return (
     <>
@@ -135,34 +135,26 @@ export default function ExpressionInput({
             disabled={disabled}
             className={`
               flex-1 px-3 py-2 border rounded-l-md text-sm
-              ${isExpression ? "border-blue-300 bg-blue-50" : "border-gray-300 bg-white"}
-              ${validationResult.isValid ? "" : "border-red-300 bg-red-50"}
-              ${disabled ? "opacity-50 cursor-not-allowed" : "focus:outline-none focus:ring-2 focus:ring-blue-500"}
-              ${isEditing ? "ring-2 ring-blue-500" : ""}
+              ${isExpression ? 'border-blue-300 bg-blue-50' : 'border-gray-300 bg-white'}
+              ${validationResult.isValid ? '' : 'border-red-300 bg-red-50'}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus:outline-none focus:ring-2 focus:ring-blue-500'}
+              ${isEditing ? 'ring-2 ring-blue-500' : ''}
             `}
           />
 
           {/* Expression indicator and controls */}
           <div className="flex items-center border-l border-gray-300">
             {isExpression && (
-              <div className="px-2 py-2 text-xs text-blue-600 font-medium">
-                EXPR
-              </div>
+              <div className="px-2 py-2 text-xs text-blue-600 font-medium">EXPR</div>
             )}
 
             <button
               type="button"
               onClick={toggleExpressionMode}
               className="px-2 py-2 text-gray-400 hover:text-gray-600 border-l border-gray-300 hover:bg-gray-50"
-              title={
-                isExpression ? "Switch to plain text" : "Switch to expression"
-              }
+              title={isExpression ? 'Switch to plain text' : 'Switch to expression'}
             >
-              {isExpression ? (
-                <Edit3 className="w-4 h-4" />
-              ) : (
-                <Code className="w-4 h-4" />
-              )}
+              {isExpression ? <Edit3 className="w-4 h-4" /> : <Code className="w-4 h-4" />}
             </button>
 
             <button
@@ -184,15 +176,13 @@ export default function ExpressionInput({
           </div>
         )}
 
-        {isExpression &&
-          validationResult.isValid &&
-          validationResult.result !== undefined && (
-            <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              Result: {JSON.stringify(validationResult.result).slice(0, 50)}
-              {JSON.stringify(validationResult.result).length > 50 && "..."}
-            </div>
-          )}
+        {isExpression && validationResult.isValid && validationResult.result !== undefined && (
+          <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
+            <Check className="w-3 h-3" />
+            Result: {JSON.stringify(validationResult.result).slice(0, 50)}
+            {JSON.stringify(validationResult.result).length > 50 && '...'}
+          </div>
+        )}
       </div>
 
       {/* Expression Editor Modal */}
@@ -208,5 +198,5 @@ export default function ExpressionInput({
         />
       )}
     </>
-  );
+  )
 }
