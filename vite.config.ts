@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 3000,
+      strictPort: false,
       allowedHosts: [
         'localhost',
         '127.0.0.1',
@@ -17,6 +18,10 @@ export default defineConfig(({ mode }) => {
         'portal-dev.pankh.ai',
         'backend-dev.pankh.ai',
       ],
+      hmr: {
+        overlay: true,
+        clientPort: 3000,
+      },
       proxy: {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',
