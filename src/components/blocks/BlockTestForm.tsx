@@ -60,10 +60,10 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
     const startTime = performance.now()
 
     try {
-      const result = await apiClient.validateBlock({
+      // Use the real node testing API for actual execution
+      const result = await apiClient.testNode({
         block_type: block.type,
         parameters: testParams,
-        dry_run: dryRun,
       })
 
       const endTime = performance.now()

@@ -87,7 +87,8 @@ const BlockModal: React.FC<BlockModalProps> = ({
     setTestResults(null)
 
     try {
-      const result = await apiClient.validateBlock({
+      // Use the real node testing API for actual execution
+      const result = await apiClient.testNode({
         block_type: block.type,
         parameters: parameters,
       })

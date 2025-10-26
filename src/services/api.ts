@@ -1,38 +1,54 @@
-import { mockWorkflows, mockBlocks, mockRegistryStats, mockHealth } from './mockData'
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
+).replace(/\/$/, '')
+const API_KEY = import.meta.env.VITE_API_KEY || ''
+const ORG_ID = import.meta.env.VITE_ORG_ID || 'default_org'
 
-// HARDCODED for now - Vite env variables not loading properly
-const API_BASE_URL = 'https://backend-dev.pankh.ai/api/v1'
-const BLOCKS_BASE_URL = '/blocks' // Block endpoints
-const API_KEY = 'df2c28ad-c3d5-4218-b0c8-258ccd0a8b99'
-const USE_MOCK_DATA = false
+if (import.meta.env?.DEV) {
+  console.log('🔧 Frontend API Configuration:', {
+    API_BASE_URL,
+    API_KEY_SET: API_KEY ? 'YES (***' + API_KEY.slice(-4) + ')' : 'NO',
+    ORG_ID,
+    'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
+    'import.meta.env.MODE': import.meta.env.MODE,
+    'import.meta.env.DEV': import.meta.env.DEV,
+  })
+}
 
-// Debug: Log configuration on load
-console.log('🔧 Frontend API Configuration:', {
-  API_BASE_URL,
-  API_KEY_SET: API_KEY ? 'YES (***' + API_KEY.slice(-4) + ')' : 'NO',
-  'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
-  'import.meta.env.MODE': import.meta.env.MODE,
-  'import.meta.env.DEV': import.meta.env.DEV,
-})
-
-// Centralized auth headers
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  'X-API-Key': API_KEY,
-})
+const getAuthHeaders = () => {
+  const headers: Record<string, string> = {}
+  if (API_KEY) {
+    headers['X-API-Key'] = API_KEY
+  }
+  return headers
+}
 
 // API client with error handling
 class ApiClient {
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
+  private orgPath(path: string) {
+    const normalized = path.startsWith('/') ? path : `/${path}`
+    return `/organizations/${ORG_ID}${normalized}`
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Normalize endpoint path and avoid double "/api[/vX]" when callers pass a full path
+    const normalizedPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+    const baseHasApi = /\/api(\/v\d+)?$/.test(API_BASE_URL)
+    const pathSansApi = baseHasApi
+      ? normalizedPath.replace(/^\/api(\/v\d+)?/, '') || '/'
+      : normalizedPath
+    const url = `${API_BASE_URL}${pathSansApi}`
+    const hasJsonBody =
+      options.body !== undefined && options.body !== null && !(options.body instanceof FormData)
 
     try {
       const response = await fetch(url, {
-        headers: {
-          ...getAuthHeaders(),
-          ...options?.headers,
-        },
         ...options,
+        headers: {
+          ...(hasJsonBody ? { 'Content-Type': 'application/json' } : {}),
+          ...getAuthHeaders(),
+          ...(options.headers || {}),
+        },
       })
 
       if (!response.ok) {
@@ -47,34 +63,58 @@ class ApiClient {
   }
 
   // Workflows API
-  async getWorkflows() {
-    return this.request('/workflows')
+  async getWorkflows(params?: { status?: string }) {
+    const searchParams = new URLSearchParams()
+    if (params?.status) {
+      searchParams.append('status', params.status)
+    }
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return this.request(this.orgPath(`/workflows${query}`))
   }
 
   async getWorkflow(id: string) {
-    return this.request(`/workflows/${id}`)
+    return this.request(this.orgPath(`/workflows/${id}`))
   }
 
   async createWorkflow(data: { name: string; graph: any }) {
-    return this.request('/workflows', {
+    return this.request(this.orgPath('/workflows'), {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   async runWorkflow(id: string) {
-    return this.request(`/workflows/${id}/run`, {
+    return this.request(this.orgPath(`/workflows/${id}/run`), {
       method: 'POST',
     })
   }
 
   // Executions API
+  async getExecutions(params?: { status?: string }) {
+    const searchParams = new URLSearchParams()
+    if (params?.status) {
+      searchParams.append('status', params.status)
+    }
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return this.request(this.orgPath(`/executions${query}`))
+  }
+
   async getExecution(id: string) {
-    return this.request(`/executions/${id}`)
+    return this.request(this.orgPath(`/executions/${id}`))
   }
 
   async getExecutionStatus(id: string) {
-    return this.request(`/organizations/default_org/executions/${id}/status`)
+    return this.request(this.orgPath(`/executions/${id}/status`))
+  }
+
+  async getExecutionLogs(id: string) {
+    return this.request(this.orgPath(`/executions/${id}/logs`))
+  }
+
+  async cancelExecution(id: string) {
+    return this.request(this.orgPath(`/executions/${id}/cancel`), {
+      method: 'POST',
+    })
   }
 
   // Blocks API
@@ -178,16 +218,8 @@ class ApiClient {
   }
 
   async getBlockCategories() {
-    // Extract categories from blocks data since /registry/blocks/categories doesn't exist
     try {
-      const blocks = await this.request('/blocks')
-      if (Array.isArray(blocks)) {
-        const categories = [
-          ...new Set(blocks.map((block: any) => block.manifest?.category).filter(Boolean)),
-        ]
-        return categories
-      }
-      return []
+      return await this.request('/blocks/categories')
     } catch (error) {
       console.error('Failed to get block categories:', error)
       return []
@@ -195,22 +227,8 @@ class ApiClient {
   }
 
   async getRegistryStats() {
-    // Create stats from blocks data since /registry/blocks/stats doesn't exist
     try {
-      const blocks = await this.request('/blocks')
-      if (Array.isArray(blocks)) {
-        const enabledBlocks = blocks.filter((block: any) => block.enabled)
-        const categories = [
-          ...new Set(blocks.map((block: any) => block.manifest?.category).filter(Boolean)),
-        ]
-        return {
-          total_blocks: blocks.length,
-          enabled_blocks: enabledBlocks.length,
-          categories: categories,
-          plugins_loaded: blocks.filter((block: any) => block.plugin_path !== 'builtin').length,
-        }
-      }
-      return { total_blocks: 0, enabled_blocks: 0, categories: [], plugins_loaded: 0 }
+      return await this.request('/blocks/stats')
     } catch (error) {
       console.error('Failed to get registry stats:', error)
       return { total_blocks: 0, enabled_blocks: 0, categories: [], plugins_loaded: 0 }
@@ -218,31 +236,11 @@ class ApiClient {
   }
 
   async getBlockInfo(blockType: string) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/${blockType}`)
+    return this.request(`/blocks/${blockType}`)
   }
 
   async getBlockSchema(blockType: string) {
-    // Get block info from the blocks list since individual block endpoints don't exist
-    try {
-      const blocks = await this.request('/blocks')
-      if (Array.isArray(blocks)) {
-        const block = blocks.find((b: any) => b.type === blockType)
-        if (block) {
-          return {
-            type: block.type,
-            manifest: block.manifest,
-            enabled: block.enabled,
-            plugin_path: block.plugin_path,
-            last_modified: block.last_modified,
-            load_error: block.load_error,
-          }
-        }
-      }
-      throw new Error(`Block ${blockType} not found`)
-    } catch (error) {
-      console.error(`Failed to get block schema for ${blockType}:`, error)
-      throw error
-    }
+    return this.request(`/blocks/${blockType}/schema`)
   }
 
   async registerBlock(data: {
@@ -251,71 +249,42 @@ class ApiClient {
     manifest?: any
     enable_immediately?: boolean
   }) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/register`, {
+    return this.request('/blocks/register', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   async generateBlock(description: string, autoDeploy = false) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/generate`, {
+    return this.request('/blocks/generate', {
       method: 'POST',
       body: JSON.stringify({ description, auto_deploy: autoDeploy }),
     })
   }
 
   async enableBlock(blockType: string) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/${blockType}/enable`, {
+    return this.request(`/blocks/${blockType}/enable`, {
       method: 'POST',
     })
   }
 
   async disableBlock(blockType: string) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/${blockType}/disable`, {
+    return this.request(`/blocks/${blockType}/disable`, {
       method: 'POST',
     })
   }
 
   async setBlockConfig(blockType: string, config: any) {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/${blockType}/config`, {
+    return this.request(`/blocks/${blockType}/config`, {
       method: 'POST',
       body: JSON.stringify({ config }),
     })
   }
 
   async reloadPlugins() {
-    return this.blockRequest(`${BLOCKS_BASE_URL}/reload`, {
+    return this.request('/blocks/reload', {
       method: 'POST',
     })
-  }
-
-  // Removed: validateBlockConfig - use workflow validation instead
-
-  // Unified method for block endpoints (with auth)
-  private async blockRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    // Fix endpoint routing conflicts
-    const url = endpoint.startsWith('/blocks')
-      ? `${API_BASE_URL}${endpoint}`
-      : `${API_BASE_URL}/registry${endpoint}`
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          ...getAuthHeaders(),
-          ...options?.headers,
-        },
-        ...options,
-      })
-
-      if (!response.ok) {
-        throw new Error(`Block API Error: ${response.status} ${response.statusText}`)
-      }
-
-      return response.json()
-    } catch (error) {
-      console.error(`Block API request failed for ${endpoint}:`, error)
-      throw error
-    }
   }
 
   // Health check
@@ -395,15 +364,26 @@ class ApiClient {
   }
 
   async searchWeb(query: string, limit: number = 5) {
-    return this.validateBlock({
-      block_type: 'searxng_search',
-      parameters: {
-        query,
-        limit,
-        language: 'en',
-        safesearch: 1,
-      },
-    })
+    try {
+      // Use the real node testing API for actual execution
+      const result = await this.testNode({
+        block_type: 'searxng_search',
+        parameters: {
+          query,
+          limit,
+          language: 'en',
+          safesearch: 1,
+        },
+      })
+      return result
+    } catch (error) {
+      console.error('Web Search Error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Search failed',
+        timestamp: new Date().toISOString(),
+      }
+    }
   }
 
   async generateWorkflowSuggestions(description: string) {
