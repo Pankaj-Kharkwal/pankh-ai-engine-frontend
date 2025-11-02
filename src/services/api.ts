@@ -240,7 +240,10 @@ class ApiClient {
   }
 
   async getBlockSchema(blockType: string) {
-    return this.request(`/blocks/${blockType}/schema`)
+    // Backend returns full block info including schema at /blocks/{type}
+    const blockInfo = await this.request(`/blocks/${blockType}`)
+    // Return the schema if available, otherwise return the full block info
+    return blockInfo?.manifest?.schema || blockInfo?.schema || blockInfo
   }
 
   async registerBlock(data: {

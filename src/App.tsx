@@ -44,6 +44,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="workflows" element={<Workflows />} />
               <Route path="workflows/create" element={<WorkflowBuilder />} />
+              <Route path="workflows/:id" element={<WorkflowBuilder />} />
               <Route path="workflows/demo" element={<WorkflowDemo />} />
               <Route path="marketplace" element={<Marketplace />} />
               <Route path="chatbot" element={<BYOChatbot />} />

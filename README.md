@@ -56,6 +56,7 @@ Edit `.env` and update the following values:
 - `VITE_API_URL` - Backend API URL (e.g., `https://backend-dev.pankh.ai/api/v1`)
 - `VITE_WS_URL` - WebSocket URL (e.g., `wss://backend-dev.pankh.ai/ws`)
 - `VITE_API_PROXY_TARGET` - Proxy target for development (e.g., `https://backend-dev.pankh.ai`)
+- `VITE_ORG_ID` - Organization identifier to scope workflow/execution APIs (defaults to `default_org`)
 - `VITE_API_KEY` - Your API key for authentication
 - Azure OpenAI credentials (if using AI block generation)
 
@@ -88,6 +89,7 @@ Update your `.env`:
 VITE_API_URL=https://backend-dev.pankh.ai/api/v1
 VITE_WS_URL=wss://backend-dev.pankh.ai/ws
 VITE_API_PROXY_TARGET=https://backend-dev.pankh.ai
+VITE_ORG_ID=default_org
 ```
 
 #### Option 2: Local Backend
@@ -101,6 +103,7 @@ If you need to test against a local backend:
 VITE_API_URL=http://backend-dev.pankh.ai/api/v1
 VITE_WS_URL=ws://backend-dev.pankh.ai/ws
 VITE_API_PROXY_TARGET=http://backend-dev.pankh.ai
+VITE_ORG_ID=default_org
 ```
 
 ## 🎯 Core Features

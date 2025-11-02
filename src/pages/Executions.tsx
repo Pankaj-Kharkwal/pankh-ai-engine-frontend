@@ -10,8 +10,8 @@ import {
   Search,
   Loader,
 } from 'lucide-react'
-import { useExecution } from '../hooks/useApi'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useExecution, useExecutions } from '../hooks/useApi'
+import { useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../services/api'
 
 interface ExecutionData {
@@ -34,12 +34,8 @@ interface ExecutionData {
 export default function Executions() {
   const [selectedExecutionId, setSelectedExecutionId] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(false)
-  // NEW: Real executions from API
-  const { data: executions, isLoading } = useQuery({
-    queryKey: ['executions'],
-    queryFn: () => apiClient.getExecutions(),
-    refetchInterval: autoRefresh ? 3000 : false,
-  })
+  // Use the new useExecutions hook
+  const { data: executions, isLoading, error: executionsError } = useExecutions()
 
   const queryClient = useQueryClient()
   // Remove mock executions - using real API data
@@ -79,7 +75,8 @@ export default function Executions() {
   useEffect(() => {
     if (!selectedExecutionId) return
 
-    const ws = new WebSocket(`ws://backend-dev.pankh.ai/ws/execution/${selectedExecutionId}`)
+    const wsBase = (import.meta.env.VITE_WS_URL || 'wss://backend-dev.pankh.ai/ws').replace(/\/$/, '')
+    const ws = new WebSocket(`${wsBase}/execution/${selectedExecutionId}`)
     ws.onmessage = event => {
       const update = JSON.parse(event.data)
       // Update execution state in real-time
@@ -207,6 +204,14 @@ export default function Executions() {
                     <Loader className="w-6 h-6 animate-spin mx-auto text-blue-400" />
                     <p className="text-sm text-gray-400 mt-2">Loading executions...</p>
                   </div>
+                ) : executionsError ? (
+                  <div className="text-center py-4 px-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                    <AlertCircle className="w-6 h-6 mx-auto text-yellow-400 mb-2" />
+                    <p className="text-sm text-yellow-400 font-medium mb-1">List API Not Available</p>
+                    <p className="text-xs text-gray-400">
+                      Enter an execution ID above to monitor a specific execution.
+                    </p>
+                  </div>
                 ) : executions?.length ? (
                   executions.map(execution => (
                     <div
@@ -239,6 +244,7 @@ export default function Executions() {
                 ) : (
                   <div className="text-center py-4 text-gray-400">
                     <p className="text-sm">No executions found</p>
+                    <p className="text-xs mt-1">Run a workflow to see executions here</p>
                   </div>
                 )}
               </div>

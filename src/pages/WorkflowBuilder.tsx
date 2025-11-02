@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import {
   ReactFlow,
   useNodesState,
@@ -10,7 +11,7 @@ import {
 } from '@xyflow/react'
 import type { Connection, Edge, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useBlocks, useBlockCategories } from '../hooks/useApi' // Assuming these hooks are available
+import { useBlocks, useBlockCategories, useCreateWorkflow, useRunWorkflow, useWorkflow } from '../hooks/useApi' // Assuming these hooks are available
 import BlockPalette from '../components/workflow/BlockPalette'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
@@ -45,34 +46,8 @@ const nodeTypes = {
   workflowNode: WorkflowNode,
 }
 
-// --- Mock API Mutations (Replace with actual useMutation hooks) ---
-const useCreateWorkflowMutation = () => {
-  const [isPending, setIsPending] = useState(false)
-  const mutateAsync = async (workflowData: any) => {
-    setIsPending(true)
-    console.log('Simulating API call to create/save workflow:', workflowData)
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate network delay
-    setIsPending(false)
-    return { id: `wkf-${Date.now()}` } // Return mock workflow object
-  }
-  return { mutateAsync, isPending }
-}
-
-const useRunWorkflowMutation = () => {
-  const mutateAsync = async (workflowId: string) => {
-    console.log('Simulating API call to run workflow:', workflowId)
-    await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate network delay
-    return {
-      id: `exec-${Date.now()}`,
-      status: 'completed',
-      result: { final_output: 'Workflow finished successfully!' },
-    } // Return mock execution object
-  }
-  return { mutateAsync }
-}
-// -----------------------------------------------------------------
-
 export default function WorkflowBuilder() {
+  const { id: workflowId } = useParams<{ id?: string }>()
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [paletteVisible, setPaletteVisible] = useState(true)
@@ -83,6 +58,7 @@ export default function WorkflowBuilder() {
   const [debuggerVisible, setDebuggerVisible] = useState(false)
   const [monitorVisible, setMonitorVisible] = useState(false)
   const [executionData, setExecutionData] = useState<any>(null)
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(workflowId || null)
 
   // --- New State for Header/Execution ---
   const [workflowName, setWorkflowName] = useState('Untitled Workflow')
@@ -91,10 +67,9 @@ export default function WorkflowBuilder() {
   const [nodeCounter, setNodeCounter] = useState(1) // Used for new node ID generation
   // -------------------------------------
 
-  // --- Mock Mutations/Queries for Header Functions ---
-  const createWorkflowMutation = useCreateWorkflowMutation()
-  const runWorkflowMutation = useRunWorkflowMutation()
-  // ---------------------------------------------------
+  const createWorkflowMutation = useCreateWorkflow()
+  const runWorkflowMutation = useRunWorkflow()
+  const { data: existingWorkflow, isLoading: workflowLoading } = useWorkflow(workflowId || '')
 
   const onConnect = useCallback(
     (params: Connection) => setEdges(eds => addEdge(params, eds)),
@@ -103,6 +78,47 @@ export default function WorkflowBuilder() {
 
   const { data: apiBlocks, isLoading: blocksLoading } = useBlocks()
   const { data: categoriesData } = useBlockCategories()
+
+  // Load existing workflow when workflowId is present
+  useEffect(() => {
+    if (existingWorkflow && workflowId) {
+      console.log('Loading existing workflow:', existingWorkflow)
+
+      // Set workflow name
+      setWorkflowName(existingWorkflow.name || 'Untitled Workflow')
+      setCurrentWorkflowId(workflowId)
+
+      // Convert backend workflow graph to React Flow nodes and edges
+      if (existingWorkflow.graph) {
+        const { nodes: graphNodes, edges: graphEdges } = existingWorkflow.graph
+
+        // Convert nodes
+        const loadedNodes: Node[] = graphNodes?.map((node: any, index: number) => ({
+          id: node.id,
+          type: 'workflowNode',
+          position: node.position || { x: 100 + index * 300, y: 100 + Math.floor(index / 3) * 200 },
+          data: {
+            label: node.name || node.type,
+            blockType: node.type,
+            config: node.parameters || {},
+            parameters: node.parameters || {},
+            status: 'idle',
+          },
+        })) || []
+
+        // Convert edges
+        const loadedEdges: Edge[] = graphEdges?.map((edge: any, index: number) => ({
+          id: edge.id || `e-${edge.from_node}-${edge.to_node}-${index}`,
+          source: edge.from_node,
+          target: edge.to_node,
+        })) || []
+
+        setNodes(loadedNodes)
+        setEdges(loadedEdges)
+        setNodeCounter(loadedNodes.length)
+      }
+    }
+  }, [existingWorkflow, workflowId, setNodes, setEdges])
 
   const categories = useMemo(() => {
     if (!categoriesData) return []
@@ -136,13 +152,25 @@ export default function WorkflowBuilder() {
 
   // Handle node update from config panel
   const handleNodeUpdate = useCallback(
-    (nodeId: string, config: any) => {
+    (nodeId: string, dataPatch: Record<string, any>) => {
       setNodes(nds =>
-        nds.map(node =>
-          node.id === nodeId
-            ? { ...node, data: { ...node.data, config, parameters: config } } // Keep 'parameters' for save/run structure
-            : node
-        )
+        nds.map(node => {
+          if (node.id !== nodeId) return node
+          const nextData = {
+            ...node.data,
+            ...dataPatch,
+          }
+
+          if (dataPatch.config && !dataPatch.parameters) {
+            nextData.parameters = dataPatch.config
+          }
+
+          if (dataPatch.parameters && !dataPatch.config) {
+            nextData.config = dataPatch.parameters
+          }
+
+          return { ...node, data: nextData }
+        })
       )
     },
     [setNodes]
@@ -200,56 +228,64 @@ export default function WorkflowBuilder() {
     setPaletteVisible(prev => !prev)
   }, [])
 
-  // --- New Workflow Actions ---
-  // The getWorkflowData is unused but remains for context
-  const getWorkflowData = useCallback(
-    () => ({
-      name: workflowName,
+  // --- Workflow helpers ---
+  const buildWorkflowPayload = useCallback(() => {
+    const graphNodes = nodes
+      .filter(node => Boolean(node.data?.blockType))
+      .map(node => ({
+        id: node.id,
+        type: node.data.blockType,
+        parameters: node.data?.parameters || node.data?.config || {},
+      }))
+
+    const graphEdges = edges.map(edge => ({
+      from_node: edge.source,
+      to_node: edge.target,
+    }))
+
+    return {
+      name: workflowName || 'Untitled Workflow',
       graph: {
-        nodes: nodes.map(node => ({
-          id: node.id,
-          // Fallback for nodes that might not have a blockType yet (like the initial default node '1')
-          type: node.data.blockType || 'default_type',
-          parameters: node.data.parameters || node.data.config || {},
-        })),
-        edges: edges.map(edge => ({
-          from_node: edge.source,
-          to_node: edge.target,
-        })),
+        nodes: graphNodes,
+        edges: graphEdges,
       },
-    }),
-    [nodes, edges, workflowName]
+    }
+  }, [nodes, edges, workflowName])
+
+  const hasConfigurableNodes = useMemo(
+    () => nodes.some(node => Boolean(node.data?.blockType)),
+    [nodes]
   )
 
-  const saveWorkflow = async () => {
-    try {
-      const workflowData = {
-        name: workflowName,
-        graph: {
-          nodes: nodes.map(node => ({
-            id: node.id,
-            type: node.data.blockType,
-            parameters: node.data.parameters,
-          })),
-          edges: edges.map(edge => ({
-            from_node: edge.source,
-            to_node: edge.target,
-          })),
-        },
+  const saveWorkflow = async (options: { silent?: boolean } = {}) => {
+    if (!hasConfigurableNodes) {
+      if (!options.silent) {
+        alert('Add at least one configured block before saving the workflow.')
       }
+      throw new Error('No configured nodes to save')
+    }
 
-      await createWorkflowMutation.mutateAsync(workflowData)
-      alert('Workflow saved successfully!')
+    const payload = buildWorkflowPayload()
+
+    try {
+      const workflow = await createWorkflowMutation.mutateAsync(payload)
+      setCurrentWorkflowId(workflow.id)
+      if (!options.silent) {
+        alert('Workflow saved successfully!')
+      }
+      return workflow
     } catch (error) {
       console.error('Failed to save workflow:', error)
-      alert('Failed to save workflow. Please try again.')
+      if (!options.silent) {
+        alert('Failed to save workflow. Please try again.')
+      }
+      throw error
     }
   }
 
   const runWorkflow = async () => {
-    if (nodes.length === 0 || (nodes.length === 1 && nodes[0].id === '1')) {
-      // Check for meaningful nodes
-      alert('Please add some blocks to your workflow first.')
+    if (!hasConfigurableNodes) {
+      alert('Please add and configure at least one block before running the workflow.')
       return
     }
 
@@ -257,27 +293,15 @@ export default function WorkflowBuilder() {
       setIsExecuting(true)
       setExecutionResult(null)
 
-      // First save the workflow
-      const workflowData = {
-        name: workflowName,
-        graph: {
-          nodes: nodes.map(node => ({
-            id: node.id,
-            type: node.data.blockType,
-            parameters: node.data.parameters,
-          })),
-          edges: edges.map(edge => ({
-            from_node: edge.source,
-            to_node: edge.target,
-          })),
-        },
+      let workflowId = currentWorkflowId
+      if (!workflowId) {
+        const workflow = await saveWorkflow({ silent: true })
+        workflowId = workflow.id
       }
 
-      const workflow = await createWorkflowMutation.mutateAsync(workflowData)
-
-      // Then run it
-      const execution = await runWorkflowMutation.mutateAsync(workflow.id)
+      const execution = await runWorkflowMutation.mutateAsync(workflowId)
       setExecutionResult(execution)
+      setExecutionData(execution)
     } catch (error) {
       console.error('Failed to run workflow:', error)
       alert('Failed to run workflow. Please check your configuration.')
@@ -452,10 +476,22 @@ export default function WorkflowBuilder() {
   )
   // ------------------------------------
 
+  // Show loading state while fetching workflow
+  if (workflowId && workflowLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading workflow...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     // The outer div is the main container, set to full viewport height and flexible column layout.
     <div style={{ height: '100vh' }} className="flex flex-col bg-gray-50 overflow-hidden">
-      {/* --- IMPROVED WORKFLOW HEADER UI --- 
+      {/* --- IMPROVED WORKFLOW HEADER UI ---
             - Increased padding for a more spacious feel.
             - Added subtle border to the title input.
             - Aligned action buttons.
@@ -464,13 +500,20 @@ export default function WorkflowBuilder() {
         <div className="flex items-center justify-between">
           {/* Left Section: Title and Name Input */}
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-800 tracking-tight">Workflow Builder</h1>
+            <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
+              {workflowId ? 'Edit Workflow' : 'Workflow Builder'}
+            </h1>
             <input
               value={workflowName}
               onChange={e => setWorkflowName(e.target.value)}
               className="text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-colors"
               placeholder="Workflow name..."
             />
+            {workflowId && (
+              <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+                ID: {workflowId.slice(-8)}
+              </span>
+            )}
           </div>
 
           {/* Right Section: Action Buttons */}
@@ -507,8 +550,8 @@ export default function WorkflowBuilder() {
 
             {/* Save Button */}
             <button
-              onClick={saveWorkflow}
-              disabled={createWorkflowMutation.isPending || nodes.length === 0}
+              onClick={() => saveWorkflow().catch(() => undefined)}
+              disabled={createWorkflowMutation.isPending || !hasConfigurableNodes}
               className="bg-gray-100 hover:bg-gray-200 border border-gray-300 px-4 py-2 flex items-center space-x-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-gray-700"
             >
               {createWorkflowMutation.isPending ? (
@@ -522,7 +565,7 @@ export default function WorkflowBuilder() {
             {/* Run Button - Primary Action */}
             <button
               onClick={runWorkflow}
-              disabled={isExecuting || nodes.length === 0}
+              disabled={isExecuting || !hasConfigurableNodes}
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 flex items-center space-x-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-md hover:shadow-lg"
             >
               {isExecuting ? (

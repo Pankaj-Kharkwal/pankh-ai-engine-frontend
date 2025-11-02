@@ -5,7 +5,7 @@
 
 import { EventSourcePolyfill } from 'event-source-polyfill'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://backend-dev.pankh.ai/api'
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1').replace(/\/$/, '')
 const API_KEY = import.meta.env.VITE_API_KEY || 'dev-key-change-me'
 
 // ==================== Types ====================

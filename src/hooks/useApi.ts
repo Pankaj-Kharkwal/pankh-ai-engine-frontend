@@ -138,6 +138,14 @@ export function useReloadPlugins() {
 }
 
 // Executions
+export function useExecutions(params?: { status?: string }) {
+  return useQuery({
+    queryKey: ['executions', params],
+    queryFn: () => apiClient.getExecutions(params),
+    retry: 1, // Only retry once since this endpoint may not be available
+  })
+}
+
 export function useExecution(id: string) {
   return useQuery({
     queryKey: ['execution', id],

@@ -213,7 +213,7 @@ export default function Workflows() {
                     <tr
                       key={workflow.id}
                       className="border-b border-white/5 cursor-pointer transition-colors duration-150 group hover:bg-white/10"
-                      onClick={() => navigate(`/workflows/${workflow.id}/details`)}
+                      onClick={() => navigate(`/workflows/${workflow.id}`)}
                     >
                       <td className="py-4 font-medium  ">
                         <div className="flex items-center flex-wrap gap-2">
@@ -267,7 +267,7 @@ export default function Workflows() {
                           <button
                             onClick={e => {
                               e.stopPropagation()
-                              navigate(`/workflows/${workflow.id}/edit`)
+                              navigate(`/workflows/${workflow.id}`)
                             }}
                             className="glass-button p-2 text-[#00C8FF] hover:bg-[#00C8FF]/20 hover:shadow-md hover:shadow-[#00C8FF]/20"
                             title="Edit Workflow"
