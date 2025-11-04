@@ -229,3 +229,86 @@ webui/
 └── README.md # This documentation
 
 ## 🚀 Development Workflow ### **Phase 1: Foundation** 1. Setup React + TypeScript + Vite 2. Configure Tailwind with glassmorphic components 3. Implement basic routing and layout 4. Create base UI component library ### **Phase 2: Core Features** 1. React Flow workflow builder integration 2. API service layer with React Query 3. Block palette and property panels 4. Workflow execution monitoring ### **Phase 3: Advanced Features** 1. Real-time WebSocket integration 2. Gluon analytics dashboard 3. Debug console and performance profiler 4. Block manager and AI generation ### **Phase 4: Polish & Deploy** 1. Accessibility compliance testing 2. Performance optimization 3. Docker containerization 4. CI/CD pipeline integration ## 🎯 Success Metrics - **User Experience**: Intuitive workflow creation in under 2 minutes - **Performance**: Sub-100ms UI interactions, real-time updates - **Reliability**: 99.9% uptime with graceful error handling - **Scalability**: Support 100+ concurrent users - **Accessibility**: WCAG 2.1 AA compliance score ## 📋 Next Steps 1. **Approve this plan** - Review and confirm feature scope 2. **Setup development environment** - Initialize React + Node.js projects 3. **Create base components** - Glassmorphic UI foundation 4. **Integrate React Flow** - Visual workflow builder 5. **Deploy containerized** - Docker integration with existing services --- **Ready to build the future of visual workflow creation! 🚀**
+
+## 🚀 Deployment
+
+### Production Deployment on Azure AKS
+
+The application is automatically deployed to Azure Kubernetes Service (AKS) via GitHub Actions when changes are pushed to the `master` branch.
+
+#### Required GitHub Secrets
+
+Configure the following secrets in your GitHub repository (Settings → Secrets and variables → Actions):
+
+- `ACR_LOGIN_SERVER` - Azure Container Registry login server (e.g., `pankhaidev.azurecr.io`)
+- `ACR_USERNAME` - ACR username (can be obtained from Azure Portal)
+- `ACR_PASSWORD` - ACR password/token
+- `AZURE_CREDENTIALS` - Azure service principal credentials (JSON format)
+- `AKS_RESOURCE_GROUP` - Resource group name (e.g., `pankh-ai-rg-dev`)
+- `AKS_CLUSTER_NAME` - AKS cluster name (e.g., `pankh-ai-aks-dev`)
+
+#### Getting Azure Credentials
+
+```bash
+# Login to Azure
+az login
+
+# Create service principal for GitHub Actions
+az ad sp create-for-rbac \
+  --name "github-actions-pankh-frontend" \
+  --role contributor \
+  --scopes /subscriptions/{subscription-id}/resourceGroups/pankh-ai-rg-dev \
+  --sdk-auth
+
+# Get ACR credentials
+az acr credential show --name pankhaidev
+```
+
+#### Architecture
+
+**Production Setup:**
+- Multi-stage Docker build with Nginx
+- Static files served by Nginx (no Node.js runtime)
+- API requests proxied to backend via Nginx
+- Optimized production build with code splitting
+- Gzip compression and caching enabled
+
+**Development vs Production:**
+- **Development**: Uses Vite dev server with HMR (see [Dockerfile.dev](Dockerfile.dev))
+- **Production**: Uses nginx with optimized static files (see [Dockerfile](Dockerfile))
+
+#### Manual Deployment
+
+If you need to deploy manually:
+
+```bash
+# Build and push to ACR
+az acr build --registry pankhaidev \
+  --image webui:$(git rev-parse --short HEAD) \
+  --image webui:latest \
+  --file Dockerfile .
+
+# Update deployment
+kubectl set image deployment/webui \
+  webui=pankhaidev.azurecr.io/webui:latest \
+  -n pankh-ai
+
+# Check rollout status
+kubectl rollout status deployment/webui -n pankh-ai
+```
+
+#### Monitoring
+
+```bash
+# Check pod status
+kubectl get pods -n pankh-ai -l app=webui
+
+# View logs
+kubectl logs -n pankh-ai -l app=webui --tail=100 -f
+
+# Check ingress
+kubectl get ingress -n pankh-ai
+
+# Access the application
+# https://portal-dev.pankh.ai
+```

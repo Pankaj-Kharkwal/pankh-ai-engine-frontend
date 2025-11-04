@@ -1,20 +1,33 @@
-# Minimal build for development
-FROM node:22-slim
+# Multi-stage build for production
+# Stage 1: Build the application
+FROM node:22-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies (with optional dependencies for platform-specific modules)
+# Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy source code AFTER npm install (exclude node_modules via .dockerignore)
+# Copy source code
 COPY . .
 
-# Expose port
-EXPOSE 3000
+# Build the application
+RUN npm run build
 
-# Start development server
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Stage 2: Production server with nginx
+FROM nginx:alpine
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

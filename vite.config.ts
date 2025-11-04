@@ -7,6 +7,21 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      minify: 'terser',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            'ui-vendor': ['framer-motion', 'lucide-react'],
+            'editor-vendor': ['@monaco-editor/react', 'monaco-editor'],
+            'query-vendor': ['@tanstack/react-query'],
+          },
+        },
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: 3000,
