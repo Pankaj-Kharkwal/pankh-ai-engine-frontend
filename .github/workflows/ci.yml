@@ -62,10 +62,10 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/pankh-ai-engine-frontend:${{ github.sha }}
-            ${{ secrets.ACR_LOGIN_SERVER }}/pankh-ai-engine-frontend:latest
-          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/pankh-ai-engine-frontend:buildcache
-          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/pankh-ai-engine-frontend:buildcache,mode=max
+            ${{ secrets.ACR_LOGIN_SERVER }}/webui:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/webui:latest
+          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/webui:buildcache
+          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/webui:buildcache,mode=max
 
   deploy-to-aks:
     runs-on: ubuntu-latest
@@ -86,24 +86,17 @@ jobs:
           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
-      - name: Create namespace if not exists
+      - name: Update deployment image
         run: |
-          kubectl create namespace pankh-dev --dry-run=client -o yaml | kubectl apply -f -
+          kubectl set image deployment/webui \
+            webui=${{ secrets.ACR_LOGIN_SERVER }}/webui:${{ github.sha }} \
+            -n pankh-ai
 
-      - name: Deploy to AKS
-        uses: azure/k8s-deploy@v4
-        with:
-          namespace: pankh-dev
-          manifests: |
-            k8s/deployment.yaml
-            k8s/service.yaml
-            k8s/ingress.yaml
-          images: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/pankh-ai-engine-frontend:${{ github.sha }}
-          pull-secrets: |
-            acr-secret
+          kubectl annotate deployment/webui \
+            kubernetes.io/change-cause="GitHub Actions deploy: ${{ github.sha }}" \
+            -n pankh-ai --overwrite
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/pankh-ai-engine-frontend -n pankh-dev
-          kubectl get pods -n pankh-dev -l app=pankh-ai-engine-frontend
+          kubectl rollout status deployment/webui -n pankh-ai --timeout=5m
+          kubectl get pods -n pankh-ai -l app=webui
