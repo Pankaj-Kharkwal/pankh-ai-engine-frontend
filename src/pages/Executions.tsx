@@ -9,10 +9,14 @@ import {
   RefreshCw,
   Search,
   Loader,
+  Terminal,
+  Activity,
 } from 'lucide-react'
-import { useExecution, useExecutions } from '../hooks/useApi'
+import { useExecution, useExecutions, useExecutionLogs, useExecutionStatus } from '../hooks/useApi'
 import { useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../services/api'
+import LogViewer from '../components/execution/LogViewer'
+import ExecutionMetrics from '../components/execution/ExecutionMetrics'
 
 interface ExecutionData {
   id: string
@@ -34,6 +38,8 @@ interface ExecutionData {
 export default function Executions() {
   const [selectedExecutionId, setSelectedExecutionId] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs' | 'outputs'>('overview')
+
   // Use the new useExecutions hook
   const { data: executions, isLoading, error: executionsError } = useExecutions()
 
@@ -43,7 +49,11 @@ export default function Executions() {
   // Use the real execution hook for live data when execution ID is provided
   const { data: liveExecution, refetch, isFetching } = useExecution(selectedExecutionId)
 
-  const currentExecution = liveExecution
+  // Fetch logs and status for selected execution
+  const { data: executionLogs, isLoading: logsLoading } = useExecutionLogs(selectedExecutionId)
+  const { data: executionStatus } = useExecutionStatus(selectedExecutionId)
+
+  const currentExecution = liveExecution || executionStatus
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -256,7 +266,7 @@ export default function Executions() {
         <div className="lg:col-span-2">
           {currentExecution ? (
             <div className="space-y-6">
-              {/* Execution Overview */}
+              {/* Execution Overview Header */}
               <div className="glass-card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold flex items-center">
@@ -288,67 +298,149 @@ export default function Executions() {
                 </div>
               </div>
 
-              {/* Node States */}
-              <div className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Node Execution Progress</h3>
-                <div className="space-y-3">
-                  {currentExecution.node_states.map(nodeState => (
-                    <div
-                      key={nodeState.node_id}
-                      className="flex items-center justify-between p-3 bg-glass-200 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(nodeState.status)}
-                        <div>
-                          <div className="font-medium">{nodeState.node_id}</div>
-                          <div className="text-xs text-gray-400">
-                            {nodeState.started_at &&
-                              `Started: ${new Date(nodeState.started_at).toLocaleTimeString()}`}
-                            {nodeState.finished_at &&
-                              ` • Finished: ${new Date(nodeState.finished_at).toLocaleTimeString()}`}
-                          </div>
-                          {nodeState.error && (
-                            <div className="text-xs text-red-400 mt-1">
-                              Error: {nodeState.error}
+              {/* Tabs Navigation */}
+              <div className="glass-card">
+                <div className="flex border-b border-gray-700">
+                  <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center space-x-2 ${
+                      activeTab === 'overview'
+                        ? 'border-b-2 border-blue-500 text-blue-400 bg-blue-900/20'
+                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Overview</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('metrics')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center space-x-2 ${
+                      activeTab === 'metrics'
+                        ? 'border-b-2 border-blue-500 text-blue-400 bg-blue-900/20'
+                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Metrics</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('logs')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center space-x-2 ${
+                      activeTab === 'logs'
+                        ? 'border-b-2 border-blue-500 text-blue-400 bg-blue-900/20'
+                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <Terminal className="w-4 h-4" />
+                    <span>Logs</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('outputs')}
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center space-x-2 ${
+                      activeTab === 'outputs'
+                        ? 'border-b-2 border-blue-500 text-blue-400 bg-blue-900/20'
+                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span>Outputs</span>
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6">
+                  {/* Overview Tab */}
+                  {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Node Execution Progress</h3>
+                        <div className="space-y-3">
+                          {currentExecution.node_states?.map((nodeState: any) => (
+                            <div
+                              key={nodeState.node_id}
+                              className="flex items-center justify-between p-3 bg-glass-200 rounded-lg"
+                            >
+                              <div className="flex items-center space-x-3">
+                                {getStatusIcon(nodeState.status)}
+                                <div>
+                                  <div className="font-medium">{nodeState.node_id}</div>
+                                  <div className="text-xs text-gray-400">
+                                    {nodeState.started_at &&
+                                      `Started: ${new Date(nodeState.started_at).toLocaleTimeString()}`}
+                                    {nodeState.finished_at &&
+                                      ` • Finished: ${new Date(nodeState.finished_at).toLocaleTimeString()}`}
+                                  </div>
+                                  {nodeState.error && (
+                                    <div className="text-xs text-red-400 mt-1">
+                                      Error: {nodeState.error}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div
+                                  className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(
+                                    nodeState.status
+                                  )}`}
+                                >
+                                  {nodeState.status}
+                                </div>
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Attempts: {nodeState.attempts}
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(
-                            nodeState.status
-                          )}`}
-                        >
-                          {nodeState.status}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          Attempts: {nodeState.attempts}
+                          ))}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Metrics Tab */}
+                  {activeTab === 'metrics' && (
+                    <ExecutionMetrics execution={currentExecution} />
+                  )}
+
+                  {/* Logs Tab */}
+                  {activeTab === 'logs' && (
+                    <div className="-m-6">
+                      <LogViewer
+                        logs={executionLogs || []}
+                        isLoading={logsLoading}
+                        autoScroll={true}
+                        showSearch={true}
+                      />
+                    </div>
+                  )}
+
+                  {/* Outputs Tab */}
+                  {activeTab === 'outputs' && (
+                    <div className="space-y-4">
+                      {currentExecution.outputs && Object.keys(currentExecution.outputs).length > 0 ? (
+                        Object.entries(currentExecution.outputs).map(([nodeId, output]) => (
+                          <div key={nodeId}>
+                            <div className="font-medium text-sm mb-2 text-blue-400 flex items-center">
+                              <Activity className="w-4 h-4 mr-2" />
+                              {nodeId}
+                            </div>
+                            <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                              <pre className="text-xs text-gray-300">
+                                {JSON.stringify(output, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-12 text-gray-500">
+                          <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p className="text-lg font-medium">No outputs available</p>
+                          <p className="text-sm mt-1">Outputs will appear here when nodes complete execution</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Outputs */}
-              {currentExecution.outputs && Object.keys(currentExecution.outputs).length > 0 && (
-                <div className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4">Node Outputs</h3>
-                  <div className="space-y-4">
-                    {Object.entries(currentExecution.outputs).map(([nodeId, output]) => (
-                      <div key={nodeId}>
-                        <div className="font-medium text-sm mb-2 text-blue-400">📤 {nodeId}</div>
-                        <div className="bg-gray-900 rounded p-3 overflow-x-auto">
-                          <pre className="text-xs text-gray-300">
-                            {JSON.stringify(output, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="glass-card p-8 text-center">

@@ -154,6 +154,38 @@ export function useExecution(id: string) {
   })
 }
 
+export function useExecutionLogs(id: string) {
+  return useQuery({
+    queryKey: ['execution-logs', id],
+    queryFn: () => apiClient.getExecutionLogs(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      // Only refetch if we're getting actual data and not in error state
+      if (query.state.status === 'error') return false
+      return 3000 // Refresh logs every 3 seconds for live updates
+    },
+    retry: 1, // Only retry once since endpoint may not be available
+  })
+}
+
+export function useExecutionStatus(id: string) {
+  return useQuery({
+    queryKey: ['execution-status', id],
+    queryFn: () => apiClient.getExecutionStatus(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      // Only refetch if execution is still running
+      if (query.state.status === 'error') return false
+      const execution = query.state.data as any
+      if (execution?.status === 'completed' || execution?.status === 'failed') {
+        return false // Stop polling when execution is done
+      }
+      return 2000 // Refresh status every 2 seconds while running
+    },
+    retry: 1, // Only retry once since endpoint may not be available
+  })
+}
+
 // Health and Metrics
 export function useHealth() {
   return useQuery({
