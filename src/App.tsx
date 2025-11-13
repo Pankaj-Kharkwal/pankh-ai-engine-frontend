@@ -14,6 +14,7 @@ import Debug from './pages/Debug'
 import Analytics from './pages/Analytics'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
+import Chatbot from './pages/Chatbot'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ function App() {
               <Route path="workflows/create" element={<WorkflowBuilder />} />
               <Route path="workflows/:id" element={<WorkflowBuilder />} />
               <Route path="workflows/demo" element={<WorkflowDemo />} />
+              <Route path="pankhchatbot" element={<Chatbot/>} />
               <Route path="marketplace" element={<Marketplace />} />
               <Route path="chatbot" element={<BYOChatbot />} />
               <Route path="blocks" element={<Blocks />} />
