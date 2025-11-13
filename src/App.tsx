@@ -7,6 +7,7 @@ import WorkflowBuilder from './pages/WorkflowBuilder'
 import Workflows from './pages/Workflows'
 import Marketplace from './pages/Marketplace'
 import BYOChatbot from './pages/BYOChatbot'
+import ExplorePage from './pages/ExplorePage'
 import WorkflowDemo from './pages/WorkflowDemo'
 import Blocks from './pages/Blocks'
 import Executions from './pages/Executions'
@@ -48,6 +49,7 @@ function App() {
               <Route path="workflows/demo" element={<WorkflowDemo />} />
               <Route path="marketplace" element={<Marketplace />} />
               <Route path="chatbot" element={<BYOChatbot />} />
+              <Route path="new-chatbot" element={<ExplorePage />} />
               <Route path="blocks" element={<Blocks />} />
               <Route path="executions" element={<Executions />} />
               <Route path="debug" element={<Debug />} />
