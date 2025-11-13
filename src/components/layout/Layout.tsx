@@ -23,7 +23,9 @@ const primaryNavigation = [
   { name: 'Workflow Builder', href: '/workflows/create', icon: GitBranch },
   { name: 'Workflows', href: '/workflows',end: true, icon: Play },
   { name: 'BYOChatbot', href: '/chatbot', icon: MessageSquare },
-  { name: 'Blocks', href: '/blocks', icon: Blocks },
+    { name: 'MyChatbots', href: '/pankhchatbot', icon: Zap }, // Changed icon to Zap for a sharper look
+  { name: 'Blocks', href: '/blocks', icon: Blocks }
+
 ]
 
 const secondaryNavigation = [
@@ -90,18 +92,18 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-gray-50">
          {/* Top Navbar - Enhanced */}  {' '}
-      <nav className="bg-white/95 backdrop-blur-md border-b-2 border-transparent border-t-2 border-t-indigo-500/50 shadow-lg fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-t-2 border-b-2 border-transparent shadow-lg bg-white/95 backdrop-blur-md border-t-indigo-500/50">
            {' '}
         <div className="px-4 sm:px-6 lg:px-8">
               {' '}
-          <div className="flex justify-between items-center h-16">
+          <div className="flex items-center justify-between h-16">
                  {' '}
             <div className="flex items-center space-x-4">
                      {/* Hamburger Button */}      {' '}
               <button
                 id="hamburger-button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-xl text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-all duration-300 ease-in-out lg:hidden" // Hide on lg+
+                className="p-2 text-gray-600 transition-all duration-300 ease-in-out rounded-xl hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden" // Hide on lg+
                 title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
               >
                        {' '}
@@ -129,18 +131,18 @@ export default function Layout() {
                             {/* Logo - Adjusted for header */}      {' '}
               <div className="flex items-center space-x-3">
                        {' '}
-                <div className="flex items-center justify-center w-12 h-12  shadow-md">
+                <div className="flex items-center justify-center w-12 h-12 shadow-md">
                           <img src="/logo.png" />{' '}
                   {/* Changed icon to Zap for a sharper look */}       {' '}
                 </div>
                        {' '}
                 <div className="flex flex-col">
                           {' '}
-                  <h1 className="text-xl font-extrabold text-gray-900 leading-tight">
+                  <h1 className="text-xl font-extrabold leading-tight text-gray-900">
                               PankhAI         {' '}
                   </h1>
                           {' '}
-                  <span className="text-xs text-indigo-500 hidden sm:block font-medium">
+                  <span className="hidden text-xs font-medium text-indigo-500 sm:block">
                               Workflow Engine         {' '}
                   </span>
                          {' '}
@@ -156,7 +158,7 @@ export default function Layout() {
                        {' '}
                 <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping-slow"></div>  
                     {' '}
-                <span className="text-xs font-semibold text-green-700 hidden sm:block">
+                <span className="hidden text-xs font-semibold text-green-700 sm:block">
                            API Connected        {' '}
                 </span>
                       {' '}
@@ -226,7 +228,7 @@ export default function Layout() {
                   {!isSidebarExpanded && (
                     <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg">
                                  {item.name}          {' '}
-                      <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-r-4 border-r-gray-800 border-t-2 border-b-2 border-t-transparent border-b-transparent"></div>
+                      <div className="absolute left-0 w-0 h-0 transform -translate-x-1 -translate-y-1/2 border-t-2 border-b-2 border-r-4 top-1/2 border-r-gray-800 border-t-transparent border-b-transparent"></div>
                                {' '}
                     </div>
                   )}
@@ -237,7 +239,7 @@ export default function Layout() {
             </div>
                  {' '}
             {isSidebarExpanded && (
-              <div className="text-xs font-semibold text-gray-500 uppercase px-4 pt-4 pb-2 mt-4 border-t border-gray-200">
+              <div className="px-4 pt-4 pb-2 mt-4 text-xs font-semibold text-gray-500 uppercase border-t border-gray-200">
                         Administration       {' '}
               </div>
             )}
@@ -280,7 +282,7 @@ export default function Layout() {
                   {!isSidebarExpanded && (
                     <div className="absolute left-full ml-3 px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] whitespace-nowrap shadow-lg">
                                  {item.name}          {' '}
-                      <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-r-4 border-r-gray-800 border-t-2 border-b-2 border-t-transparent border-b-transparent"></div>
+                      <div className="absolute left-0 w-0 h-0 transform -translate-x-1 -translate-y-1/2 border-t-2 border-b-2 border-r-4 top-1/2 border-r-gray-800 border-t-transparent border-b-transparent"></div>
                                {' '}
                     </div>
                   )}
@@ -323,9 +325,9 @@ export default function Layout() {
            {' '}
         <div className="flex flex-col h-full">
                {/* Mobile Logo (Keep it for context) */}    {' '}
-          <div className="border-b border-gray-200 p-6">
+          <div className="p-6 border-b border-gray-200">
                   <h1 className="text-2xl font-bold text-gray-800">🧬 PankhAI</h1>     {' '}
-            <p className="text-sm text-gray-600 mt-1">Workflow Engine</p>    {' '}
+            <p className="mt-1 text-sm text-gray-600">Workflow Engine</p>    {' '}
           </div>
                {/* Mobile Navigation */}    {' '}
           <nav className="flex-1 overflow-y-auto p-4 space-y-1.5">
@@ -353,7 +355,7 @@ export default function Layout() {
                    {' '}
             </div>
                        {' '}
-            <div className="text-xs font-semibold text-gray-500 uppercase px-4 pt-4 pb-2 mt-4 border-t border-gray-200">
+            <div className="px-4 pt-4 pb-2 mt-4 text-xs font-semibold text-gray-500 uppercase border-t border-gray-200">
                      Administration      {' '}
             </div>
                  {' '}
@@ -382,7 +384,7 @@ export default function Layout() {
                 {' '}
           </nav>
                {/* Mobile Status */}    {' '}
-          <div className="border-t border-gray-200 p-4">
+          <div className="p-4 border-t border-gray-200">
                  {' '}
             <div className="flex items-center text-sm font-medium text-gray-700">
                     {' '}
@@ -403,7 +405,7 @@ export default function Layout() {
         />
       )}
          {/* Main content padding adjustment */}  {' '}
-      <div className="pt-16 min-h-screen">
+      <div className="min-h-screen pt-16">
            {' '}
         <main
           className={`transition-all duration-300 ease-in-out p-4 sm:p-6 lg:p-8 ${
