@@ -103,6 +103,29 @@ export function useGenerateBlock() {
   })
 }
 
+export function useVerifyBlock() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (blockId: string) => apiClient.verifyBlock(blockId),
+    onSuccess: (data, blockId) => {
+      queryClient.invalidateQueries({ queryKey: ['blocks'] })
+      queryClient.invalidateQueries({ queryKey: ['block', blockId] })
+    },
+  })
+}
+
+export function useHealBlock() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ blockId, issues }: { blockId: string; issues: any[] }) =>
+      apiClient.healBlock(blockId, issues),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['blocks'] })
+      queryClient.invalidateQueries({ queryKey: ['block', variables.blockId] })
+    },
+  })
+}
+
 export function useEnableBlock() {
   const queryClient = useQueryClient()
   return useMutation({
