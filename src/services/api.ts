@@ -104,6 +104,48 @@ class ApiClient {
     }
   }
 
+  // Generic helpers so feature screens (like BlockTestLab) can hit custom endpoints
+  async get<T = any>(endpoint: string, options: RequestInit = {}) {
+    return this.request<T>(endpoint, options)
+  }
+
+  async post<T = any>(endpoint: string, data?: any, options: RequestInit = {}) {
+    const body =
+      data instanceof FormData || typeof data === 'string'
+        ? data
+        : data !== undefined
+          ? JSON.stringify(data)
+          : undefined
+
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body,
+    })
+  }
+
+  async put<T = any>(endpoint: string, data?: any, options: RequestInit = {}) {
+    const body =
+      data instanceof FormData || typeof data === 'string'
+        ? data
+        : data !== undefined
+          ? JSON.stringify(data)
+          : undefined
+
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body,
+    })
+  }
+
+  async delete<T = any>(endpoint: string, options: RequestInit = {}) {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'DELETE',
+    })
+  }
+
   // Helper method to fetch user organizations (needed by getOrgId)
   async getUserOrganizations() {
     return this.request<any[]>('/users/me/organizations')
@@ -588,6 +630,29 @@ Return issues found and suggestions.`
         error: error instanceof Error ? error.message : 'Test failed',
       }
     }
+  }
+
+  // Generic HTTP methods for convenience
+  async get<T = any>(endpoint: string): Promise<T> {
+    return this.request(endpoint, { method: 'GET' })
+  }
+
+  async post<T = any>(endpoint: string, data?: any): Promise<T> {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async put<T = any>(endpoint: string, data?: any): Promise<T> {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async delete<T = any>(endpoint: string): Promise<T> {
+    return this.request(endpoint, { method: 'DELETE' })
   }
 }
 
