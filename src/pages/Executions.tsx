@@ -38,7 +38,9 @@ interface ExecutionData {
 export default function Executions() {
   const [selectedExecutionId, setSelectedExecutionId] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs' | 'outputs'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'logs' | 'outputs'>(
+    'overview'
+  )
 
   // Use the new useExecutions hook
   const { data: executions, isLoading, error: executionsError } = useExecutions()
@@ -85,7 +87,10 @@ export default function Executions() {
   useEffect(() => {
     if (!selectedExecutionId) return
 
-    const wsBase = (import.meta.env.VITE_WS_URL || 'wss://backend-dev.pankh.ai/ws').replace(/\/$/, '')
+    const wsBase = (import.meta.env.VITE_WS_URL || 'wss://backend-dev.pankh.ai/ws').replace(
+      /\/$/,
+      ''
+    )
     const ws = new WebSocket(`${wsBase}/execution/${selectedExecutionId}`)
     ws.onmessage = event => {
       const update = JSON.parse(event.data)
@@ -217,7 +222,9 @@ export default function Executions() {
                 ) : executionsError ? (
                   <div className="text-center py-4 px-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
                     <AlertCircle className="w-6 h-6 mx-auto text-yellow-400 mb-2" />
-                    <p className="text-sm text-yellow-400 font-medium mb-1">List API Not Available</p>
+                    <p className="text-sm text-yellow-400 font-medium mb-1">
+                      List API Not Available
+                    </p>
                     <p className="text-xs text-gray-400">
                       Enter an execution ID above to monitor a specific execution.
                     </p>
@@ -397,9 +404,7 @@ export default function Executions() {
                   )}
 
                   {/* Metrics Tab */}
-                  {activeTab === 'metrics' && (
-                    <ExecutionMetrics execution={currentExecution} />
-                  )}
+                  {activeTab === 'metrics' && <ExecutionMetrics execution={currentExecution} />}
 
                   {/* Logs Tab */}
                   {activeTab === 'logs' && (
@@ -416,7 +421,8 @@ export default function Executions() {
                   {/* Outputs Tab */}
                   {activeTab === 'outputs' && (
                     <div className="space-y-4">
-                      {currentExecution.outputs && Object.keys(currentExecution.outputs).length > 0 ? (
+                      {currentExecution.outputs &&
+                      Object.keys(currentExecution.outputs).length > 0 ? (
                         Object.entries(currentExecution.outputs).map(([nodeId, output]) => (
                           <div key={nodeId}>
                             <div className="font-medium text-sm mb-2 text-blue-400 flex items-center">
@@ -434,7 +440,9 @@ export default function Executions() {
                         <div className="text-center py-12 text-gray-500">
                           <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
                           <p className="text-lg font-medium">No outputs available</p>
-                          <p className="text-sm mt-1">Outputs will appear here when nodes complete execution</p>
+                          <p className="text-sm mt-1">
+                            Outputs will appear here when nodes complete execution
+                          </p>
                         </div>
                       )}
                     </div>

@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { Terminal, Download, Search, X, AlertCircle, Info, CheckCircle, XCircle } from 'lucide-react'
+import {
+  Terminal,
+  Download,
+  Search,
+  X,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react'
 
 interface LogEntry {
   timestamp: string
@@ -30,23 +39,30 @@ export default function LogViewer({
   const logContainerRef = useRef<HTMLDivElement>(null)
 
   // Parse logs if they come as a string
-  const parsedLogs: LogEntry[] = typeof logs === 'string'
-    ? logs.split('\n').filter(line => line.trim()).map((line, index) => {
-        // Try to parse structured log format
-        const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2})/)
-        const levelMatch = line.match(/\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b/)
+  const parsedLogs: LogEntry[] =
+    typeof logs === 'string'
+      ? logs
+          .split('\n')
+          .filter(line => line.trim())
+          .map((line, index) => {
+            // Try to parse structured log format
+            const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2})/)
+            const levelMatch = line.match(/\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\b/)
 
-        return {
-          timestamp: timestampMatch ? timestampMatch[1] : new Date().toISOString(),
-          level: (levelMatch ? levelMatch[1] : 'INFO') as LogEntry['level'],
-          message: line,
-        }
-      })
-    : Array.isArray(logs) ? logs : []
+            return {
+              timestamp: timestampMatch ? timestampMatch[1] : new Date().toISOString(),
+              level: (levelMatch ? levelMatch[1] : 'INFO') as LogEntry['level'],
+              message: line,
+            }
+          })
+      : Array.isArray(logs)
+        ? logs
+        : []
 
   // Filter logs based on search and level
   const filteredLogs = parsedLogs.filter(log => {
-    const matchesSearch = !searchTerm ||
+    const matchesSearch =
+      !searchTerm ||
       log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.node_id?.toLowerCase().includes(searchTerm.toLowerCase())
 
@@ -95,9 +111,12 @@ export default function LogViewer({
   }
 
   const downloadLogs = () => {
-    const logText = parsedLogs.map(log =>
-      `[${log.timestamp}] [${log.level}] ${log.node_id ? `[${log.node_id}] ` : ''}${log.message}`
-    ).join('\n')
+    const logText = parsedLogs
+      .map(
+        log =>
+          `[${log.timestamp}] [${log.level}] ${log.node_id ? `[${log.node_id}] ` : ''}${log.message}`
+      )
+      .join('\n')
 
     const blob = new Blob([logText], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -125,7 +144,7 @@ export default function LogViewer({
             <>
               <select
                 value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value)}
+                onChange={e => setLevelFilter(e.target.value)}
                 className="px-3 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Levels</option>
@@ -142,7 +161,7 @@ export default function LogViewer({
                   type="text"
                   placeholder="Search logs..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-8 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                 />
                 {searchTerm && (
@@ -196,21 +215,24 @@ export default function LogViewer({
                 key={index}
                 className={`flex items-start space-x-3 p-2 rounded hover:bg-gray-900/50 transition-colors ${getLevelColor(log.level)}`}
               >
-                <div className="flex-shrink-0 pt-0.5">
-                  {getLevelIcon(log.level)}
-                </div>
+                <div className="flex-shrink-0 pt-0.5">{getLevelIcon(log.level)}</div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="text-xs text-gray-500 font-mono">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
-                      log.level === 'ERROR' || log.level === 'CRITICAL' ? 'bg-red-500/20 text-red-300' :
-                      log.level === 'WARNING' ? 'bg-yellow-500/20 text-yellow-300' :
-                      log.level === 'INFO' ? 'bg-blue-500/20 text-blue-300' :
-                      'bg-gray-500/20 text-gray-300'
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                        log.level === 'ERROR' || log.level === 'CRITICAL'
+                          ? 'bg-red-500/20 text-red-300'
+                          : log.level === 'WARNING'
+                            ? 'bg-yellow-500/20 text-yellow-300'
+                            : log.level === 'INFO'
+                              ? 'bg-blue-500/20 text-blue-300'
+                              : 'bg-gray-500/20 text-gray-300'
+                      }`}
+                    >
                       {log.level}
                     </span>
                     {log.node_id && (
@@ -235,13 +257,17 @@ export default function LogViewer({
       <div className="flex items-center justify-between p-2 bg-gray-900 border-t border-gray-700 text-xs text-gray-400">
         <div className="flex items-center space-x-4">
           <span>Total: {parsedLogs.length}</span>
-          <span className="text-red-400">Errors: {parsedLogs.filter(l => l.level === 'ERROR' || l.level === 'CRITICAL').length}</span>
-          <span className="text-yellow-400">Warnings: {parsedLogs.filter(l => l.level === 'WARNING').length}</span>
-          <span className="text-blue-400">Info: {parsedLogs.filter(l => l.level === 'INFO').length}</span>
+          <span className="text-red-400">
+            Errors: {parsedLogs.filter(l => l.level === 'ERROR' || l.level === 'CRITICAL').length}
+          </span>
+          <span className="text-yellow-400">
+            Warnings: {parsedLogs.filter(l => l.level === 'WARNING').length}
+          </span>
+          <span className="text-blue-400">
+            Info: {parsedLogs.filter(l => l.level === 'INFO').length}
+          </span>
         </div>
-        <div>
-          {autoScroll && <span className="text-green-400">● Auto-scroll enabled</span>}
-        </div>
+        <div>{autoScroll && <span className="text-green-400">● Auto-scroll enabled</span>}</div>
       </div>
     </div>
   )

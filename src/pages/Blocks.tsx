@@ -26,7 +26,7 @@ import {
 } from '../hooks/useApi'
 import BlockDetails from '../components/blocks/BlockDetails'
 import { apiClient } from '../services/api'
-import AIAssistant from '../components/ai/AIAssistant'
+import AIAssistantEnhanced from '../components/ai/AIAssistantEnhanced'
 import NoBlocksFoundPanel from '../components/blocks/NoBlocksFoundPanel' // Import the new component
 
 // Icon mapping for different block types - ADDED ICONS FOR DIVERSITY
@@ -88,10 +88,10 @@ export default function Blocks() {
         autoDeploy: autoDeploy,
       })
       refetch() // Refetch blocks after successful generation
-      return { success: true };
+      return { success: true }
     } catch (err) {
       console.error('Failed to generate block:', err)
-      return { success: false, error: err };
+      return { success: false, error: err }
     }
   }
 
@@ -137,23 +137,26 @@ export default function Blocks() {
   }
 
   // --- Graceful Fallback for No Blocks or API Error ---
-  if (hasApiError || (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')) {
+  if (
+    hasApiError ||
+    (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')
+  ) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <NoBlocksFoundPanel
           hasError={hasApiError}
           errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
           onRetry={() => {
-            refetch();
+            refetch()
             // Also refetch categories and registry stats if they had errors
-            if (categoriesError) useBlockCategories().refetch();
-            if (registryStatsError) useRegistryStats().refetch();
+            if (categoriesError) useBlockCategories().refetch()
+            if (registryStatsError) useRegistryStats().refetch()
           }}
           onGenerateBlock={handleGenerateBlock}
           isGeneratingBlock={generateBlockMutation.isPending}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -182,7 +185,9 @@ export default function Blocks() {
 
           {/* Right Side: Primary Action Button */}
           <button
-            onClick={() => { /* This button will now be handled by the NoBlocksFoundPanel or a dedicated AI Assistant */ }}
+            onClick={() => {
+              /* This button will now be handled by the NoBlocksFoundPanel or a dedicated AI Assistant */
+            }}
             className="
                             flex items-center space-x-2 
                             px-6 py-2.5 
@@ -419,20 +424,28 @@ export default function Blocks() {
         disableBlockMutation={disableBlockMutation}
       />
 
-      {/* AI Assistant - Keep this as a floating element */}
-      <AIAssistant
+      {/* AI Assistant - Enhanced with Block Generation Mode */}
+      <AIAssistantEnhanced
         context={
           selectedBlock
             ? `Currently viewing ${selectedBlock.type} block`
             : 'Block management and configuration'
         }
-        contextType="block"
+        contextType="block_generation"
+        organizationId={currentOrganization?.id || 'default_org'}
         suggestions={[
-          'How do I configure this block?',
-          'What parameters does this block need?',
-          'Generate a new custom block',
-          'Explain how this block works',
+          'Create an HTTP request block',
+          'Make a JSON data transformer',
+          'Build a condition checker',
+          'Create an LLM chat block',
         ]}
+        onBlockGenerated={(block, blockId) => {
+          console.log('Block generated:', block)
+          if (blockId) {
+            // Refetch blocks to show the new one
+            refetch()
+          }
+        }}
       />
     </div>
   )

@@ -335,7 +335,9 @@ export default function Workflows() {
               )}
             </div>
             <h3 className="text-xl font-semibold mb-2">
-              {searchTerm ? 'No Workflows Match Your Search' : `Ready to get started${user?.full_name ? ', ' + user.full_name.split(' ')[0] : ''}?`}
+              {searchTerm
+                ? 'No Workflows Match Your Search'
+                : `Ready to get started${user?.full_name ? ', ' + user.full_name.split(' ')[0] : ''}?`}
             </h3>
             <p className="text-[#A0A0A0] mb-6 max-w-md mx-auto">
               {searchTerm

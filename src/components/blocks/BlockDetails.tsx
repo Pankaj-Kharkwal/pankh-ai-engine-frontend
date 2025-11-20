@@ -79,8 +79,13 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
     {block?.metadata?.verification_status && (
       <div className="flex items-center space-x-2 mt-2">
         <label className="text-xs font-semibold uppercase text-gray-500">Verification:</label>
-        <span className={`text-sm font-bold px-2 py-1 rounded ${block.metadata.verification_status === 'verified' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
+        <span
+          className={`text-sm font-bold px-2 py-1 rounded ${
+            block.metadata.verification_status === 'verified'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
           {block.metadata.verification_status.toUpperCase()}
         </span>
       </div>
@@ -122,10 +127,11 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
     {testResults && (
       <div className="space-y-6">
         <div
-          className={`p-4 rounded-lg shadow-md flex items-center space-x-3 ${testResults.success
+          className={`p-4 rounded-lg shadow-md flex items-center space-x-3 ${
+            testResults.success
               ? 'bg-green-100 border border-green-300'
               : 'bg-red-100 border border-red-300'
-            }`}
+          }`}
         >
           {testResults.success ? (
             <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
@@ -134,8 +140,9 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
           )}
           <div>
             <h4
-              className={`font-bold text-lg ${testResults.success ? 'text-green-900' : 'text-red-900'
-                }`}
+              className={`font-bold text-lg ${
+                testResults.success ? 'text-green-900' : 'text-red-900'
+              }`}
             >
               {testResults.success ? 'Test Passed Successfully' : 'Test Failed'}
             </h4>
@@ -255,44 +262,51 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
   const handleVerify = () => {
     if (!block?.id) return
     verifyBlock.mutate(block.id, {
-      onSuccess: (data) => {
+      onSuccess: data => {
         setVerificationResult(data)
-      }
+      },
     })
   }
 
   const handleHeal = () => {
     if (!block?.id || !verificationResult?.issues) return
-    healBlock.mutate({ blockId: block.id, issues: verificationResult.issues }, {
-      onSuccess: (data) => {
-        setHealingResult(data)
-        // Re-verify after healing? Or just show success.
+    healBlock.mutate(
+      { blockId: block.id, issues: verificationResult.issues },
+      {
+        onSuccess: data => {
+          setHealingResult(data)
+          // Re-verify after healing? Or just show success.
+        },
       }
-    })
+    )
   }
 
   const getTabButtonClass = (tabName: string) =>
-    `flex items-center space-x-2 px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${activeTab === tabName
-      ? 'border-b-4 border-blue-600 text-blue-700 bg-blue-50/50'
-      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+    `flex items-center space-x-2 px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
+      activeTab === tabName
+        ? 'border-b-4 border-blue-600 text-blue-700 bg-blue-50/50'
+        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
     }`
 
   const getSubTabButtonClass = (subTabName: string) =>
-    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${activeDetailsSubTab === subTabName
-      ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-      : 'text-gray-500 hover:bg-gray-100'
+    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
+      activeDetailsSubTab === subTabName
+        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+        : 'text-gray-500 hover:bg-gray-100'
     }`
 
   const getTestSubTabButtonClass = (subTabName: string) =>
-    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${activeTestSubTab === subTabName
-      ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-      : 'text-gray-500 hover:bg-gray-100'
+    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
+      activeTestSubTab === subTabName
+        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+        : 'text-gray-500 hover:bg-gray-100'
     }`
 
   const getAnalyticsSubTabButtonClass = (subTabName: string) =>
-    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${activeAnalyticsSubTab === subTabName
-      ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-      : 'text-gray-500 hover:bg-gray-100'
+    `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
+      activeAnalyticsSubTab === subTabName
+        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+        : 'text-gray-500 hover:bg-gray-100'
     }`
 
   if (!block) {
@@ -486,14 +500,20 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                   disabled={verifyBlock.isPending}
                   className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {verifyBlock.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  {verifyBlock.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="w-4 h-4" />
+                  )}
                   <span>Run Verification</span>
                 </button>
               </div>
 
               {verificationResult && (
                 <div className="space-y-4">
-                  <div className={`p-4 rounded-lg border ${verificationResult.is_valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div
+                    className={`p-4 rounded-lg border ${verificationResult.is_valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                  >
                     <div className="flex items-center space-x-3">
                       {verificationResult.is_valid ? (
                         <CheckCircle className="w-6 h-6 text-green-600" />
@@ -501,10 +521,16 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                         <XCircle className="w-6 h-6 text-red-600" />
                       )}
                       <div>
-                        <h4 className={`font-bold ${verificationResult.is_valid ? 'text-green-900' : 'text-red-900'}`}>
-                          {verificationResult.is_valid ? 'Verification Passed' : 'Verification Failed'}
+                        <h4
+                          className={`font-bold ${verificationResult.is_valid ? 'text-green-900' : 'text-red-900'}`}
+                        >
+                          {verificationResult.is_valid
+                            ? 'Verification Passed'
+                            : 'Verification Failed'}
                         </h4>
-                        <p className="text-sm text-gray-600">Score: {verificationResult.score}/100</p>
+                        <p className="text-sm text-gray-600">
+                          Score: {verificationResult.score}/100
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -514,17 +540,27 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                       <h4 className="font-semibold text-gray-800 mb-2">Issues Found:</h4>
                       <ul className="space-y-2">
                         {verificationResult.issues.map((issue: any, idx: number) => (
-                          <li key={idx} className={`p-3 rounded border ${issue.severity === 'error' ? 'bg-red-50 border-red-100 text-red-800' :
-                              issue.severity === 'warning' ? 'bg-yellow-50 border-yellow-100 text-yellow-800' :
-                                'bg-blue-50 border-blue-100 text-blue-800'
-                            }`}>
+                          <li
+                            key={idx}
+                            className={`p-3 rounded border ${
+                              issue.severity === 'error'
+                                ? 'bg-red-50 border-red-100 text-red-800'
+                                : issue.severity === 'warning'
+                                  ? 'bg-yellow-50 border-yellow-100 text-yellow-800'
+                                  : 'bg-blue-50 border-blue-100 text-blue-800'
+                            }`}
+                          >
                             <div className="flex items-start space-x-2">
                               <span className="uppercase text-xs font-bold px-2 py-0.5 rounded bg-white bg-opacity-50 border border-black border-opacity-10">
                                 {issue.severity}
                               </span>
                               <div>
                                 <p className="font-medium text-sm">{issue.message}</p>
-                                {issue.suggestion && <p className="text-xs mt-1 opacity-80">Suggestion: {issue.suggestion}</p>}
+                                {issue.suggestion && (
+                                  <p className="text-xs mt-1 opacity-80">
+                                    Suggestion: {issue.suggestion}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </li>
@@ -544,7 +580,11 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                         disabled={healBlock.isPending}
                         className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
                       >
-                        {healBlock.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
+                        {healBlock.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Wrench className="w-4 h-4" />
+                        )}
                         <span>Attempt Auto-Heal</span>
                       </button>
                     </div>
@@ -555,9 +595,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
               {healingResult && (
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h4 className="font-bold text-blue-900 mb-2">Healing Result</h4>
-                  <p className="text-sm text-blue-800 mb-2">
-                    Changes made:
-                  </p>
+                  <p className="text-sm text-blue-800 mb-2">Changes made:</p>
                   <ul className="list-disc list-inside text-sm text-blue-800">
                     {healingResult.changes_made?.map((change: string, idx: number) => (
                       <li key={idx}>{change}</li>
@@ -588,10 +626,11 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
               onClose()
             }}
             disabled={activeTab !== 'details' || activeDetailsSubTab !== 'parameters'}
-            className={`px-6 py-2 text-white rounded-lg transition-all font-semibold ${activeTab === 'details' && activeDetailsSubTab === 'parameters'
+            className={`px-6 py-2 text-white rounded-lg transition-all font-semibold ${
+              activeTab === 'details' && activeDetailsSubTab === 'parameters'
                 ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
                 : 'bg-gray-400 cursor-not-allowed opacity-75'
-              }`}
+            }`}
             title={
               activeTab !== 'details' || activeDetailsSubTab !== 'parameters'
                 ? 'Switch to Parameters tab to save'

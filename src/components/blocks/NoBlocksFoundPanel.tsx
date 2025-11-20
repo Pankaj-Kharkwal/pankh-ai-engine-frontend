@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Plus, Zap, AlertCircle, Loader2, Search } from 'lucide-react';
-import AIAssistant from '../ai/AIAssistant'; // Assuming this path is correct
+import { useState } from 'react'
+import { Plus, Zap, AlertCircle, Loader2, Search } from 'lucide-react'
+import AIAssistantEnhanced from '../ai/AIAssistantEnhanced' // Updated to use Enhanced version
 
 interface NoBlocksFoundPanelProps {
-  hasError: boolean;
-  errorMessage?: string;
-  onRetry: () => void;
-  onGenerateBlock: (description: string, autoDeploy?: boolean) => Promise<any>;
-  isGeneratingBlock: boolean;
+  hasError: boolean
+  errorMessage?: string
+  onRetry: () => void
+  onGenerateBlock: (description: string, autoDeploy?: boolean) => Promise<any>
+  isGeneratingBlock: boolean
 }
 
 export default function NoBlocksFoundPanel({
@@ -17,13 +17,13 @@ export default function NoBlocksFoundPanel({
   onGenerateBlock,
   isGeneratingBlock,
 }: NoBlocksFoundPanelProps) {
-  const [generateDescription, setGenerateDescription] = useState('');
+  const [generateDescription, setGenerateDescription] = useState('')
 
   const handleGenerateClick = async () => {
-    if (!generateDescription.trim()) return;
-    await onGenerateBlock(generateDescription, true);
-    setGenerateDescription(''); // Clear description after generation
-  };
+    if (!generateDescription.trim()) return
+    await onGenerateBlock(generateDescription, true)
+    setGenerateDescription('') // Clear description after generation
+  }
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl shadow-xl border border-gray-200 text-center">
@@ -34,7 +34,8 @@ export default function NoBlocksFoundPanel({
             <div>
               <div className="text-xl font-bold">Failed to Load Registry</div>
               <div className="text-base text-red-700 mt-2">
-                {errorMessage || 'Could not connect to the block API. Please ensure the backend service is running and accessible.'}
+                {errorMessage ||
+                  'Could not connect to the block API. Please ensure the backend service is running and accessible.'}
               </div>
               <button
                 onClick={onRetry}
@@ -50,8 +51,8 @@ export default function NoBlocksFoundPanel({
           <Search className="w-16 h-16 mx-auto mb-6 text-gray-400" />
           <h3 className="text-3xl font-extrabold mb-3 text-gray-900">No Blocks Found Yet!</h3>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl">
-            It looks like you haven't created any blocks, or the registry is empty.
-            Let our AI assistant help you generate your first custom block!
+            It looks like you haven't created any blocks, or the registry is empty. Let our AI
+            assistant help you generate your first custom block!
           </p>
 
           {/* AI Assistant for Block Generation */}
@@ -61,7 +62,7 @@ export default function NoBlocksFoundPanel({
             </h4>
             <textarea
               value={generateDescription}
-              onChange={(e) => setGenerateDescription(e.target.value)}
+              onChange={e => setGenerateDescription(e.target.value)}
               placeholder="Describe the block you want to create (e.g., 'A block that fetches weather data for a city and returns the temperature in Celsius')."
               rows={4}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 text-sm resize-none"
@@ -90,18 +91,23 @@ export default function NoBlocksFoundPanel({
             </button>
           </div>
 
-          {/* Optional: AIAssistant as a floating panel for general help */}
-          <AIAssistant
+          {/* Optional: AIAssistantEnhanced as a floating panel for block generation */}
+          <AIAssistantEnhanced
             context="No blocks found in the registry. User might need help generating their first block."
-            contextType="block_generation_help"
+            contextType="block_generation"
             suggestions={[
-              "What kind of blocks can I generate?",
-              "Give me an example of a data processing block.",
-              "How do I use generated blocks in a workflow?",
+              'Create an HTTP request block',
+              'Make a JSON data transformer',
+              'Build a condition checker',
+              'Create an LLM chat block',
             ]}
+            onBlockGenerated={(block, blockId) => {
+              console.log('Block generated:', block, blockId)
+              // Refresh blocks list would happen here
+            }}
           />
         </>
       )}
     </div>
-  );
+  )
 }

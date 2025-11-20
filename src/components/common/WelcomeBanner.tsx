@@ -28,8 +28,8 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userName, workflow
               Welcome to Pankh AI, {firstName}! 🎉
             </h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-              You're all set to start building powerful AI-driven workflows!
-              Let's create something amazing together.
+              You're all set to start building powerful AI-driven workflows! Let's create something
+              amazing together.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -38,7 +38,9 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userName, workflow
                   <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Create Workflows</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                    Create Workflows
+                  </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Build your first automation workflow in minutes
                   </p>
@@ -47,10 +49,15 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userName, workflow
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-pink-200 dark:border-pink-800">
                 <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-pink-600 dark:text-pink-400" strokeWidth={2} />
+                  <TrendingUp
+                    className="w-5 h-5 text-pink-600 dark:text-pink-400"
+                    strokeWidth={2}
+                  />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Explore Blocks</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                    Explore Blocks
+                  </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Discover powerful AI blocks and integrations
                   </p>
@@ -81,7 +88,8 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userName, workflow
         Welcome back, {firstName}! 👋
       </h2>
       <p className="text-gray-700 dark:text-gray-300">
-        You have {workflowCount} active workflow{workflowCount !== 1 ? 's' : ''}. Ready to build more?
+        You have {workflowCount} active workflow{workflowCount !== 1 ? 's' : ''}. Ready to build
+        more?
       </p>
     </div>
   )

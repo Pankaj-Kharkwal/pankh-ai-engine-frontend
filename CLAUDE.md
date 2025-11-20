@@ -9,12 +9,14 @@ Pankh AI Engine Frontend - A React-based visual workflow builder for AI-powered 
 ## Development Commands
 
 ### Setup
+
 ```bash
 npm install                    # Install dependencies
 cp .env.example .env          # Create environment file (configure API URLs)
 ```
 
 ### Development
+
 ```bash
 npm run dev                   # Start dev server on http://localhost:3000
 npm run build                 # Production build to dist/
@@ -24,6 +26,7 @@ npm run format                # Auto-format with Prettier
 ```
 
 ### Testing
+
 ```bash
 npx playwright test                           # Run all Playwright e2e tests
 npx playwright test tests/core.spec.ts       # Run specific test file
@@ -36,6 +39,7 @@ Note: Tests expect the dev server on port 3001 (configured in playwright.config.
 ## Architecture
 
 ### Tech Stack
+
 - **React 19** - UI library with concurrent rendering
 - **TypeScript** - Type-safe development
 - **Vite** - Fast build tool with HMR
@@ -48,6 +52,7 @@ Note: Tests expect the dev server on port 3001 (configured in playwright.config.
 - **Playwright** - E2E testing
 
 ### Key Directories
+
 ```
 src/
 ├── components/
@@ -69,9 +74,11 @@ src/
 ```
 
 ### Backend Integration
+
 The frontend connects to a separate backend API (Pankh AI Engine backend).
 
 **Environment Variables (see .env.example):**
+
 - `VITE_API_URL` - Backend API base URL (e.g., https://backend-dev.pankh.ai/api/v1)
 - `VITE_WS_URL` - WebSocket URL for real-time updates (e.g., wss://backend-dev.pankh.ai/ws)
 - `VITE_API_PROXY_TARGET` - Proxy target for dev server (same as backend URL)
@@ -80,6 +87,7 @@ The frontend connects to a separate backend API (Pankh AI Engine backend).
 - Azure OpenAI credentials for AI block generation
 
 **API Client (src/services/api.ts):**
+
 - All API calls go through `ApiClient` class
 - Automatically adds organization scope: `/organizations/{ORG_ID}/...`
 - Automatically injects `X-API-Key` header
@@ -88,6 +96,7 @@ The frontend connects to a separate backend API (Pankh AI Engine backend).
 ### Core Features
 
 **Visual Workflow Builder (pages/WorkflowBuilder.tsx)**
+
 - Drag-and-drop workflow creation using XY Flow
 - Block palette for browsing/searching workflow blocks
 - Node configuration panel with parameter forms
@@ -97,18 +106,21 @@ The frontend connects to a separate backend API (Pankh AI Engine backend).
 - Undo/redo support (see hooks/useUndoRedo.ts)
 
 **Block Management (pages/Blocks.tsx)**
+
 - Block registry explorer with search/filter
 - AI-assisted block generation
 - Block testing interface with parameter validation
 - Block metadata viewer (inputs, outputs, dependencies)
 
 **Execution Monitoring (pages/Executions.tsx, components/execution/)**
+
 - Real-time workflow execution tracking via WebSocket
 - Execution history with detailed logs
 - Performance metrics and analytics
 - Debug mode with step-by-step inspection
 
 **Dark Mode Theme System**
+
 - Full light/dark/system theme support (see DARK_MODE_INTEGRATION.md)
 - ThemeProvider context in contexts/ThemeContext.tsx
 - CSS custom properties in styles/theme.css
@@ -116,7 +128,9 @@ The frontend connects to a separate backend API (Pankh AI Engine backend).
 - Persistent theme preference via localStorage
 
 ## Routing
+
 Main routes defined in src/App.tsx:
+
 - `/` - Dashboard (overview, quick actions, metrics)
 - `/workflows` - Workflow gallery (list, search, filter)
 - `/workflows/create` - Workflow builder (new workflow)
@@ -134,18 +148,22 @@ Main routes defined in src/App.tsx:
 ## Code Style & Patterns
 
 ### State Management
+
 - **Global state**: Zustand stores (minimal usage)
 - **Server state**: React Query for API data fetching/caching
 - **Local state**: React useState/useReducer
 - **Theme state**: ThemeContext provider
 
 ### API Calls
+
 Use the custom `useApi` hook (src/hooks/useApi.ts) which wraps React Query:
+
 ```tsx
 const { data, isLoading, error } = useApi('/workflows', { method: 'GET' })
 ```
 
 ### Component Patterns
+
 - Functional components with TypeScript interfaces
 - Props destructuring with default values
 - Error boundaries for fault isolation
@@ -153,6 +171,7 @@ const { data, isLoading, error } = useApi('/workflows', { method: 'GET' })
 - Memoization for performance-critical components
 
 ### Styling
+
 - Tailwind utility classes with dark: modifier for dark mode
 - CSS custom properties (var(--bg-primary), etc.) for theme-aware colors
 - Glassmorphic design system (frosted glass effects, gradients, shadows)
@@ -161,17 +180,20 @@ const { data, isLoading, error } = useApi('/workflows', { method: 'GET' })
 ## Deployment
 
 ### Production Deployment (Azure AKS)
+
 - Automated via GitHub Actions on push to `master` branch
 - Multi-stage Docker build (see Dockerfile)
 - Static files served by Nginx (no Node.js runtime in production)
 - See .github/workflows/ci.yml for CI/CD pipeline
 
 **Required GitHub Secrets:**
+
 - `ACR_LOGIN_SERVER`, `ACR_USERNAME`, `ACR_PASSWORD` - Azure Container Registry
 - `AZURE_CREDENTIALS` - Service principal JSON
 - `AKS_RESOURCE_GROUP`, `AKS_CLUSTER_NAME` - AKS cluster details
 
 **Manual deployment:**
+
 ```bash
 # Build and push to ACR
 az acr build --registry pankhaidev \
@@ -185,6 +207,7 @@ kubectl rollout status deployment/webui -n pankh-ai
 ```
 
 **Monitoring:**
+
 ```bash
 kubectl get pods -n pankh-ai -l app=webui          # Check pod status
 kubectl logs -n pankh-ai -l app=webui --tail=100   # View logs
@@ -192,23 +215,28 @@ kubectl get ingress -n pankh-ai                    # Check ingress
 ```
 
 ### Development vs Production
+
 - **Development**: Vite dev server with HMR (Dockerfile.dev)
 - **Production**: Nginx serving optimized static build (Dockerfile)
 
 ## Common Tasks
 
 ### Adding a New Page
+
 1. Create component in `src/pages/PageName.tsx`
 2. Add route to `src/App.tsx` Routes
 3. Add navigation link in `src/components/layout/Layout.tsx`
 
 ### Adding a New API Endpoint
+
 1. Add method to `src/services/api.ts` ApiClient class
 2. Create React Query hook in `src/hooks/useApi.ts` if needed
 3. Use the hook in your component
 
 ### Styling for Dark Mode
+
 Always use CSS custom properties or Tailwind dark: classes:
+
 ```tsx
 // Good:
 <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
@@ -219,6 +247,7 @@ Always use CSS custom properties or Tailwind dark: classes:
 ```
 
 ### WebSocket Real-time Updates
+
 WebSocket connection established in execution monitoring components. Events: `workflow.started`, `workflow.node.completed`, `workflow.completed`, `workflow.error`, `gluon.performance`, etc.
 
 ## Important Notes

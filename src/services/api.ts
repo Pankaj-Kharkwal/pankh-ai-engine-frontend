@@ -314,12 +314,45 @@ class ApiClient {
     })
   }
 
-  async generateBlock(description: string, autoDeploy = false) {
-    // Get current organization ID
+  async generateBlock(
+    description: string,
+    autoDeploy = false,
+    options?: {
+      persist?: boolean
+      verify?: boolean
+      runPreview?: boolean
+      previewInputs?: Record<string, any>
+    }
+  ) {
     const orgId = await this.getOrgId()
+
+    const shouldPersist = options?.persist ?? autoDeploy
+    const shouldVerify = options?.verify ?? autoDeploy
+    const shouldPreview = options?.runPreview ?? autoDeploy
+
+    const payload: Record<string, any> = {
+      description,
+      organization_id: orgId,
+    }
+
+    if (shouldPersist) {
+      payload.persist = true
+    }
+    if (shouldVerify) {
+      payload.verify = true
+    }
+    if (shouldPreview) {
+      payload.run_preview = true
+      if (options?.previewInputs) {
+        payload.preview_inputs = options.previewInputs
+      }
+    } else if (options?.previewInputs) {
+      payload.preview_inputs = options.previewInputs
+    }
+
     return this.request('/ai/generate-block', {
       method: 'POST',
-      body: JSON.stringify({ description, organization_id: orgId }),
+      body: JSON.stringify(payload),
     })
   }
 

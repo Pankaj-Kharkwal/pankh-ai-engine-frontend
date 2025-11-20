@@ -519,7 +519,9 @@ export default function Dashboard() {
       <div className="space-y-10 relative z-10">
         {/* Header */}
         <header className="mb-6">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">Dashboard</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
+            Dashboard
+          </h1>
           <p className="text-lg text-gray-700 dark:text-gray-300 mt-2">
             Your centralized hub for workflow automation and AI insights.
           </p>
@@ -617,7 +619,9 @@ export default function Dashboard() {
             ) : (
               <div className="text-center text-gray-500 py-12 border-2 border-dashed border-purple-400/70 rounded-2xl bg-white/50">
                 <Zap className="w-14 h-14 mx-auto mb-4 text-purple-500/70" strokeWidth={1.5} />
-                <p className="text-lg font-semibold text-gray-800 dark:text-gray-900">Ready to create your first workflow?</p>
+                <p className="text-lg font-semibold text-gray-800 dark:text-gray-900">
+                  Ready to create your first workflow?
+                </p>
                 <p className="text-base mt-1 text-gray-700 dark:text-gray-800 mb-4">
                   Use the <strong>Create New Workflow</strong> button to start building!
                 </p>
