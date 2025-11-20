@@ -9,6 +9,7 @@ import Marketplace from './pages/Marketplace'
 import BYOChatbot from './pages/BYOChatbot'
 import WorkflowDemo from './pages/WorkflowDemo'
 import Blocks from './pages/Blocks'
+import BlockTestLab from './pages/BlockTestLab'
 import Executions from './pages/Executions'
 import Debug from './pages/Debug'
 import Analytics from './pages/Analytics'
@@ -65,6 +66,7 @@ function App() {
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="chatbot" element={<BYOChatbot />} />
             <Route path="blocks" element={<Blocks />} />
+            <Route path="blocks/test-lab" element={<BlockTestLab />} />
             <Route path="executions" element={<Executions />} />
             <Route path="debug" element={<Debug />} />
             <Route path="analytics" element={<Analytics />} />
