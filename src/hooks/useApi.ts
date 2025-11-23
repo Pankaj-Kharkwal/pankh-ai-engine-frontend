@@ -2,10 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../services/api'
 
 // Workflows
-export function useWorkflows() {
+export function useWorkflows(options = {}) {
   return useQuery({
     queryKey: ['workflows'],
     queryFn: () => apiClient.getWorkflows(),
+    staleTime: 30000, // 30 seconds
+    retry: 2,
+    ...options,
   })
 }
 
@@ -52,10 +55,13 @@ export function useBlockCategories() {
   })
 }
 
-export function useRegistryStats() {
+export function useRegistryStats(options = {}) {
   return useQuery({
     queryKey: ['registry-stats'],
     queryFn: () => apiClient.getRegistryStats(),
+    staleTime: 30000, // 30 seconds
+    retry: 2,
+    ...options,
   })
 }
 
@@ -231,11 +237,14 @@ export function useExecutionStatus(id: string) {
 }
 
 // Health and Metrics
-export function useHealth() {
+export function useHealth(options = {}) {
   return useQuery({
     queryKey: ['health'],
     queryFn: () => apiClient.getHealth(),
     refetchInterval: 30000, // Check every 30 seconds
+    staleTime: 10000, // 10 seconds
+    retry: 2,
+    ...options,
   })
 }
 
