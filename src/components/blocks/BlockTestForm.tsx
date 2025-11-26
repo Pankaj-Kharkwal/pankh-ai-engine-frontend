@@ -21,24 +21,36 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
   // Load block schema on mount
   useEffect(() => {
     const loadSchema = async () => {
-      if (!block?.type) return
+      if (!block) return
 
       setLoadingSchema(true)
       setSchemaError(null)
 
       try {
-        const schemaData = await apiClient.getBlockSchema(block.type)
-        setSchema(schemaData)
+        // Use block data directly instead of fetching by type
+        setSchema(block)
 
-        // Initialize parameters with default values
+        // Initialize parameters with default values from new format (block.io.inputs) or old format
         const defaultParams: any = {}
-        const configSchema = schemaData?.manifest?.config_schema
-        if (configSchema?.properties) {
-          Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
-            if (fieldSchema.default !== undefined) {
-              defaultParams[key] = fieldSchema.default
+        const inputs = block?.io?.inputs || []
+
+        if (Array.isArray(inputs) && inputs.length > 0) {
+          // New format: block.io.inputs (array)
+          inputs.forEach((input: any) => {
+            if (input.examples && input.examples.length > 0) {
+              defaultParams[input.key] = input.examples[0]
             }
           })
+        } else {
+          // Old format: block.manifest.config_schema.properties (object)
+          const configSchema = block?.manifest?.config_schema
+          if (configSchema?.properties) {
+            Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+              if (fieldSchema.default !== undefined) {
+                defaultParams[key] = fieldSchema.default
+              }
+            })
+          }
         }
         setTestParams(defaultParams)
       } catch (err) {
@@ -50,7 +62,7 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
     }
 
     loadSchema()
-  }, [block?.type])
+  }, [block])
 
   const runBlockTest = async () => {
     setTesting(true)
@@ -117,19 +129,57 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Test Block: {block.manifest?.name || block.type}</h3>
+      <h3 className="text-lg font-semibold">Test Block: {block.name || block.manifest?.name || block.type}</h3>
 
       {/* Parameter Form using BlockParameterForm for full feature support */}
-      {schema?.manifest?.config_schema?.properties ? (
-        <BlockParameterForm
-          schema={schema.manifest.config_schema.properties}
-          values={testParams}
-          onChange={setTestParams}
-          disabled={testing}
-        />
-      ) : (
-        <div className="text-gray-500 text-sm py-4">No parameters required for this block</div>
-      )}
+      {(() => {
+        // Try new format first (array)
+        const inputs = block?.io?.inputs || schema?.io?.inputs
+        if (Array.isArray(inputs) && inputs.length > 0) {
+          // Convert array format to object format for BlockParameterForm
+          const paramSchema = inputs.reduce((acc: any, input: any) => {
+            acc[input.key] = {
+              type: input.type,
+              title: input.key,
+              description: input.description,
+              required: input.required,
+              default: input.examples?.[0],
+              enum: input.enum,
+              minimum: input.minimum,
+              maximum: input.maximum,
+              minLength: input.minLength,
+              maxLength: input.maxLength,
+              pattern: input.pattern,
+              format: input.format,
+            }
+            return acc
+          }, {})
+
+          return (
+            <BlockParameterForm
+              schema={paramSchema}
+              values={testParams}
+              onChange={setTestParams}
+              disabled={testing}
+            />
+          )
+        }
+
+        // Fall back to old format (object)
+        const oldSchema = schema?.manifest?.config_schema?.properties
+        if (oldSchema && Object.keys(oldSchema).length > 0) {
+          return (
+            <BlockParameterForm
+              schema={oldSchema}
+              values={testParams}
+              onChange={setTestParams}
+              disabled={testing}
+            />
+          )
+        }
+
+        return <div className="text-gray-500 text-sm py-4">No parameters required for this block</div>
+      })()}
 
       {/* Dry Run Toggle */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

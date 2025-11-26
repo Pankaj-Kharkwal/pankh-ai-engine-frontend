@@ -8,6 +8,9 @@ interface NoBlocksFoundPanelProps {
   onRetry: () => void
   onGenerateBlock: (description: string, autoDeploy?: boolean) => Promise<any>
   isGeneratingBlock: boolean
+  onGenerationStart?: () => void
+  onStageChange?: (stage: string) => void
+  organizationId?: string
 }
 
 export default function NoBlocksFoundPanel({
@@ -16,6 +19,9 @@ export default function NoBlocksFoundPanel({
   onRetry,
   onGenerateBlock,
   isGeneratingBlock,
+  onGenerationStart,
+  onStageChange,
+  organizationId,
 }: NoBlocksFoundPanelProps) {
   const [generateDescription, setGenerateDescription] = useState('')
 
@@ -95,12 +101,15 @@ export default function NoBlocksFoundPanel({
           <AIAssistantEnhanced
             context="No blocks found in the registry. User might need help generating their first block."
             contextType="block_generation"
+            organizationId={organizationId}
             suggestions={[
               'Create an HTTP request block',
               'Make a JSON data transformer',
               'Build a condition checker',
               'Create an LLM chat block',
             ]}
+            onGenerationStart={onGenerationStart}
+            onStageChange={onStageChange}
             onBlockGenerated={(block, blockId) => {
               console.log('Block generated:', block, blockId)
               // Refresh blocks list would happen here

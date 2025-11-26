@@ -24,6 +24,7 @@ import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
 import CollaborationPanel from '../components/workflow/CollaborationPanel'
 import ExecutionDebugger from '../components/workflow/ExecutionDebugger'
 import ExecutionMonitor from '../components/workflow/ExecutionMonitor'
+import AIWorkflowGenerator from '../components/ai/AIWorkflowGenerator'
 
 // Import icons (mocked, you'll need to install or replace with your actual icon library)
 import {
@@ -35,6 +36,7 @@ import {
   Volume2,
   Globe,
   MessageSquare,
+  Sparkles,
 } from 'lucide-react' // Assuming lucide-react or similar
 
 const initialNodes: Node[] = [
@@ -65,6 +67,8 @@ export default function WorkflowBuilder() {
   const [monitorVisible, setMonitorVisible] = useState(false)
   const [executionData, setExecutionData] = useState<any>(null)
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(workflowId || null)
+  const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false)
+  const [sseConnection, setSseConnection] = useState<EventSource | null>(null)
 
   // --- New State for Header/Execution ---
   const [workflowName, setWorkflowName] = useState('Untitled Workflow')
@@ -148,7 +152,7 @@ export default function WorkflowBuilder() {
         id: newId,
         position: { x: Math.random() * 400 + 200, y: Math.random() * 400 + 200 },
         data: {
-          label: block.manifest?.name || block.type,
+          label: block.name || block.type,
           blockType: block.type,
           config: {},
           status: 'idle',
@@ -313,12 +317,123 @@ export default function WorkflowBuilder() {
       const execution = await runWorkflowMutation.mutateAsync(workflowId)
       setExecutionResult(execution)
       setExecutionData(execution)
+
+      // Setup SSE connection for real-time progress
+      setupSSEConnection(execution.id)
     } catch (error) {
       console.error('Failed to run workflow:', error)
       alert('Failed to run workflow. Please check your configuration.')
     } finally {
       setIsExecuting(false)
     }
+  }
+
+  // Setup SSE connection for execution monitoring
+  const setupSSEConnection = (executionId: string) => {
+    // Close existing connection if any
+    if (sseConnection) {
+      sseConnection.close()
+    }
+
+    const apiBase = import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
+    const sseUrl = `${apiBase}/executions/${executionId}/stream`
+
+    const eventSource = new EventSource(sseUrl, { withCredentials: true })
+
+    eventSource.onmessage = event => {
+      try {
+        const update = JSON.parse(event.data)
+        console.log('SSE Update:', update)
+
+        // Update execution data
+        setExecutionData((prev: any) => ({
+          ...prev,
+          ...update,
+        }))
+
+        // Update node statuses on canvas
+        if (update.node_states) {
+          setNodes(nds =>
+            nds.map(node => {
+              const nodeState = update.node_states.find((ns: any) => ns.node_id === node.id)
+              if (nodeState) {
+                return {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    status: nodeState.status,
+                  },
+                }
+              }
+              return node
+            })
+          )
+        }
+
+        // Close connection when execution completes
+        if (update.status === 'completed' || update.status === 'failed') {
+          eventSource.close()
+          setSseConnection(null)
+          setIsExecuting(false)
+        }
+      } catch (error) {
+        console.error('Failed to parse SSE message:', error)
+      }
+    }
+
+    eventSource.onerror = error => {
+      console.error('SSE Error:', error)
+      eventSource.close()
+      setSseConnection(null)
+      setIsExecuting(false)
+    }
+
+    setSseConnection(eventSource)
+  }
+
+  // Cleanup SSE connection on unmount
+  useEffect(() => {
+    return () => {
+      if (sseConnection) {
+        sseConnection.close()
+      }
+    }
+  }, [sseConnection])
+
+  // Handle AI-generated workflow
+  const handleApplyAIWorkflow = (workflow: any) => {
+    // Clear existing nodes and edges
+    setNodes([])
+    setEdges([])
+
+    // Convert AI-generated workflow to React Flow nodes
+    const newNodes: Node[] = workflow.nodes.map((node: any, index: number) => ({
+      id: node.id,
+      type: 'workflowNode',
+      position: node.position || {
+        x: 100 + index * 250,
+        y: 100 + Math.floor(index / 4) * 200,
+      },
+      data: {
+        label: node.label,
+        blockType: node.type,
+        config: node.parameters,
+        parameters: node.parameters,
+        status: 'idle',
+      },
+    }))
+
+    // Convert connections to React Flow edges
+    const newEdges: Edge[] = workflow.connections.map((conn: any, index: number) => ({
+      id: `e-${conn.from}-${conn.to}-${index}`,
+      source: conn.from,
+      target: conn.to,
+    }))
+
+    setNodes(newNodes)
+    setEdges(newEdges)
+    setWorkflowName(workflow.description || 'AI Generated Workflow')
+    setNodeCounter(newNodes.length)
   }
 
   const loadDemoWorkflow = useCallback(
@@ -529,8 +644,17 @@ export default function WorkflowBuilder() {
 
           {/* Right Section: Action Buttons */}
           <div className="flex space-x-3 items-center">
-            {/* --- FIX: Load Demo Dropdown --- 
-                        The parent div (relative group) now covers both the button and the dropdown area, 
+            {/* AI Workflow Generator Button */}
+            <button
+              onClick={() => setAiGeneratorOpen(true)}
+              className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-4 py-2 flex items-center space-x-2 rounded-lg transition-all text-sm font-medium shadow-md hover:shadow-lg"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>AI Generate</span>
+            </button>
+
+            {/* --- FIX: Load Demo Dropdown ---
+                        The parent div (relative group) now covers both the button and the dropdown area,
                         and the dropdown itself has group-hover:block/group-hover:opacity-100.
                         I've simplified the transition to use 'hidden' and 'block' for reliability.
                         */}
@@ -704,6 +828,16 @@ export default function WorkflowBuilder() {
         executionData={executionData}
         isVisible={monitorVisible}
         onToggleVisibility={() => setMonitorVisible(!monitorVisible)}
+      />
+
+      {/* AI Workflow Generator Modal */}
+      <AIWorkflowGenerator
+        isOpen={aiGeneratorOpen}
+        onClose={() => setAiGeneratorOpen(false)}
+        onApplyToCanvas={handleApplyAIWorkflow}
+        onWorkflowGenerated={workflow => {
+          console.log('Workflow generated:', workflow)
+        }}
       />
     </div>
   )

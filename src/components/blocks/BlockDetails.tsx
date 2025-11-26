@@ -232,13 +232,13 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
   }, [block, resetTestState])
 
   const loadBlockSchema = async () => {
-    if (!block?.type) return
+    if (!block?.id) return
 
     setIsLoading(true)
     setError(null)
 
     try {
-      const schemaData = await apiClient.getBlockSchema(block.type)
+      const schemaData = await apiClient.getBlockSchema(block.id)
       setSchema(schemaData)
 
       const defaultParams: any = {}
@@ -318,7 +318,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col transform transition-all duration-300">
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800">
-            {block.manifest?.name || block.type} Details
+            {block.name || block.manifest?.name || block.type} Details
           </h2>
           <button
             onClick={onClose}
@@ -400,7 +400,32 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                     )}
                     {schema && (
                       <BlockParameterForm
-                        schema={schema.manifest?.config_schema?.properties || {}}
+                        schema={(() => {
+                          // Try new format first (array)
+                          const inputs = block?.io?.inputs || schema?.io?.inputs
+                          if (Array.isArray(inputs) && inputs.length > 0) {
+                            // Convert array format to object format for BlockParameterForm
+                            return inputs.reduce((acc: any, input: any) => {
+                              acc[input.key] = {
+                                type: input.type,
+                                title: input.key,
+                                description: input.description,
+                                required: input.required,
+                                default: input.examples?.[0],
+                                enum: input.enum,
+                                minimum: input.minimum,
+                                maximum: input.maximum,
+                                minLength: input.minLength,
+                                maxLength: input.maxLength,
+                                pattern: input.pattern,
+                                format: input.format,
+                              }
+                              return acc
+                            }, {})
+                          }
+                          // Fall back to old format (object)
+                          return schema.manifest?.config_schema?.properties || {}
+                        })()}
                         values={parameters}
                         onChange={setParameters}
                         disabled={isLoading}

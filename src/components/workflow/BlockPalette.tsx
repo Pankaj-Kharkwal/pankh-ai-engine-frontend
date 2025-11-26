@@ -335,13 +335,13 @@ const BlockPalette: React.FC<BlockPaletteProps> = ({
                                                              {' '}
                               <div className="font-semibold text-sm text-gray-900 truncate">
                                                                  {' '}
-                                {block.manifest?.name || block.type}                             
+                                {block.name || block.type}                             
                                  {' '}
                               </div>
                                                              {' '}
                               <div className="text-xs text-gray-500 truncate mt-0.5">
                                                                  {' '}
-                                {block.manifest?.description || 'No description available'}         
+                                {block.metadata?.description || 'No description available'}         
                                                      {' '}
                               </div>
                                                            {' '}

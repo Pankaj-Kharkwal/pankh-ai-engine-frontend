@@ -619,7 +619,7 @@ Return issues found and suggestions.`
     execution_id?: string
   }) {
     try {
-      const result = await this.request('/nodes/test', {
+      const result = await this.request('/blocks/test', {
         method: 'POST',
         body: JSON.stringify(payload),
       })

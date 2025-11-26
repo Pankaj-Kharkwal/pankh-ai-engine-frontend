@@ -60,15 +60,27 @@ const BlockModal: React.FC<BlockModalProps> = ({
       const schemaData = await apiClient.getBlockSchema(block.type)
       setSchema(schemaData)
 
-      // Initialize parameters with default values from the manifest's config_schema
+      // Initialize parameters with default values from new format (block.io.inputs) or old format
       const defaultParams: any = {}
-      const configSchema = schemaData?.manifest?.config_schema
-      if (configSchema?.properties) {
-        Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
-          if (fieldSchema.default !== undefined) {
-            defaultParams[key] = fieldSchema.default
+
+      // Try new format first (array)
+      const inputs = schemaData?.io?.inputs
+      if (Array.isArray(inputs) && inputs.length > 0) {
+        inputs.forEach((input: any) => {
+          if (input.examples && input.examples.length > 0) {
+            defaultParams[input.key] = input.examples[0]
           }
         })
+      } else {
+        // Fall back to old format (object)
+        const configSchema = schemaData?.manifest?.config_schema
+        if (configSchema?.properties) {
+          Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+            if (fieldSchema.default !== undefined) {
+              defaultParams[key] = fieldSchema.default
+            }
+          })
+        }
       }
       setParameters(defaultParams)
     } catch (err) {
@@ -128,10 +140,10 @@ const BlockModal: React.FC<BlockModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {block?.manifest?.name || block?.type?.replace(/_/g, ' ') || 'Block'}
+                {block?.name || block?.type?.replace(/_/g, ' ') || 'Block'}
               </h2>
               <p className="text-sm text-gray-500">
-                {block?.manifest?.category || 'Unknown'} • {block?.enabled ? 'Enabled' : 'Disabled'}
+                {block?.category || 'Unknown'} • {block?.enabled ? 'Enabled' : 'Disabled'}
               </p>
             </div>
           </div>
@@ -188,7 +200,7 @@ const BlockModal: React.FC<BlockModalProps> = ({
                     <div>
                       <label className="text-sm font-medium text-gray-700">Category</label>
                       <p className="text-sm text-gray-900">
-                        {block?.manifest?.category || 'Unknown'}
+                        {block?.category || 'Unknown'}
                       </p>
                     </div>
                     <div>
@@ -222,11 +234,11 @@ const BlockModal: React.FC<BlockModalProps> = ({
                 </div>
               </div>
 
-              {block?.manifest?.summary && (
+              {block?.metadata?.description && (
                 <div>
                   <h3 className="text-lg font-medium mb-3">Description</h3>
                   <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">
-                    {block.manifest.summary}
+                    {block.metadata.description}
                   </p>
                 </div>
               )}
@@ -271,16 +283,53 @@ const BlockModal: React.FC<BlockModalProps> = ({
                 </div>
               )}
 
-              {schema && (
-                <BlockParameterForm
-                  schema={schema.manifest?.config_schema?.properties || {}}
-                  values={parameters}
-                  onChange={setParameters}
-                  disabled={isLoading}
-                  availableNodes={availableNodes}
-                  contextData={contextData}
-                />
-              )}
+              {schema && (() => {
+                // Try new format first (array)
+                const inputs = schema?.io?.inputs
+                if (Array.isArray(inputs) && inputs.length > 0) {
+                  // Convert array format to object format for BlockParameterForm
+                  const paramSchema = inputs.reduce((acc: any, input: any) => {
+                    acc[input.key] = {
+                      type: input.type,
+                      title: input.key,
+                      description: input.description,
+                      required: input.required,
+                      default: input.examples?.[0],
+                      enum: input.enum,
+                      minimum: input.minimum,
+                      maximum: input.maximum,
+                      minLength: input.minLength,
+                      maxLength: input.maxLength,
+                      pattern: input.pattern,
+                      format: input.format,
+                    }
+                    return acc
+                  }, {})
+
+                  return (
+                    <BlockParameterForm
+                      schema={paramSchema}
+                      values={parameters}
+                      onChange={setParameters}
+                      disabled={isLoading}
+                      availableNodes={availableNodes}
+                      contextData={contextData}
+                    />
+                  )
+                }
+
+                // Fall back to old format (object)
+                return (
+                  <BlockParameterForm
+                    schema={schema.manifest?.config_schema?.properties || {}}
+                    values={parameters}
+                    onChange={setParameters}
+                    disabled={isLoading}
+                    availableNodes={availableNodes}
+                    contextData={contextData}
+                  />
+                )
+              })()}
             </div>
           )}
 

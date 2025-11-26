@@ -21,38 +21,75 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
     }
   }
 
-  // Generate sample input based on config schema
+  // Generate sample input based on config schema or io.inputs
   const generateSampleInput = () => {
-    if (!schema?.manifest?.config_schema?.properties) {
+    // Try io.inputs first (new format), then fallback to manifest.config_schema (old format)
+    const inputs = block?.io?.inputs || schema?.io?.inputs || []
+
+    if (inputs.length === 0 && !schema?.manifest?.config_schema?.properties) {
       return null
     }
 
     const sample: any = {}
-    Object.entries(schema.manifest.config_schema.properties).forEach(
-      ([key, fieldSchema]: [string, any]) => {
-        switch (fieldSchema.type) {
+
+    // Handle new format: block.io.inputs (array of input objects)
+    if (inputs.length > 0) {
+      inputs.forEach((input: any) => {
+        const key = input.key
+        const examples = input.examples || []
+        switch (input.type) {
           case 'string':
-            sample[key] = fieldSchema.default || `example_${key}`
+            sample[key] = examples[0] || `example_${key}`
             break
           case 'number':
           case 'integer':
-            sample[key] = fieldSchema.default || 42
+            sample[key] = examples[0] || 42
             break
           case 'boolean':
-            sample[key] = fieldSchema.default !== undefined ? fieldSchema.default : true
+            sample[key] = examples[0] !== undefined ? examples[0] : true
             break
           case 'array':
-            sample[key] = fieldSchema.default || ['item1', 'item2']
+            sample[key] = examples[0] || ['item1', 'item2']
             break
           case 'object':
-            sample[key] = fieldSchema.default || {}
+            sample[key] = examples[0] || {}
             break
           default:
-            sample[key] = null
+            sample[key] = examples[0] || null
         }
-      }
-    )
-    return sample
+      })
+      return sample
+    }
+
+    // Handle old format: schema.manifest.config_schema.properties (object)
+    if (schema?.manifest?.config_schema?.properties) {
+      Object.entries(schema.manifest.config_schema.properties).forEach(
+        ([key, fieldSchema]: [string, any]) => {
+          switch (fieldSchema.type) {
+            case 'string':
+              sample[key] = fieldSchema.default || `example_${key}`
+              break
+            case 'number':
+            case 'integer':
+              sample[key] = fieldSchema.default || 42
+              break
+            case 'boolean':
+              sample[key] = fieldSchema.default !== undefined ? fieldSchema.default : true
+              break
+            case 'array':
+              sample[key] = fieldSchema.default || ['item1', 'item2']
+              break
+            case 'object':
+              sample[key] = fieldSchema.default || {}
+              break
+            default:
+              sample[key] = null
+          }
+        }
+      )
+    }
+
+    return Object.keys(sample).length > 0 ? sample : null
   }
 
   // Generate sample output based on block type
@@ -114,9 +151,13 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
   const sampleInput = generateSampleInput()
   const sampleOutput = generateSampleOutput()
 
-  // Extract input schema details
-  const inputSchema = schema?.manifest?.config_schema?.properties || {}
-  const inputProperties = Object.entries(inputSchema)
+  // Extract input schema details - support both new and old formats
+  const inputs = block?.io?.inputs || schema?.io?.inputs || []
+
+  // Convert to array of [key, schema] tuples for consistent rendering
+  const inputProperties = inputs.length > 0
+    ? inputs.map((input: any) => [input.key, input])
+    : Object.entries(schema?.manifest?.config_schema?.properties || {})
 
   return (
     <div className="space-y-6">
@@ -185,6 +226,14 @@ export default function BlockIOSchema({ block, schema }: BlockIOSchemaProps) {
                               Default:{' '}
                               <code className="bg-gray-100 px-1 rounded">
                                 {JSON.stringify(fieldSchema.default)}
+                              </code>
+                            </div>
+                          )}
+                          {fieldSchema.examples && fieldSchema.examples.length > 0 && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              Example:{' '}
+                              <code className="bg-gray-100 px-1 rounded">
+                                {JSON.stringify(fieldSchema.examples[0])}
                               </code>
                             </div>
                           )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Code,
@@ -15,6 +15,7 @@ import {
   Grid,
   BarChart3,
   Settings,
+  CheckCircle,
 } from 'lucide-react'
 import {
   useBlocks,
@@ -61,6 +62,21 @@ export default function Blocks() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
 
+  // Generation progress state
+  const [generationProgress, setGenerationProgress] = useState<{
+    isGenerating: boolean
+    stage: string
+    blockName?: string
+  } | null>(null)
+
+  // Success notification state
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false)
+  const [generatedBlockInfo, setGeneratedBlockInfo] = useState<{
+    name: string
+    type: string
+    blockId?: string
+  } | null>(null)
+
   const { data: blocks, isLoading, error, refetch } = useBlocks(selectedCategory)
   const { data: categories, error: categoriesError } = useBlockCategories() // Get error for categories
   const { data: registryStats, error: registryStatsError } = useRegistryStats() // Get error for registry stats
@@ -68,14 +84,35 @@ export default function Blocks() {
   const enableBlockMutation = useEnableBlock()
   const disableBlockMutation = useDisableBlock()
 
+  // Get organization ID from environment
+  const organizationId = import.meta.env.VITE_ORG_ID || '692544df47f2d43416429b38'
+
+  // Debug: Monitor generationProgress state changes
+  useEffect(() => {
+    console.log('🎯 [Blocks] generationProgress state changed:', generationProgress)
+  }, [generationProgress])
+
   // Determine if there's any error related to blocks or registry stats
   const hasApiError = !!error || !!categoriesError || !!registryStatsError
+
+  // Auto-hide success notification after 5 seconds
+  useEffect(() => {
+    if (showSuccessNotification) {
+      const timer = setTimeout(() => {
+        setShowSuccessNotification(false)
+        setGeneratedBlockInfo(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [showSuccessNotification])
 
   // Filter blocks based on search term
   const filteredBlocks = Array.isArray(blocks)
     ? blocks.filter(
         (block: any) =>
+          block.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           block.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          block.metadata?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           block.manifest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           block.manifest?.summary?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -142,8 +179,43 @@ export default function Blocks() {
     (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')
   ) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <NoBlocksFoundPanel
+      <>
+        {/* Generation Progress Banner */}
+        {(() => {
+          console.log('🎯 [Blocks] Rendering NoBlocks - checking banner condition:', {
+            generationProgress,
+            shouldShow: generationProgress?.isGenerating
+          })
+          return generationProgress?.isGenerating
+        })() && (
+          <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-200 px-8 py-4 z-50 shadow-lg animate-fadeIn">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center space-x-4">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <div>
+                  <p className="font-bold text-gray-900">Generating AI Block...</p>
+                  <p className="text-sm text-blue-700">
+                    {generationProgress.stage === 'planning' && '🤔 Analyzing your description and planning...'}
+                    {generationProgress.stage === 'generation' && '⚡ Creating block specification...'}
+                    {generationProgress.stage === 'verification' && '✅ Validating block quality...'}
+                    {generationProgress.stage === 'healing' && '🔧 Fixing issues...'}
+                    {generationProgress.stage === 'persistence' && '💾 Saving to database...'}
+                    {!generationProgress.stage && 'Processing...'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {/* AI assistant is always visible as floating button */}}
+                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+              >
+                View Details →
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="min-h-screen bg-gray-50 p-8">
+          <NoBlocksFoundPanel
           hasError={hasApiError}
           errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
           onRetry={() => {
@@ -154,8 +226,25 @@ export default function Blocks() {
           }}
           onGenerateBlock={handleGenerateBlock}
           isGeneratingBlock={generateBlockMutation.isPending}
+          organizationId={organizationId}
+          onGenerationStart={() => {
+            console.log('🎯 [Blocks→NoBlocksPanel] onGenerationStart callback invoked!')
+            setGenerationProgress({
+              isGenerating: true,
+              stage: 'planning',
+            })
+          }}
+          onStageChange={(stage) => {
+            console.log('🎯 [Blocks→NoBlocksPanel] onStageChange callback invoked with stage:', stage)
+            setGenerationProgress(prev => ({
+              ...prev,
+              isGenerating: true,
+              stage: stage,
+            }))
+          }}
         />
-      </div>
+        </div>
+      </>
     )
   }
 
@@ -332,13 +421,13 @@ export default function Blocks() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredBlocks.map((block: any) => {
                 const BlockIcon = getBlockIcon(block.type)
-                const category = block.manifest?.category || block.type.split('_')[0] || 'general'
+                const category = block.metadata?.category || block.manifest?.category || block.type || 'general'
                 const color = getCategoryColor(category)
                 const bgColor = color.replace('text-', 'bg-').replace('-600', '-50')
 
                 return (
                   <div
-                    key={block.type}
+                    key={block.id}
                     className="bg-white border border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-between"
                   >
                     <div className="flex-grow">
@@ -382,11 +471,11 @@ export default function Blocks() {
 
                       {/* Block Title and Summary */}
                       <h3 className="text-xl font-extrabold mb-2 text-gray-900 leading-snug">
-                        {block.manifest?.name || block.type.replace(/_/g, ' ')}
+                        {block.name || block.manifest?.name || block.type.replace(/_/g, ' ')}
                       </h3>
                       <p className="text-sm text-gray-500 mb-6 line-clamp-3">
-                        {block.manifest?.summary ||
-                          `Block type: ${block.type}. No summary provided in manifest.`}
+                        {block.metadata?.description || block.manifest?.summary ||
+                          `Block type: ${block.type}. No summary provided.`}
                       </p>
                     </div>
 
@@ -424,6 +513,76 @@ export default function Blocks() {
         disableBlockMutation={disableBlockMutation}
       />
 
+      {/* Generation Progress Banner */}
+      {(() => {
+        console.log('🎯 [Blocks] Rendering - checking banner condition:', {
+          generationProgress,
+          shouldShow: generationProgress?.isGenerating
+        })
+        return generationProgress?.isGenerating
+      })() && (
+        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-200 px-8 py-4 z-50 shadow-lg animate-fadeIn">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center space-x-4">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <div>
+                <p className="font-bold text-gray-900">Generating AI Block...</p>
+                <p className="text-sm text-blue-700">
+                  {generationProgress.stage === 'planning' && '🤔 Analyzing your description and planning...'}
+                  {generationProgress.stage === 'generation' && '⚡ Creating block specification...'}
+                  {generationProgress.stage === 'verification' && '✅ Validating block quality...'}
+                  {generationProgress.stage === 'healing' && '🔧 Fixing issues...'}
+                  {generationProgress.stage === 'persistence' && '💾 Saving to database...'}
+                  {!generationProgress.stage && 'Processing...'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {/* AI assistant is always visible as floating button */}}
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              View Details →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Notification */}
+      {showSuccessNotification && generatedBlockInfo && (
+        <div className="fixed top-20 right-8 bg-green-50 border-2 border-green-500 rounded-xl shadow-2xl px-6 py-4 z-50 animate-slideInRight max-w-md">
+          <div className="flex items-start space-x-3">
+            <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-bold text-green-900 mb-1">Block Generated Successfully!</h4>
+              <p className="text-sm text-green-700 mb-2">
+                <span className="font-semibold">{generatedBlockInfo.name}</span> ({generatedBlockInfo.type})
+              </p>
+              {generatedBlockInfo.blockId && (
+                <button
+                  onClick={() => {
+                    // Find and open the generated block
+                    const block = blocks?.find((b: any) => b.id === generatedBlockInfo.blockId || b._id === generatedBlockInfo.blockId)
+                    if (block) {
+                      setSelectedBlock(block)
+                      setShowSuccessNotification(false)
+                    }
+                  }}
+                  className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+                >
+                  Open Block Details →
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setShowSuccessNotification(false)}
+              className="text-green-600 hover:text-green-800"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* AI Assistant - Enhanced with Block Generation Mode */}
       <AIAssistantEnhanced
         context={
@@ -432,18 +591,63 @@ export default function Blocks() {
             : 'Block management and configuration'
         }
         contextType="block_generation"
-        organizationId={currentOrganization?.id || 'default_org'}
+        organizationId={organizationId}
         suggestions={[
           'Create an HTTP request block',
           'Make a JSON data transformer',
           'Build a condition checker',
           'Create an LLM chat block',
         ]}
+        onGenerationStart={() => {
+          console.log('🎯 [Blocks] onGenerationStart callback invoked!')
+          console.log('🎯 [Blocks] Setting generationProgress state:', { isGenerating: true, stage: 'planning' })
+          setGenerationProgress({
+            isGenerating: true,
+            stage: 'planning',
+          })
+          console.log('🎯 [Blocks] State setter called')
+        }}
+        onStageChange={(stage) => {
+          console.log('🎯 [Blocks] onStageChange callback invoked with stage:', stage)
+          setGenerationProgress(prev => {
+            console.log('🎯 [Blocks] Previous state:', prev)
+            const newState = {
+              ...prev,
+              isGenerating: true,
+              stage: stage,
+            }
+            console.log('🎯 [Blocks] New state:', newState)
+            return newState
+          })
+        }}
         onBlockGenerated={(block, blockId) => {
           console.log('Block generated:', block)
+
+          // Stop generation progress
+          setGenerationProgress(null)
+
+          // Show success notification
+          setGeneratedBlockInfo({
+            name: block.name || 'New Block',
+            type: block.type || 'utility',
+            blockId: blockId,
+          })
+          setShowSuccessNotification(true)
+
           if (blockId) {
             // Refetch blocks to show the new one
             refetch()
+
+            // Auto-open block details after brief delay for refetch
+            setTimeout(() => {
+              const updatedBlock = blocks?.find((b: any) => b.id === blockId || b._id === blockId)
+              if (updatedBlock) {
+                setSelectedBlock(updatedBlock)
+              } else {
+                // If block not found in list yet, use the generated block data
+                setSelectedBlock({ ...block, id: blockId })
+              }
+            }, 1000)
           }
         }}
       />

@@ -47,6 +47,8 @@ interface AIAssistantProps {
   suggestions?: string[]
   onSuggestionApplied?: (suggestion: string) => void
   onBlockGenerated?: (block: any, blockId?: string) => void
+  onGenerationStart?: () => void
+  onStageChange?: (stage: string) => void
   organizationId?: string
 }
 
@@ -56,6 +58,8 @@ export default function AIAssistantEnhanced({
   suggestions = [],
   onSuggestionApplied,
   onBlockGenerated,
+  onGenerationStart,
+  onStageChange,
   organizationId,
 }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -145,6 +149,15 @@ export default function AIAssistantEnhanced({
     setIsGeneratingBlock(true)
     setCurrentStage('Initializing...')
 
+    // Notify parent component that generation started
+    if (onGenerationStart) {
+      console.log('🚀 [AIAssistant] Calling onGenerationStart callback')
+      onGenerationStart()
+      console.log('🚀 [AIAssistant] onGenerationStart callback completed')
+    } else {
+      console.warn('⚠️ [AIAssistant] onGenerationStart callback not provided')
+    }
+
     // Add user message
     addMessage(description, 'user')
 
@@ -190,6 +203,16 @@ export default function AIAssistantEnhanced({
         }
 
         setCurrentStage(`${stage} (${status})`)
+
+        // Notify parent component of stage change
+        if (onStageChange && status === 'started') {
+          console.log(`🚀 [AIAssistant] Calling onStageChange callback with stage: ${stage}`)
+          onStageChange(stage)
+          console.log('🚀 [AIAssistant] onStageChange callback completed')
+        } else if (!onStageChange) {
+          console.warn('⚠️ [AIAssistant] onStageChange callback not provided')
+        }
+
         updateMessage(aiMessageId, {
           content: currentContent,
           metadata: { stage, isBlockGen: true },

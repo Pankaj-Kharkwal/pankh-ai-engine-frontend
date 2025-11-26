@@ -37,18 +37,32 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({ isOpen, onClose, n
       setSchema(schemaData)
 
       // Initialize with node's existing parameters or defaults
-      const configSchema = schemaData?.manifest?.config_schema
       const defaultParams: Record<string, any> = {}
 
-      if (configSchema?.properties) {
-        Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
-          // Use existing parameter value, or fall back to default from schema
-          if (node.data.parameters && key in node.data.parameters) {
-            defaultParams[key] = node.data.parameters[key]
-          } else if (fieldSchema.default !== undefined) {
-            defaultParams[key] = fieldSchema.default
+      // Try new format first (array)
+      const inputs = schemaData?.io?.inputs
+      if (Array.isArray(inputs) && inputs.length > 0) {
+        inputs.forEach((input: any) => {
+          // Use existing parameter value, or fall back to example/default
+          if (node.data.parameters && input.key in node.data.parameters) {
+            defaultParams[input.key] = node.data.parameters[input.key]
+          } else if (input.examples && input.examples.length > 0) {
+            defaultParams[input.key] = input.examples[0]
           }
         })
+      } else {
+        // Fall back to old format (object)
+        const configSchema = schemaData?.manifest?.config_schema
+        if (configSchema?.properties) {
+          Object.entries(configSchema.properties).forEach(([key, fieldSchema]: [string, any]) => {
+            // Use existing parameter value, or fall back to default from schema
+            if (node.data.parameters && key in node.data.parameters) {
+              defaultParams[key] = node.data.parameters[key]
+            } else if (fieldSchema.default !== undefined) {
+              defaultParams[key] = fieldSchema.default
+            }
+          })
+        }
       }
 
       setTestParams(defaultParams)
@@ -110,16 +124,54 @@ export const NodeTestModal: React.FC<NodeTestModalProps> = ({ isOpen, onClose, n
               {/* Parameter Form */}
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Test Parameters</h3>
-                {schema?.manifest?.config_schema?.properties ? (
-                  <BlockParameterForm
-                    schema={schema.manifest.config_schema.properties}
-                    values={testParams}
-                    onChange={setTestParams}
-                    disabled={testing}
-                  />
-                ) : (
-                  <p className="text-sm text-gray-500">No parameters required for this block</p>
-                )}
+                {(() => {
+                  // Try new format first (array)
+                  const inputs = schema?.io?.inputs
+                  if (Array.isArray(inputs) && inputs.length > 0) {
+                    // Convert array format to object format for BlockParameterForm
+                    const paramSchema = inputs.reduce((acc: any, input: any) => {
+                      acc[input.key] = {
+                        type: input.type,
+                        title: input.key,
+                        description: input.description,
+                        required: input.required,
+                        default: input.examples?.[0],
+                        enum: input.enum,
+                        minimum: input.minimum,
+                        maximum: input.maximum,
+                        minLength: input.minLength,
+                        maxLength: input.maxLength,
+                        pattern: input.pattern,
+                        format: input.format,
+                      }
+                      return acc
+                    }, {})
+
+                    return (
+                      <BlockParameterForm
+                        schema={paramSchema}
+                        values={testParams}
+                        onChange={setTestParams}
+                        disabled={testing}
+                      />
+                    )
+                  }
+
+                  // Fall back to old format (object)
+                  const oldSchema = schema?.manifest?.config_schema?.properties
+                  if (oldSchema && Object.keys(oldSchema).length > 0) {
+                    return (
+                      <BlockParameterForm
+                        schema={oldSchema}
+                        values={testParams}
+                        onChange={setTestParams}
+                        disabled={testing}
+                      />
+                    )
+                  }
+
+                  return <p className="text-sm text-gray-500">No parameters required for this block</p>
+                })()}
               </div>
 
               {/* Test Results */}
