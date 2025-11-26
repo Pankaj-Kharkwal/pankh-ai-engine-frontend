@@ -631,29 +631,6 @@ Return issues found and suggestions.`
       }
     }
   }
-
-  // Generic HTTP methods for convenience
-  async get<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'GET' })
-  }
-
-  async post<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async put<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async delete<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'DELETE' })
-  }
 }
 
 export const apiClient = new ApiClient()

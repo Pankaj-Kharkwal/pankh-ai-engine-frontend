@@ -89,9 +89,9 @@ export default function Layout() {
   }, []) // Empty dependency array, state update is functional
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#120c1a]">
       {/* Top Navbar - Enhanced */}{' '}
-      <nav className="bg-white/95 backdrop-blur-md border-b-2 border-transparent border-t-2 border-t-indigo-500/50 shadow-lg fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <nav className="bg-[#120c1a] backdrop-blur-md border-b-2 border-transparent border-t-2 border-t-indigo-500/50 shadow-lg fixed top-0 left-0 right-0 z-50 transition-all duration-300">
         {' '}
         <div className="px-4 sm:px-6 lg:px-8">
           {' '}
@@ -132,10 +132,10 @@ export default function Layout() {
                 </div>{' '}
                 <div className="flex flex-col">
                   {' '}
-                  <h1 className="text-xl font-extrabold text-gray-900 leading-tight">
+                  <h1 className="text-xl font-extrabold text-white leading-tight">
                     PankhAI{' '}
                   </h1>{' '}
-                  <span className="text-xs text-indigo-500 hidden sm:block font-medium">
+                  <span className="text-xs text-yellow-500 hidden sm:block font-medium">
                     Workflow Engine{' '}
                   </span>{' '}
                 </div>{' '}
@@ -144,10 +144,14 @@ export default function Layout() {
             {/* Right side - Status and actions */}{' '}
             <div className="flex items-center space-x-4">
               {/* Status Indicator - Enhanced */}{' '}
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-50 border border-green-300 rounded-full shadow-sm">
+              <div className="flex items-center space-x-2 px-3 py-1.5 
+bg-white/10 backdrop-blur-md 
+border border-white/20 
+rounded-full shadow-lg
+">
                 {' '}
                 <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping-slow"></div>{' '}
-                <span className="text-xs font-semibold text-green-700 hidden sm:block">
+                <span className="text-xs font-semibold text-white hidden sm:block">
                   API Connected{' '}
                 </span>{' '}
               </div>{' '}
@@ -167,7 +171,7 @@ export default function Layout() {
         onMouseLeave={handleMouseLeave} // Hover logic
       >
         {' '}
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col bg-[#120c1a] h-full">
           {/* Navigation */}{' '}
           <nav
             className={`flex-1 transition-all duration-300 p-3 space-y-1.5 ${isSidebarExpanded ? 'overflow-y-auto' : 'overflow-visible'}`}
@@ -186,14 +190,14 @@ export default function Layout() {
                       isSidebarExpanded
                         ? `px-4 py-3 text-sm font-semibold ${
                             isActive
-                              ? 'bg-indigo-50 text-indigo-700 shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                              ? 'bg-white/10 backdrop-blur-md border border-white/20  text-white shadow-sm'
+                              : 'text-white/70 hover:bg-white/10'
                           }`
                         : `justify-center p-3.5 ${
                             // Increased padding for better hover target
                             isActive
-                              ? 'bg-indigo-100 text-indigo-700'
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                              ? 'bg-white/10 backdrop-blur-md border border-white/20   text-white'
+                              : 'text-white/70 hover:bg-gray-100 hover:text-gray-700'
                           }`
                     }`
                   }
@@ -235,13 +239,13 @@ export default function Layout() {
                       isSidebarExpanded
                         ? `px-4 py-3 text-sm font-semibold ${
                             isActive
-                              ? 'bg-indigo-50 text-indigo-700 shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                              ? 'bg-white/10 backdrop-blur-md border border-white/20  text-white shadow-sm'
+                              : 'text-white/70 hover:bg-white/10'
                           }`
                         : `justify-center p-3.5 ${
                             isActive
-                              ? 'bg-indigo-100 text-indigo-700'
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                              ? 'bg-white/10 backdrop-blur-md border border-white/20   text-white'
+                              : 'text-white/70 hover:bg-gray-100 hover:text-gray-700'
                           }`
                     }`
                   }
@@ -277,7 +281,7 @@ export default function Layout() {
                 title="API Status"
               ></div>{' '}
               {isSidebarExpanded && (
-                <span className="text-sm font-medium text-gray-700">API Connected</span>
+                <span className="text-sm font-medium text-yellow-200">API Connected</span>
               )}{' '}
             </div>{' '}
           </div>{' '}

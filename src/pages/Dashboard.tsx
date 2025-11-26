@@ -345,7 +345,6 @@ import {
   BarChart3,
   Zap,
   Clock,
-  CheckCircle,
   AlertCircle,
   PlusCircle,
   LayoutGrid,
@@ -369,10 +368,13 @@ import { useAuth } from '../contexts/AuthContext'
 
 // Helper component for Stat Cards
 const StatCard = ({ name, value, icon: Icon, change, changeType }: any) => {
-  const isHealthy = changeType === 'positive'
-  const textColor = isHealthy ? 'text-green-600' : 'text-red-600'
-  const iconBg = isHealthy ? 'bg-purple-200/50 backdrop-blur-sm' : 'bg-red-200/50 backdrop-blur-sm'
-  const iconColor = isHealthy ? 'text-purple-700' : 'text-red-700'
+const isHealthy = changeType === 'positive'
+const textColor = isHealthy ? 'text-yellow-300' : 'text-red-400'
+const iconBg = isHealthy
+  ? 'bg-yellow-300/10 backdrop-blur-sm'
+  : 'bg-red-300/10 backdrop-blur-sm'
+const iconColor = isHealthy ? 'text-yellow-400' : 'text-red-400'
+
 
   return (
     <div className="relative bg-white/30 backdrop-blur-md rounded-2xl p-6 shadow-xl transition-all duration-300 border border-white/50 hover:border-purple-300/70 group">
@@ -523,7 +525,7 @@ export default function Dashboard() {
             Dashboard
           </h1>
           <p className="text-lg text-gray-700 dark:text-gray-300 mt-2">
-            Your centralized hub for workflow automation and AI insights.
+            Your centralized hub for and AI insights.
           </p>
         </header>
 
