@@ -14,9 +14,9 @@ import { useBlocks, useBlockCategories, useCreateWorkflow, useRunWorkflow, useWo
 import { useAuth } from '../contexts/AuthContext'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
-// import CollaborationPanel from '../components/workflow/CollaborationPanel'
-// import ExecutionDebugger from '../components/workflow/ExecutionDebugger'
-// import ExecutionMonitor from '../components/workflow/ExecutionMonitor'
+import CollaborationPanel from '../components/workflow/CollaborationPanel'
+import ExecutionDebugger from '../components/workflow/ExecutionDebugger'
+import ExecutionMonitor from '../components/workflow/ExecutionMonitor'
 
 // Icons
 import {
@@ -27,6 +27,7 @@ import {
   BarChart3,
   ChevronDown,
   User,
+  Filter,
   Search,
   CheckCircle,
   XCircle,
@@ -104,14 +105,20 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   const [executionData, setExecutionData] = useState<any>(null)
   const [expandedCategories, setExpandedCategories] = useState(new Set(['utility', 'ai']))
   const [collaborationVisible, setCollaborationVisible] = useState(false)
-  // const [debuggerVisible, setDebuggerVisible] = useState(false)
+  const [debuggerVisible, setDebuggerVisible] = useState(false)
   const [monitorVisible, setMonitorVisible] = useState(false)
+  const [activePanel, setActivePanel] = useState<"debugger" | "monitor" | "collaboration" | null>(null);
+
   const [, setNodeCounter] = useState(1)
   const [blocksSearchTerm, setBlocksSearchTerm] = useState('')
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
   const [draggedBlock, setDraggedBlock] = useState<any>(null)
   const [hasInitializedView, setHasInitializedView] = useState(false)
-
+  const [workflowQuickFilter, setWorkflowQuickFilter] = useState<'all' | 'today' | 'thisWeek'>('all')
+  const [workflowSortName, setWorkflowSortName] = useState<'az' | 'za' | ''>('')
+  const [workflowSortId, setWorkflowSortId] = useState<'short' | 'long' | ''>('')
+  const [workflowSortDate, setWorkflowSortDate] = useState<'new' | 'old' | ''>('')
   const createWorkflowMutation = useCreateWorkflow()
   const runWorkflowMutation = useRunWorkflow()
   const { user } = useAuth()
@@ -740,28 +747,102 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
             </button>
           </div>
           {/* Icon Buttons */}
-          <div className="flex gap-4 m-auto justify-center">
+        <div className="flex gap-4 m-auto justify-center">
+            {/* Debugger Button */}
             <button
-              className={`p-2 rounded transition-colors ${isDay ? 'bg-gray-100 hover:bg-gray-200 text-gray-900' : 'bg-[#150b1e] hover:bg-[#2a172e]'}`}
-              title="Settings"
+              onClick={() =>
+                setActivePanel(activePanel === "debugger" ? null : "debugger")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "debugger"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
+              title="Execution Manager"
             >
               <Settings className="w-4 h-4" />
             </button>
+            {/* Monitor Button */}
             <button
-              onClick={() => setMonitorVisible(!monitorVisible)}
-              className={`p-2 rounded transition-colors ${monitorVisible ? 'bg-blue-600 text-white' : isDay ? 'bg-gray-100 hover:bg-gray-200 text-gray-900' : 'bg-[#150b1e] hover:bg-[#2a172e]'}`}
+              onClick={() =>
+                setActivePanel(activePanel === "monitor" ? null : "monitor")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "monitor"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
               title="Analytics"
             >
               <BarChart3 className="w-4 h-4" />
             </button>
+            {/* Collaboration Button */}
             <button
-              onClick={() => setCollaborationVisible(!collaborationVisible)}
-              className={`p-2 rounded transition-colors ${collaborationVisible ? 'bg-blue-600 text-white' : isDay ? 'bg-gray-100 hover:bg-gray-200 text-gray-900' : 'bg-[#150b1e] hover:bg-[#2a172e]'}`}
+              onClick={() =>
+                setActivePanel(activePanel === "collaboration" ? null : "collaboration")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "collaboration"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
               title="Collaboration"
             >
               <MessageSquare className="w-4 h-4" />
             </button>
           </div>
+          {/* SLIDING PANELS */}
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              activePanel ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            {activePanel === "debugger" && (
+              <div className="animate-slide-down">
+                <ExecutionDebugger
+                  nodes={nodes}
+                  edges={edges}
+                  executionData={executionData}
+                  isVisible={debuggerVisible}
+                  onToggleVisibility={() => setDebuggerVisible(!debuggerVisible)}
+                  // // onExecuteStep={handleExecuteStep}
+                  // // onExecuteToBreakpoint={handleExecuteToBreakpoint}
+                  // // onStopExecution={handleStopExecution}
+                  isDay={isDay} 
+                />
+              </div>
+            )}
+
+            {activePanel === "monitor" && (
+              <div className="animate-slide-down">
+                <ExecutionMonitor
+                  nodes={nodes}
+                  edges={edges}
+                  executionData={executionData}
+                  isVisible={true}
+                  onToggleVisibility={() => setActivePanel(null)}
+                />
+              </div>
+            )}
+
+            {activePanel === "collaboration" && (
+              <div className="animate-slide-down">
+                <CollaborationPanel
+                  isVisible={true}
+                  onToggleVisibility={() => setActivePanel(null)}
+                  currentUserId="current-user-id"
+                  workflowId={currentWorkflowId || "workflow-123"}
+                />
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* Quick Start Templates Section */}
@@ -1096,42 +1177,201 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
         </div>
 
         {/* Content Area - Saved Workflows */}
-        <div className="flex-1 overflow-y-auto p-4">
-              {workflowsLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className={`${isDay ? 'bg-gray-50' : 'bg-[#150b1e]'} h-20 rounded animate-pulse`} />
-                  ))}
-                </div>
-              ) : (
-            <div className="space-y-2">
-              {filteredWorkflows.length > 0 ? (
-                filteredWorkflows.map((workflow: any) => (
-                  <div
-                    key={workflow.id}
-                    className={`${isDay ? 'bg-gray-50 hover:bg-gray-100 text-gray-900' : 'bg-[#150b1e] hover:bg-[#2a172e] text-white'} p-3 rounded cursor-pointer transition-colors`}
-                    onClick={() => {
-                      // Navigate to workflow editor
-                      window.location.href = `/workflows/${workflow.id}`
-                    }}
-                  >
-                        <div className={`text-sm font-medium truncate ${isDay ? 'text-gray-900' : 'text-white'}`}>{workflow.name || 'Untitled Workflow'}</div>
-                        <div className={`text-xs mt-1 font-mono ${isDay ? 'text-gray-600' : 'text-gray-400'}`}>{workflow.id?.slice(0, 8) || 'N/A'}</div>
-                    {workflow.created_at && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {new Date(workflow.created_at).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 text-sm py-8">
-                  {workflowsLoading ? 'Loading workflows...' : 'No saved workflows match your search'}
-                </div>
-              )}
+       <div className="flex-1 overflow-y-auto p-4">
+          {/* ---------------- FILTER CONTROLS ---------------- */}
+          <div className="mb-4 space-y-3">
+            {/* Quick Filters */}
+            <div className="flex items-center justify-between">
+              <h3 className={`text-sm font-semibold ${isDay ? "text-gray-800" : "text-yellow-600"}`}>
+                Saved Workflows
+              </h3>
+              <button
+              onClick={() => setFilterOpen(!filterOpen)}
+              className={`flex items-center gap-2 px-3 py-2 text-xs rounded border ${
+                isDay
+                  ? "bg-white text-gray-800 border-gray-300"
+                  : "bg-[#1a0f25] text-gray-200 border-gray-700"
+              }`}
+            >
+              <Filter className="w-3 h-3" />
+              <span>Filter</span>
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
             </div>
-          )}
+
+            {/* Sorting */}
+            {/* FILTER DROPDOWN BUTTON */}
+          <div className="relative inline-block text-left">
+            {filterOpen && (
+              <div
+                className={`absolute z-20 mt-2 w-60 p-3 rounded shadow-lg border ${
+                  isDay
+                    ? "bg-white border-gray-300 text-gray-800"
+                    : "bg-[#1a0f25] border-gray-700 text-gray-200"
+                }`}
+              >
+
+                {/* Quick Filter */}
+                <div className="mb-2">
+                  <label className="text-xs font-semibold">Quick Filter</label>
+                  <select
+                    value={workflowQuickFilter}
+                    onChange={(e) => setWorkflowQuickFilter(e.target.value as any)}
+                    className={`mt-1 w-full px-2 py-1 text-xs rounded border ${
+                      isDay
+                        ? "bg-white text-gray-800 border-gray-300"
+                        : "bg-[#140c1c] text-gray-200 border-gray-700"
+                    }`}
+                  >
+                    <option value="all">All</option>
+                    <option value="today">Created Today</option>
+                    <option value="thisWeek">Created This Week</option>
+                  </select>
+                </div>
+
+                {/* Sort by Name */}
+                <div className="mb-2">
+                  <label className="text-xs font-semibold">Sort by Name</label>
+                  <select
+                    value={workflowSortName}
+                    onChange={(e) => setWorkflowSortName(e.target.value as any)}
+                    className={`mt-1 w-full px-2 py-1 text-xs rounded border ${
+                      isDay
+                        ? "bg-white text-gray-800 border-gray-300"
+                        : "bg-[#140c1c] text-gray-200 border-gray-700"
+                    }`}
+                  >
+                    <option value="">Default</option>
+                    <option value="az">A → Z</option>
+                    <option value="za">Z → A</option>
+                  </select>
+                </div>
+
+                {/* Sort by ID */}
+                <div className="mb-2">
+                  <label className="text-xs font-semibold">Sort by ID Length</label>
+                  <select
+                    value={workflowSortId}
+                    onChange={(e) => setWorkflowSortId(e.target.value as any)}
+                    className={`mt-1 w-full px-2 py-1 text-xs rounded border ${
+                      isDay
+                        ? "bg-white text-gray-800 border-gray-300"
+                        : "bg-[#140c1c] text-gray-200 border-gray-700"
+                    }`}
+                  >
+                    <option value="">Default</option>
+                    <option value="short">Short → Long</option>
+                    <option value="long">Long → Short</option>
+                  </select>
+                </div>
+
+                {/* Sort by Date */}
+                <div>
+                  <label className="text-xs font-semibold">Sort by Date</label>
+                  <select
+                    value={workflowSortDate}
+                    onChange={(e) => setWorkflowSortDate(e.target.value as any)}
+                    className={`mt-1 w-full px-2 py-1 text-xs rounded border ${
+                      isDay
+                        ? "bg-white text-gray-800 border-gray-300"
+                        : "bg-[#140c1c] text-gray-200 border-gray-700"
+                    }`}
+                  >
+                    <option value="">Default</option>
+                    <option value="new">Newest First</option>
+                    <option value="old">Oldest First</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          </div>
+
+          {/* ---------------- FILTER + SORT LOGIC ---------------- */}
+          {(() => {
+            let list = [...filteredWorkflows]
+
+            // Quick Filter
+            const now = new Date()
+            if (workflowQuickFilter === "today") {
+              list = list.filter(w => new Date(w.created_at).toDateString() === now.toDateString())
+            }
+            if (workflowQuickFilter === "thisWeek") {
+              const weekAgo = new Date()
+              weekAgo.setDate(now.getDate() - 7)
+              list = list.filter(w => new Date(w.created_at) >= weekAgo)
+            }
+
+            // Sort by Name
+            if (workflowSortName === "az") {
+              list.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+            }
+            if (workflowSortName === "za") {
+              list.sort((a, b) => (b.name || "").localeCompare(a.name || ""))
+            }
+
+            // Sort by ID Length
+            if (workflowSortId === "short") {
+              list.sort((a, b) => a.id.length - b.id.length)
+            }
+            if (workflowSortId === "long") {
+              list.sort((a, b) => b.id.length - a.id.length)
+            }
+
+            // Sort by Date
+            if (workflowSortDate === "new") {
+              list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            }
+            if (workflowSortDate === "old") {
+              list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+            }
+
+            return (
+              <div className="space-y-2">
+                {list.length > 0 ? (
+                  list.map((workflow: any) => (
+                    <div
+                      key={workflow.id}
+                      className={`${
+                        isDay
+                          ? "bg-gray-50 hover:bg-gray-100 text-gray-900"
+                          : "bg-[#150b1e] hover:bg-[#2a172e] text-white"
+                      } p-3 rounded cursor-pointer transition-colors`}
+                      onClick={() => (window.location.href = `/workflows/${workflow.id}`)}
+                    >
+                      <div className={`text-sm font-medium truncate ${isDay ? "text-gray-900" : "text-white"}`}>
+                        {workflow.name || "Untitled Workflow"}
+                      </div>
+                      <div className={`text-xs mt-1 font-mono ${isDay ? "text-gray-600" : "text-gray-400"}`}>
+                        {workflow.id?.slice(0, 8) || "N/A"}
+                      </div>
+
+                      {workflow.created_at && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {new Date(workflow.created_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 text-sm py-8">
+                    No saved workflows match your filters
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
+
       </div>
 
       {/* Node Config Panel (Overlay) */}
