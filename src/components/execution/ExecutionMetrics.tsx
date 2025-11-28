@@ -95,10 +95,30 @@ export default function ExecutionMetrics({ execution, className = '' }: Executio
     if (metrics.total === 0) return []
 
     return [
-      { label: 'Completed', value: metrics.completed, percentage: (metrics.completed / metrics.total) * 100, color: 'bg-green-500' },
-      { label: 'Failed', value: metrics.failed, percentage: (metrics.failed / metrics.total) * 100, color: 'bg-red-500' },
-      { label: 'Running', value: metrics.running, percentage: (metrics.running / metrics.total) * 100, color: 'bg-blue-500' },
-      { label: 'Pending', value: metrics.pending, percentage: (metrics.pending / metrics.total) * 100, color: 'bg-yellow-500' },
+      {
+        label: 'Completed',
+        value: metrics.completed,
+        percentage: (metrics.completed / metrics.total) * 100,
+        color: 'bg-green-500',
+      },
+      {
+        label: 'Failed',
+        value: metrics.failed,
+        percentage: (metrics.failed / metrics.total) * 100,
+        color: 'bg-red-500',
+      },
+      {
+        label: 'Running',
+        value: metrics.running,
+        percentage: (metrics.running / metrics.total) * 100,
+        color: 'bg-blue-500',
+      },
+      {
+        label: 'Pending',
+        value: metrics.pending,
+        percentage: (metrics.pending / metrics.total) * 100,
+        color: 'bg-yellow-500',
+      },
     ].filter(item => item.value > 0)
   }
 

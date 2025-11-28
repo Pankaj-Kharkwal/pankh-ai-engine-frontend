@@ -16,6 +16,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { useWorkflows, useRunWorkflow } from '../hooks/useApi'
+import { useAuth } from '../contexts/AuthContext'
 
 // --- Helper Types & Simulated Data (for demonstration) ---
 type WorkflowCategory = 'AI' | 'Data' | 'Integration' | 'Scheduled'
@@ -74,6 +75,7 @@ const StatusBadge = ({ status }: { status: Workflow['status'] }) => {
 // --- Main Component ---
 export default function Workflows() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [runningId, setRunningId] = useState<string | null>(null)
 
@@ -325,29 +327,30 @@ export default function Workflows() {
         ) : (
           /* Empty/No Workflows State */
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-4 p-4 rounded-full border-2 border-[#6B7280]/50 flex items-center justify-center">
-              {/* Inactive/Placeholder Color: #6B7280 */}
-              <Settings className="w-12 h-12 text-[#6B7280] opacity-80" />
+            <div className="w-24 h-24 mx-auto mb-4 p-4 rounded-full border-2 border-[#6B7280]/50 flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+              {searchTerm ? (
+                <Search className="w-12 h-12 text-[#6B7280] opacity-80" />
+              ) : (
+                <Zap className="w-12 h-12 text-purple-500 opacity-80" />
+              )}
             </div>
-            <h3 className="text-xl font-semibold mb-2  ">
-              {searchTerm ? 'No Workflows Match Your Search' : 'Your Workspace is Empty'}
+            <h3 className="text-xl font-semibold mb-2">
+              {searchTerm
+                ? 'No Workflows Match Your Search'
+                : `Ready to get started${user?.full_name ? ', ' + user.full_name.split(' ')[0] : ''}?`}
             </h3>
             <p className="text-[#A0A0A0] mb-6 max-w-md mx-auto">
               {searchTerm
                 ? 'Try simplifying your keywords or clear the search to view all automations.'
-                : 'Time to build! Click the button above or below to create your first powerful automation.'}
+                : 'You have 0 workflows. Create your first automation to unlock the power of AI-driven workflows!'}
             </p>
             {!searchTerm && (
               <button
                 onClick={() => navigate('/workflows/create')}
-                className="glass-button px-6 py-3 bg-[#C8A2FF] hover:bg-[#B385FF] text-[#1A1C20] font-bold"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                {' '}
-                <div className="flex items-center space-x-2">
-                  {' '}
-                  <Plus className="w-4 h-4 mr-2" />
-                  <div>Start New Workflow </div>
-                </div>
+                <Plus className="w-5 h-5" />
+                <span>Start Your First Workflow</span>
               </button>
             )}
           </div>

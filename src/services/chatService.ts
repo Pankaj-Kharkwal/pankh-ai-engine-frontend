@@ -5,7 +5,10 @@
 
 import { EventSourcePolyfill } from 'event-source-polyfill'
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1').replace(/\/$/, '')
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1').replace(
+  /\/$/,
+  ''
+)
 const API_KEY = import.meta.env.VITE_API_KEY || 'dev-key-change-me'
 
 // ==================== Types ====================
@@ -476,4 +479,198 @@ export async function getUserSessions(
   }
 
   return response.json()
+}
+
+// ==================== Block Generation with SSE ====================
+
+export interface BlockGenerationRequest {
+  description: string
+  organization_id: string
+  session_id?: string
+  persist?: boolean
+  verify?: boolean
+  run_preview?: boolean
+  preview_inputs?: Record<string, any>
+}
+
+export interface BlockGenerationStage {
+  stage: 'planning' | 'generation' | 'verification' | 'healing' | 'preview' | 'persistence'
+  status: 'started' | 'completed' | 'failed' | 'skipped'
+  message?: string
+  data?: any
+}
+
+export interface BlockGenerationComplete {
+  block: any
+  block_id?: string
+  verification?: any
+  persisted: boolean
+}
+
+export interface BlockGenSSEEvent extends SSEEvent {
+  type: 'stage' | 'token' | 'complete' | 'error'
+  data: BlockGenerationStage | { token: string; stage?: string } | BlockGenerationComplete | { message: string; stage?: string }
+}
+
+export type BlockGenEventHandler = (event: BlockGenSSEEvent) => void
+
+/**
+ * Create a chat session for block generation
+ */
+export async function createBlockGenSession(organizationId: string): Promise<{ session_id: string }> {
+  const response = await fetch(`${API_BASE}/ai/chat/sessions?organization_id=${organizationId}&context_type=block_generation`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_KEY,
+    },
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to create block generation session: ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Generate a block with SSE streaming
+ */
+export class BlockGenerationStream {
+  private eventSource: EventSourcePolyfill | null = null
+  private handlers: Map<string, BlockGenEventHandler[]> = new Map()
+
+  /**
+   * Start block generation with SSE streaming
+   */
+  async generate(request: BlockGenerationRequest): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const url = `${API_BASE}/ai/chat/generate-block/stream`
+
+      // Use POST with SSE
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY,
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify(request),
+        credentials: 'include',
+      }).then(response => {
+        if (!response.ok) {
+          reject(new Error(`Failed to start block generation: ${response.statusText}`))
+          return
+        }
+
+        if (!response.body) {
+          reject(new Error('Response body is null'))
+          return
+        }
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        const processStream = async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+
+              if (done) {
+                resolve()
+                break
+              }
+
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() || ''
+
+              for (const line of lines) {
+                if (line.startsWith('event:')) {
+                  const eventType = line.slice(7).trim()
+                  continue
+                }
+
+                if (line.startsWith('data:')) {
+                  const dataStr = line.slice(6).trim()
+                  if (!dataStr) continue
+
+                  try {
+                    const data = JSON.parse(dataStr)
+                    let eventType: BlockGenSSEEvent['type'] = 'token'
+
+                    // Determine event type from data
+                    if (data.stage !== undefined && data.status !== undefined) {
+                      eventType = 'stage'
+                    } else if (data.token !== undefined) {
+                      eventType = 'token'
+                    } else if (data.block !== undefined) {
+                      eventType = 'complete'
+                    } else if (data.message !== undefined && data.stage === undefined) {
+                      eventType = 'error'
+                    }
+
+                    this.emit(eventType, data)
+                  } catch (e) {
+                    console.error('Failed to parse SSE data:', e)
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            reject(error)
+          }
+        }
+
+        processStream()
+      }).catch(reject)
+    })
+  }
+
+  /**
+   * Register event handler
+   */
+  on(eventType: BlockGenSSEEvent['type'], handler: BlockGenEventHandler): void {
+    if (!this.handlers.has(eventType)) {
+      this.handlers.set(eventType, [])
+    }
+    this.handlers.get(eventType)!.push(handler)
+  }
+
+  /**
+   * Unregister event handler
+   */
+  off(eventType: BlockGenSSEEvent['type'], handler: BlockGenEventHandler): void {
+    const handlers = this.handlers.get(eventType)
+    if (handlers) {
+      const index = handlers.indexOf(handler)
+      if (index > -1) {
+        handlers.splice(index, 1)
+      }
+    }
+  }
+
+  /**
+   * Emit event to registered handlers
+   */
+  private emit(eventType: BlockGenSSEEvent['type'], data: any): void {
+    const event: BlockGenSSEEvent = { type: eventType, data }
+    const handlers = this.handlers.get(eventType)
+    if (handlers) {
+      handlers.forEach(handler => handler(event))
+    }
+  }
+
+  /**
+   * Cancel generation
+   */
+  cancel(): void {
+    if (this.eventSource) {
+      this.eventSource.close()
+      this.eventSource = null
+    }
+    this.handlers.clear()
+  }
 }

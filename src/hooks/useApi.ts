@@ -91,14 +91,58 @@ export function useRegisterBlock() {
   })
 }
 
+type GenerateBlockArgs = {
+  description: string
+  autoDeploy?: boolean
+  persist?: boolean
+  verify?: boolean
+  runPreview?: boolean
+  previewInputs?: Record<string, any>
+}
+
 export function useGenerateBlock() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ description, autoDeploy }: { description: string; autoDeploy?: boolean }) =>
-      apiClient.generateBlock(description, autoDeploy),
+    mutationFn: ({
+      description,
+      autoDeploy,
+      persist,
+      verify,
+      runPreview,
+      previewInputs,
+    }: GenerateBlockArgs) =>
+      apiClient.generateBlock(description, autoDeploy, {
+        persist,
+        verify,
+        runPreview,
+        previewInputs,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blocks'] })
       queryClient.invalidateQueries({ queryKey: ['registry-stats'] })
+    },
+  })
+}
+
+export function useVerifyBlock() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (blockId: string) => apiClient.verifyBlock(blockId),
+    onSuccess: (data, blockId) => {
+      queryClient.invalidateQueries({ queryKey: ['blocks'] })
+      queryClient.invalidateQueries({ queryKey: ['block', blockId] })
+    },
+  })
+}
+
+export function useHealBlock() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ blockId, issues }: { blockId: string; issues: any[] }) =>
+      apiClient.healBlock(blockId, issues),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['blocks'] })
+      queryClient.invalidateQueries({ queryKey: ['block', variables.blockId] })
     },
   })
 }
@@ -159,7 +203,7 @@ export function useExecutionLogs(id: string) {
     queryKey: ['execution-logs', id],
     queryFn: () => apiClient.getExecutionLogs(id),
     enabled: !!id,
-    refetchInterval: (query) => {
+    refetchInterval: query => {
       // Only refetch if we're getting actual data and not in error state
       if (query.state.status === 'error') return false
       return 3000 // Refresh logs every 3 seconds for live updates
@@ -173,7 +217,7 @@ export function useExecutionStatus(id: string) {
     queryKey: ['execution-status', id],
     queryFn: () => apiClient.getExecutionStatus(id),
     enabled: !!id,
-    refetchInterval: (query) => {
+    refetchInterval: query => {
       // Only refetch if execution is still running
       if (query.state.status === 'error') return false
       const execution = query.state.data as any

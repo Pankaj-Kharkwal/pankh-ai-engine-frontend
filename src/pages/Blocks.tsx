@@ -26,7 +26,8 @@ import {
 } from '../hooks/useApi'
 import BlockDetails from '../components/blocks/BlockDetails'
 import { apiClient } from '../services/api'
-import AIAssistant from '../components/ai/AIAssistant'
+import AIAssistantEnhanced from '../components/ai/AIAssistantEnhanced'
+import NoBlocksFoundPanel from '../components/blocks/NoBlocksFoundPanel' // Import the new component
 
 // Icon mapping for different block types - ADDED ICONS FOR DIVERSITY
 const getBlockIcon = (blockType: string) => {
@@ -58,16 +59,17 @@ const getCategoryColor = (category: string) => {
 export default function Blocks() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [generateDescription, setGenerateDescription] = useState('')
-  const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
 
   const { data: blocks, isLoading, error, refetch } = useBlocks(selectedCategory)
-  const { data: categories } = useBlockCategories()
-  const { data: registryStats } = useRegistryStats()
+  const { data: categories, error: categoriesError } = useBlockCategories() // Get error for categories
+  const { data: registryStats, error: registryStatsError } = useRegistryStats() // Get error for registry stats
   const generateBlockMutation = useGenerateBlock()
   const enableBlockMutation = useEnableBlock()
   const disableBlockMutation = useDisableBlock()
+
+  // Determine if there's any error related to blocks or registry stats
+  const hasApiError = !!error || !!categoriesError || !!registryStatsError
 
   // Filter blocks based on search term
   const filteredBlocks = Array.isArray(blocks)
@@ -79,19 +81,17 @@ export default function Blocks() {
       )
     : []
 
-  const handleGenerateBlock = async () => {
-    if (!generateDescription.trim()) return
-
+  const handleGenerateBlock = async (description: string, autoDeploy?: boolean) => {
     try {
       await generateBlockMutation.mutateAsync({
-        description: generateDescription,
-        autoDeploy: true,
+        description: description,
+        autoDeploy: autoDeploy,
       })
-      setGenerateDescription('')
-      setShowGenerateModal(false)
-      refetch()
-    } catch (error) {
-      console.error('Failed to generate block:', error)
+      refetch() // Refetch blocks after successful generation
+      return { success: true }
+    } catch (err) {
+      console.error('Failed to generate block:', err)
+      return { success: false, error: err }
     }
   }
 
@@ -136,28 +136,25 @@ export default function Blocks() {
     )
   }
 
-  /* --- IMPROVED ERROR STATE --- */
-  if (error) {
+  // --- Graceful Fallback for No Blocks or API Error ---
+  if (
+    hasApiError ||
+    (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')
+  ) {
     return (
-      <div className="min-h-screen p-10 bg-gray-50 flex items-start justify-center">
-        <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-8 shadow-2xl mt-20 max-w-lg">
-          <div className="flex items-start space-x-4 text-red-800">
-            <AlertCircle className="w-8 h-8 flex-shrink-0 mt-1" />
-            <div>
-              <div className="text-xl font-bold">Failed to Load Registry</div>
-              <div className="text-base text-red-700 mt-2">
-                Could not connect to the block API. Please ensure the backend service is running and
-                accessible.
-              </div>
-              <button
-                onClick={() => refetch()}
-                className="mt-4 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Retry Connection
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <NoBlocksFoundPanel
+          hasError={hasApiError}
+          errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
+          onRetry={() => {
+            refetch()
+            // Also refetch categories and registry stats if they had errors
+            if (categoriesError) useBlockCategories().refetch()
+            if (registryStatsError) useRegistryStats().refetch()
+          }}
+          onGenerateBlock={handleGenerateBlock}
+          isGeneratingBlock={generateBlockMutation.isPending}
+        />
       </div>
     )
   }
@@ -188,7 +185,9 @@ export default function Blocks() {
 
           {/* Right Side: Primary Action Button */}
           <button
-            onClick={() => setShowGenerateModal(true)}
+            onClick={() => {
+              /* This button will now be handled by the NoBlocksFoundPanel or a dedicated AI Assistant */
+            }}
             className="
                             flex items-center space-x-2 
                             px-6 py-2.5 
@@ -329,7 +328,7 @@ export default function Blocks() {
           </div>
 
           {/* Block Grid Display */}
-          {filteredBlocks.length > 0 ? (
+          {filteredBlocks.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredBlocks.map((block: any) => {
                 const BlockIcon = getBlockIcon(block.type)
@@ -409,104 +408,9 @@ export default function Blocks() {
                 )
               })}
             </div>
-          ) : (
-            /* Improved Empty State */
-            <div className="text-center py-20 px-4 bg-gray-50 border-4 border-dashed border-gray-200 rounded-2xl">
-              <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-2xl font-bold mb-2 text-gray-800">No Blocks Found</h3>
-              <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                We couldn't find any blocks matching your search or filter criteria. Try adjusting
-                your search term or category, or create a new block.
-              </p>
-              <button
-                onClick={() => setShowGenerateModal(true)}
-                className="flex items-center space-x-2 mx-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition duration-200 transform hover:scale-[1.02]"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Generate a Custom Block</span>
-              </button>
-            </div>
           )}
         </div>
       </main>
-
-      {/* Generate Block Modal (Frosted Glass Style) */}
-      {showGenerateModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 p-4"
-          onClick={() => setShowGenerateModal(false)}
-        >
-          <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 max-w-lg w-full mx-auto transform transition-all duration-300 scale-100 border border-white/50"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-3 flex items-center">
-              <Zap className="w-6 h-6 mr-3 text-indigo-600" />
-              AI Block Generator
-            </h3>
-            <div className="space-y-6">
-              {/* Description Input Area */}
-              <div>
-                <label
-                  htmlFor="block-description"
-                  className="block text-base font-semibold text-gray-800 mb-3"
-                >
-                  Describe the block's function in detail:
-                </label>
-                <textarea
-                  id="block-description"
-                  value={generateDescription}
-                  onChange={e => setGenerateDescription(e.target.value)}
-                  placeholder="e.g., 'A block that fetches the current stock price for a given ticker, then uses a pre-trained sentiment model to classify the latest 10 news headlines about the company as positive, negative, or neutral.'"
-                  className="w-full h-40 resize-none p-4 border border-gray-300 rounded-xl bg-white text-gray-800 
-                                                focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner text-sm"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  The more detail you provide, the better the generated block will be.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4">
-                {/* Secondary Button: Cancel */}
-                <button
-                  onClick={() => setShowGenerateModal(false)}
-                  className="px-6 py-3 text-base font-medium text-gray-700 bg-gray-100 rounded-xl 
-                                                hover:bg-gray-200 transition-colors shadow-md"
-                >
-                  Cancel
-                </button>
-
-                {/* Primary Button: Generate */}
-                <button
-                  onClick={handleGenerateBlock}
-                  disabled={!generateDescription.trim() || generateBlockMutation.isPending}
-                  className={`px-6 py-3 text-base font-medium text-white rounded-xl shadow-lg transition-all duration-300
-                                        ${
-                                          !generateDescription.trim() ||
-                                          generateBlockMutation.isPending
-                                            ? 'bg-indigo-400 cursor-not-allowed opacity-80'
-                                            : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl shadow-indigo-300'
-                                        }
-                                        flex items-center justify-center space-x-2`}
-                >
-                  {generateBlockMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Generating Code...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5" />
-                      <span>Generate Block</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Block Modal */}
       {/* Note: I'm assuming BlockDetails handles its own modal/overlay logic, if not,
@@ -520,20 +424,28 @@ export default function Blocks() {
         disableBlockMutation={disableBlockMutation}
       />
 
-      {/* AI Assistant - Keep this as a floating element */}
-      <AIAssistant
+      {/* AI Assistant - Enhanced with Block Generation Mode */}
+      <AIAssistantEnhanced
         context={
           selectedBlock
             ? `Currently viewing ${selectedBlock.type} block`
             : 'Block management and configuration'
         }
-        contextType="block"
+        contextType="block_generation"
+        organizationId={currentOrganization?.id || 'default_org'}
         suggestions={[
-          'How do I configure this block?',
-          'What parameters does this block need?',
-          'Generate a new custom block',
-          'Explain how this block works',
+          'Create an HTTP request block',
+          'Make a JSON data transformer',
+          'Build a condition checker',
+          'Create an LLM chat block',
         ]}
+        onBlockGenerated={(block, blockId) => {
+          console.log('Block generated:', block)
+          if (blockId) {
+            // Refetch blocks to show the new one
+            refetch()
+          }
+        }}
       />
     </div>
   )

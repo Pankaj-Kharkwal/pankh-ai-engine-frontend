@@ -1,14 +1,12 @@
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
 ).replace(/\/$/, '')
-const API_KEY = import.meta.env.VITE_API_KEY || ''
-const ORG_ID = import.meta.env.VITE_ORG_ID || 'default_org'
+let API_KEY = import.meta.env.VITE_API_KEY || ''
 
 if (import.meta.env?.DEV) {
   console.log('🔧 Frontend API Configuration:', {
     API_BASE_URL,
     API_KEY_SET: API_KEY ? 'YES (***' + API_KEY.slice(-4) + ')' : 'NO',
-    ORG_ID,
     'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
     'import.meta.env.MODE': import.meta.env.MODE,
     'import.meta.env.DEV': import.meta.env.DEV,
@@ -17,7 +15,9 @@ if (import.meta.env?.DEV) {
 
 const getAuthHeaders = () => {
   const headers: Record<string, string> = {}
-  if (API_KEY) {
+  // Only add API key if it's explicitly set (M2M scenario). Browser
+  // flows rely on cookies/Bearer per unified auth.
+  if (API_KEY && API_KEY.trim()) {
     headers['X-API-Key'] = API_KEY
   }
   return headers
@@ -25,9 +25,50 @@ const getAuthHeaders = () => {
 
 // API client with error handling
 class ApiClient {
-  private orgPath(path: string) {
+  private currentOrgId: string | null = null
+
+  // Get current organization ID (lazy loaded from user's orgs)
+  private async getOrgId(): Promise<string> {
+    if (this.currentOrgId) {
+      return this.currentOrgId
+    }
+
+    try {
+      // Fetch user's organizations
+      const orgs = await this.getUserOrganizations()
+      if (orgs && orgs.length > 0) {
+        this.currentOrgId = orgs[0].id
+        if (import.meta.env?.DEV) {
+          console.log('📋 Using organization:', this.currentOrgId, orgs[0].name)
+        }
+        return this.currentOrgId
+      }
+    } catch (error) {
+      console.warn('Failed to fetch user organizations:', error)
+    }
+
+    // No orgs available; surface a clear error so callers can prompt user
+    throw new Error('No organizations found for current user')
+  }
+
+  // Set organization ID manually (useful after login/signup)
+  setOrgId(orgId: string) {
+    this.currentOrgId = orgId
+    if (import.meta.env?.DEV) {
+      console.log('📋 Organization ID set to:', orgId)
+    }
+  }
+
+  // Clear organization cache (useful for logout)
+  clearOrgId() {
+    this.currentOrgId = null
+  }
+
+  private async orgPath(path: string): Promise<string> {
     const normalized = path.startsWith('/') ? path : `/${path}`
-    return `/organizations/${ORG_ID}${normalized}`
+    const orgId = await this.getOrgId()
+    // Ensure trailing slash for consistency with backend redirects
+    return `/organizations/${orgId}${normalized}/`
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -44,6 +85,7 @@ class ApiClient {
     try {
       const response = await fetch(url, {
         ...options,
+        credentials: 'include', // IMPORTANT: Include cookies for authentication
         headers: {
           ...(hasJsonBody ? { 'Content-Type': 'application/json' } : {}),
           ...getAuthHeaders(),
@@ -62,6 +104,11 @@ class ApiClient {
     }
   }
 
+  // Helper method to fetch user organizations (needed by getOrgId)
+  async getUserOrganizations() {
+    return this.request<any[]>('/users/me/organizations')
+  }
+
   // Workflows API
   async getWorkflows(params?: { status?: string }) {
     const searchParams = new URLSearchParams()
@@ -69,22 +116,26 @@ class ApiClient {
       searchParams.append('status', params.status)
     }
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    return this.request(this.orgPath(`/workflows${query}`))
+    const path = await this.orgPath(`/workflows${query}`)
+    return this.request(path)
   }
 
   async getWorkflow(id: string) {
-    return this.request(this.orgPath(`/workflows/${id}`))
+    const path = await this.orgPath(`/workflows/${id}`)
+    return this.request(path)
   }
 
   async createWorkflow(data: { name: string; graph: any }) {
-    return this.request(this.orgPath('/workflows'), {
+    const path = await this.orgPath('/workflows')
+    return this.request(path, {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   async runWorkflow(id: string) {
-    return this.request(this.orgPath(`/workflows/${id}/run`), {
+    const path = await this.orgPath(`/workflows/${id}/run`)
+    return this.request(path, {
       method: 'POST',
     })
   }
@@ -96,23 +147,28 @@ class ApiClient {
       searchParams.append('status', params.status)
     }
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    return this.request(this.orgPath(`/executions${query}`))
+    const path = await this.orgPath(`/executions${query}`)
+    return this.request(path)
   }
 
   async getExecution(id: string) {
-    return this.request(this.orgPath(`/executions/${id}`))
+    const path = await this.orgPath(`/executions/${id}`)
+    return this.request(path)
   }
 
   async getExecutionStatus(id: string) {
-    return this.request(this.orgPath(`/executions/${id}/status`))
+    const path = await this.orgPath(`/executions/${id}/status`)
+    return this.request(path)
   }
 
   async getExecutionLogs(id: string) {
-    return this.request(this.orgPath(`/executions/${id}/logs`))
+    const path = await this.orgPath(`/executions/${id}/logs`)
+    return this.request(path)
   }
 
   async cancelExecution(id: string) {
-    return this.request(this.orgPath(`/executions/${id}/cancel`), {
+    const path = await this.orgPath(`/executions/${id}/cancel`)
+    return this.request(path, {
       method: 'POST',
     })
   }
@@ -241,7 +297,7 @@ class ApiClient {
 
   async getBlockSchema(blockType: string) {
     // Backend returns full block info including schema at /blocks/{type}
-    const blockInfo = await this.request(`/blocks/${blockType}`)
+    const blockInfo = await this.request<any>(`/blocks/${blockType}`)
     // Return the schema if available, otherwise return the full block info
     return blockInfo?.manifest?.schema || blockInfo?.schema || blockInfo
   }
@@ -258,10 +314,59 @@ class ApiClient {
     })
   }
 
-  async generateBlock(description: string, autoDeploy = false) {
-    return this.request('/blocks/generate', {
+  async generateBlock(
+    description: string,
+    autoDeploy = false,
+    options?: {
+      persist?: boolean
+      verify?: boolean
+      runPreview?: boolean
+      previewInputs?: Record<string, any>
+    }
+  ) {
+    const orgId = await this.getOrgId()
+
+    const shouldPersist = options?.persist ?? autoDeploy
+    const shouldVerify = options?.verify ?? autoDeploy
+    const shouldPreview = options?.runPreview ?? autoDeploy
+
+    const payload: Record<string, any> = {
+      description,
+      organization_id: orgId,
+    }
+
+    if (shouldPersist) {
+      payload.persist = true
+    }
+    if (shouldVerify) {
+      payload.verify = true
+    }
+    if (shouldPreview) {
+      payload.run_preview = true
+      if (options?.previewInputs) {
+        payload.preview_inputs = options.previewInputs
+      }
+    } else if (options?.previewInputs) {
+      payload.preview_inputs = options.previewInputs
+    }
+
+    return this.request('/ai/generate-block', {
       method: 'POST',
-      body: JSON.stringify({ description, auto_deploy: autoDeploy }),
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async verifyBlock(blockId: string) {
+    return this.request('/ai/verify-block', {
+      method: 'POST',
+      body: JSON.stringify({ block_id: blockId }),
+    })
+  }
+
+  async healBlock(blockId: string, issues: any[]) {
+    return this.request('/ai/heal-block', {
+      method: 'POST',
+      body: JSON.stringify({ block_id: blockId, issues }),
     })
   }
 
@@ -295,6 +400,7 @@ class ApiClient {
     try {
       // Use proxied endpoint (configured in vite.config.ts)
       return await fetch('/health', {
+        credentials: 'include',
         headers: getAuthHeaders(),
       }).then(res => res.json())
     } catch (error) {
@@ -307,6 +413,7 @@ class ApiClient {
   async getMetrics() {
     // Use proxied endpoint (configured in vite.config.ts)
     return fetch('/metrics', {
+      credentials: 'include',
       headers: getAuthHeaders(),
     }).then(res => res.text())
   }

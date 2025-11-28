@@ -355,6 +355,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useWorkflows, useRegistryStats, useHealth } from '../hooks/useApi'
 import AIAssistant from '../components/ai/AIAssistant'
+import { WelcomeBanner } from '../components/common/WelcomeBanner'
+import { useAuth } from '../contexts/AuthContext'
 
 // --- Glassmorphism Styles (Conceptual via Tailwind classes) ---
 // The 'glass-card' class would typically involve:
@@ -406,6 +408,7 @@ const QuickActionButton = ({ icon: Icon, title, subtitle, color, onClick }: any)
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: workflows, isLoading: workflowsLoading, error: workflowsError } = useWorkflows()
   const { data: registryStats, isLoading: statsLoading } = useRegistryStats()
   const { data: health, isLoading: healthLoading } = useHealth()
@@ -516,11 +519,16 @@ export default function Dashboard() {
       <div className="space-y-10 relative z-10">
         {/* Header */}
         <header className="mb-6">
-          <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">Dashboard</h1>
-          <p className="text-lg text-gray-700 mt-2">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
+            Dashboard
+          </h1>
+          <p className="text-lg text-gray-700 dark:text-gray-300 mt-2">
             Your centralized hub for workflow automation and AI insights.
           </p>
         </header>
+
+        {/* Welcome Banner */}
+        <WelcomeBanner userName={user?.full_name} workflowCount={totalWorkflows} />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -611,10 +619,19 @@ export default function Dashboard() {
             ) : (
               <div className="text-center text-gray-500 py-12 border-2 border-dashed border-purple-400/70 rounded-2xl bg-white/50">
                 <Zap className="w-14 h-14 mx-auto mb-4 text-purple-500/70" strokeWidth={1.5} />
-                <p className="text-lg font-semibold text-gray-800">No workflows found</p>
-                <p className="text-base mt-1 text-gray-700">
-                  Click **Create New Workflow** to begin your automation journey!
+                <p className="text-lg font-semibold text-gray-800 dark:text-gray-900">
+                  Ready to create your first workflow?
                 </p>
+                <p className="text-base mt-1 text-gray-700 dark:text-gray-800 mb-4">
+                  Use the <strong>Create New Workflow</strong> button to start building!
+                </p>
+                <button
+                  onClick={() => navigate('/workflows/create')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  Create Your First Workflow
+                </button>
               </div>
             )}
           </div>
@@ -636,7 +653,7 @@ export default function Dashboard() {
               status="Online"
               detail={
                 registryStats
-                  ? `${(registryStats as any).enabled_blocks} of ${(registryStats as any).total_blocks} blocks available`
+                  ? `${(registryStats as any).enabled_blocks || 0} of ${(registryStats as any).total_blocks || 0} blocks available`
                   : 'Loading...'
               }
               isHealthy={!!registryStats}

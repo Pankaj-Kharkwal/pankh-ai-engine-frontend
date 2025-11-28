@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react' // Added useCallback
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { BlockTestForm } from './BlockTestForm'
 import {
   Play,
@@ -14,8 +14,11 @@ import {
   Grid,
   Activity,
   Zap,
+  ShieldCheck,
+  Wrench,
 } from 'lucide-react'
 import { apiClient } from '../../services/api'
+import { useVerifyBlock, useHealBlock } from '../../hooks/useApi'
 import BlockParameterForm from './BlockParameterForm'
 import BlockIOSchema from './BlockIOSchema'
 import BlockMetrics from './BlockMetrics'
@@ -26,7 +29,7 @@ interface BlockDetailsProps {
   onSave: (parameters: any) => void
 }
 
-// Helper component for the Info Tab content (no changes needed here)
+// Helper component for the Info Tab content
 const InfoContent: React.FC<{ block: any }> = ({ block }) => (
   <div className="space-y-6">
     <div>
@@ -73,6 +76,21 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
       </span>
     </div>
 
+    {block?.metadata?.verification_status && (
+      <div className="flex items-center space-x-2 mt-2">
+        <label className="text-xs font-semibold uppercase text-gray-500">Verification:</label>
+        <span
+          className={`text-sm font-bold px-2 py-1 rounded ${
+            block.metadata.verification_status === 'verified'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {block.metadata.verification_status.toUpperCase()}
+        </span>
+      </div>
+    )}
+
     {block?.manifest?.summary && (
       <div>
         <h3 className="text-lg font-bold text-gray-800 mb-3">Description</h3>
@@ -93,7 +111,7 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
   </div>
 )
 
-// Helper component for the Results tab content (no changes needed here)
+// Helper component for the Results tab content
 const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
   <div className="space-y-4">
     <h3 className="text-xl font-bold text-gray-800">Test Results Summary</h3>
@@ -168,45 +186,6 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
             </pre>
           </div>
         )}
-
-        {/* Validation and Warnings (optional details) */}
-        {(testResults.validation_info ||
-          (testResults.validation_errors && testResults.validation_errors.length > 0)) && (
-          <div className="space-y-4">
-            {testResults.validation_info && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm">
-                <h5 className="font-semibold text-green-900 mb-2 border-b border-green-200 pb-1">
-                  Validation Info
-                </h5>
-                <div className="text-sm text-green-800 space-y-1">
-                  <div>
-                    <strong>Block Type:</strong> {testResults.validation_info.block_type}
-                  </div>
-                  <div>
-                    <strong>Parameters Count:</strong>{' '}
-                    {testResults.validation_info.parameters_count}
-                  </div>
-                  <div>
-                    <strong>API Validation:</strong> {testResults.validation_info.api_validation}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {testResults.validation_errors && testResults.validation_errors.length > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
-                <h5 className="font-semibold text-yellow-900 mb-2 border-b border-yellow-200 pb-1">
-                  Validation Warnings
-                </h5>
-                <ul className="text-sm text-yellow-800 space-y-1 list-disc pl-5">
-                  {testResults.validation_errors.map((error: string, index: number) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     )}
   </div>
@@ -214,7 +193,7 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
 
 const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) => {
   // Main Tab State
-  const [activeTab, setActiveTab] = useState<'details' | 'test' | 'metrics'>('details')
+  const [activeTab, setActiveTab] = useState<'details' | 'test' | 'metrics' | 'verify'>('details')
 
   // Sub-Tab States
   const [activeDetailsSubTab, setActiveDetailsSubTab] = useState<
@@ -230,10 +209,18 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
   const [error, setError] = useState<string | null>(null)
   const [testResults, setTestResults] = useState<any>(null)
 
+  // Verification & Healing
+  const verifyBlock = useVerifyBlock()
+  const healBlock = useHealBlock()
+  const [verificationResult, setVerificationResult] = useState<any>(null)
+  const [healingResult, setHealingResult] = useState<any>(null)
+
   // Function to reset test-related state
   const resetTestState = useCallback(() => {
     setTestResults(null)
     setActiveTestSubTab('run_test')
+    setVerificationResult(null)
+    setHealingResult(null)
   }, [])
 
   useEffect(() => {
@@ -243,8 +230,6 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
       resetTestState()
     }
   }, [block, resetTestState])
-
-  // Removed the previous useEffect for activeTestSubTab as the resetTestState handles the initial state
 
   const loadBlockSchema = async () => {
     if (!block?.type) return
@@ -272,6 +257,28 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleVerify = () => {
+    if (!block?.id) return
+    verifyBlock.mutate(block.id, {
+      onSuccess: data => {
+        setVerificationResult(data)
+      },
+    })
+  }
+
+  const handleHeal = () => {
+    if (!block?.id || !verificationResult?.issues) return
+    healBlock.mutate(
+      { blockId: block.id, issues: verificationResult.issues },
+      {
+        onSuccess: data => {
+          setHealingResult(data)
+          // Re-verify after healing? Or just show success.
+        },
+      }
+    )
   }
 
   const getTabButtonClass = (tabName: string) =>
@@ -325,15 +332,19 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
         <div className="flex border-b border-gray-200 bg-gray-50 overflow-x-auto">
           <button className={getTabButtonClass('details')} onClick={() => setActiveTab('details')}>
             <Grid className="w-5 h-5" />
-            <span>Details (Info, Params, I/O)</span>
+            <span>Details</span>
           </button>
           <button className={getTabButtonClass('test')} onClick={() => setActiveTab('test')}>
             <TestTube className="w-5 h-5" />
-            <span>Test & Results</span>
+            <span>Test</span>
           </button>
           <button className={getTabButtonClass('metrics')} onClick={() => setActiveTab('metrics')}>
             <Activity className="w-5 h-5" />
-            <span>Logs & Metrics</span>
+            <span>Metrics</span>
+          </button>
+          <button className={getTabButtonClass('verify')} onClick={() => setActiveTab('verify')}>
+            <ShieldCheck className="w-5 h-5" />
+            <span>Verify & Heal</span>
           </button>
         </div>
 
@@ -436,7 +447,6 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                     block={block}
                     onTestComplete={result => {
                       setTestResults(result)
-                      // FIX 1: Explicitly switch to results tab after test completes
                       setActiveTestSubTab('results')
                     }}
                   />
@@ -477,6 +487,127 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Verify & Heal Tab Content */}
+          {activeTab === 'verify' && (
+            <div className="bg-white p-5 rounded-lg shadow-md h-full space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-800">Block Verification</h3>
+                <button
+                  onClick={handleVerify}
+                  disabled={verifyBlock.isPending}
+                  className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {verifyBlock.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="w-4 h-4" />
+                  )}
+                  <span>Run Verification</span>
+                </button>
+              </div>
+
+              {verificationResult && (
+                <div className="space-y-4">
+                  <div
+                    className={`p-4 rounded-lg border ${verificationResult.is_valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {verificationResult.is_valid ? (
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                      ) : (
+                        <XCircle className="w-6 h-6 text-red-600" />
+                      )}
+                      <div>
+                        <h4
+                          className={`font-bold ${verificationResult.is_valid ? 'text-green-900' : 'text-red-900'}`}
+                        >
+                          {verificationResult.is_valid
+                            ? 'Verification Passed'
+                            : 'Verification Failed'}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Score: {verificationResult.score}/100
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {verificationResult.issues && verificationResult.issues.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">Issues Found:</h4>
+                      <ul className="space-y-2">
+                        {verificationResult.issues.map((issue: any, idx: number) => (
+                          <li
+                            key={idx}
+                            className={`p-3 rounded border ${
+                              issue.severity === 'error'
+                                ? 'bg-red-50 border-red-100 text-red-800'
+                                : issue.severity === 'warning'
+                                  ? 'bg-yellow-50 border-yellow-100 text-yellow-800'
+                                  : 'bg-blue-50 border-blue-100 text-blue-800'
+                            }`}
+                          >
+                            <div className="flex items-start space-x-2">
+                              <span className="uppercase text-xs font-bold px-2 py-0.5 rounded bg-white bg-opacity-50 border border-black border-opacity-10">
+                                {issue.severity}
+                              </span>
+                              <div>
+                                <p className="font-medium text-sm">{issue.message}</p>
+                                {issue.suggestion && (
+                                  <p className="text-xs mt-1 opacity-80">
+                                    Suggestion: {issue.suggestion}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {!verificationResult.is_valid && (
+                    <div className="pt-4 border-t">
+                      <h4 className="font-bold text-gray-800 mb-2">Self-Healing</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Attempt to automatically fix the identified issues using AI.
+                      </p>
+                      <button
+                        onClick={handleHeal}
+                        disabled={healBlock.isPending}
+                        className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {healBlock.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Wrench className="w-4 h-4" />
+                        )}
+                        <span>Attempt Auto-Heal</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {healingResult && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-bold text-blue-900 mb-2">Healing Result</h4>
+                  <p className="text-sm text-blue-800 mb-2">Changes made:</p>
+                  <ul className="list-disc list-inside text-sm text-blue-800">
+                    {healingResult.changes_made?.map((change: string, idx: number) => (
+                      <li key={idx}>{change}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-3">
+                    <p className="text-xs text-blue-600">
+                      The block has been updated. Please re-run verification to confirm fixes.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

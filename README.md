@@ -267,6 +267,7 @@ az acr credential show --name pankhaidev
 #### Architecture
 
 **Production Setup:**
+
 - Multi-stage Docker build with Nginx
 - Static files served by Nginx (no Node.js runtime)
 - API requests proxied to backend via Nginx
@@ -274,6 +275,7 @@ az acr credential show --name pankhaidev
 - Gzip compression and caching enabled
 
 **Development vs Production:**
+
 - **Development**: Uses Vite dev server with HMR (see [Dockerfile.dev](Dockerfile.dev))
 - **Production**: Uses nginx with optimized static files (see [Dockerfile](Dockerfile))
 

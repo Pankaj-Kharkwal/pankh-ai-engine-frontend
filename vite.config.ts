@@ -42,15 +42,7 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',
           changeOrigin: true,
           secure: false,
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              // Add API key header if available
-              const apiKey = env.VITE_API_KEY
-              if (apiKey) {
-                proxyReq.setHeader('X-API-Key', apiKey)
-              }
-            })
-          },
+          // Removed API key header injection - using cookie auth instead
         },
         '/health': {
           target: env.VITE_API_PROXY_TARGET || 'http://backend-dev.pankh.ai',

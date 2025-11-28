@@ -11,7 +11,13 @@ import {
 } from '@xyflow/react'
 import type { Connection, Edge, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useBlocks, useBlockCategories, useCreateWorkflow, useRunWorkflow, useWorkflow } from '../hooks/useApi' // Assuming these hooks are available
+import {
+  useBlocks,
+  useBlockCategories,
+  useCreateWorkflow,
+  useRunWorkflow,
+  useWorkflow,
+} from '../hooks/useApi' // Assuming these hooks are available
 import BlockPalette from '../components/workflow/BlockPalette'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
@@ -93,25 +99,30 @@ export default function WorkflowBuilder() {
         const { nodes: graphNodes, edges: graphEdges } = existingWorkflow.graph
 
         // Convert nodes
-        const loadedNodes: Node[] = graphNodes?.map((node: any, index: number) => ({
-          id: node.id,
-          type: 'workflowNode',
-          position: node.position || { x: 100 + index * 300, y: 100 + Math.floor(index / 3) * 200 },
-          data: {
-            label: node.name || node.type,
-            blockType: node.type,
-            config: node.parameters || {},
-            parameters: node.parameters || {},
-            status: 'idle',
-          },
-        })) || []
+        const loadedNodes: Node[] =
+          graphNodes?.map((node: any, index: number) => ({
+            id: node.id,
+            type: 'workflowNode',
+            position: node.position || {
+              x: 100 + index * 300,
+              y: 100 + Math.floor(index / 3) * 200,
+            },
+            data: {
+              label: node.name || node.type,
+              blockType: node.type,
+              config: node.parameters || {},
+              parameters: node.parameters || {},
+              status: 'idle',
+            },
+          })) || []
 
         // Convert edges
-        const loadedEdges: Edge[] = graphEdges?.map((edge: any, index: number) => ({
-          id: edge.id || `e-${edge.from_node}-${edge.to_node}-${index}`,
-          source: edge.from_node,
-          target: edge.to_node,
-        })) || []
+        const loadedEdges: Edge[] =
+          graphEdges?.map((edge: any, index: number) => ({
+            id: edge.id || `e-${edge.from_node}-${edge.to_node}-${index}`,
+            source: edge.from_node,
+            target: edge.to_node,
+          })) || []
 
         setNodes(loadedNodes)
         setEdges(loadedEdges)
