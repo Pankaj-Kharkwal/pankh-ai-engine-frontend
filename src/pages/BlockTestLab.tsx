@@ -12,7 +12,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Send, PlayCircle, Plus, Bot, Code, Zap, CheckCircle,
-  XCircle, Clock, MessageSquare, Terminal, Activity
+  XCircle, Clock, MessageSquare, Terminal, Activity, Save
 } from 'lucide-react';
 import { apiClient as api } from '../services/api';
 
@@ -61,7 +61,7 @@ const BlockTestLab: React.FC = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send Chat Message
+  // Send Chat Message with Streaming
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -76,35 +76,107 @@ const BlockTestLab: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/chatbot/chat', {
-        messages: [...messages, userMessage].map(m => ({
-          role: m.role,
-          content: m.content,
-          timestamp: m.timestamp
-        }))
-      });
+      // Create placeholder for streaming response
+      const assistantMessageId = Date.now();
+      let streamedContent = '';
+      let detectedIntent: string | null = null;
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: response.data.message.content,
-        timestamp: response.data.message.timestamp
+        content: '',
+        timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Check for block generation intent
-      if (response.data.intent === 'generate_block') {
-        // Auto-switch to block tab
-        setActiveTab('block');
+      // Connect to streaming endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/chatbot/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': import.meta.env.VITE_API_KEY || ''
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp
+          }))
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('Response body is null');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      // Read stream
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const dataStr = line.slice(5).trim();
+            if (!dataStr) continue;
+
+            try {
+              const data = JSON.parse(dataStr);
+
+              if (data.type === 'intent') {
+                detectedIntent = data.intent;
+              } else if (data.type === 'token') {
+                streamedContent += data.content;
+                // Update message with streamed content
+                setMessages(prev =>
+                  prev.map((msg, idx) =>
+                    idx === prev.length - 1
+                      ? { ...msg, content: streamedContent }
+                      : msg
+                  )
+                );
+              } else if (data.type === 'complete') {
+                // Check for block generation intent
+                if (detectedIntent === 'generate_block') {
+                  setActiveTab('block');
+                }
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
       }
     } catch (error: any) {
       console.error('Chat error:', error);
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: `❌ Error: ${error.response?.data?.detail || error.message}`,
+        content: `❌ Error: ${error.message}`,
         timestamp: new Date().toISOString()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => {
+        // Replace last message if it was empty (failed streaming)
+        const lastMsg = prev[prev.length - 1];
+        if (lastMsg?.content === '') {
+          return [...prev.slice(0, -1), errorMessage];
+        }
+        return [...prev, errorMessage];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -115,25 +187,25 @@ const BlockTestLab: React.FC = () => {
     setIsLoading(true);
     try {
       // Get user's organization
-      const orgResponse = await api.get('/users/me/organizations');
-      const orgId = orgResponse.data[0]?.id;
+      const orgs = await api.getUserOrganizations();
+      const orgId = orgs[0]?.id;
 
       if (!orgId) {
         throw new Error('No organization found');
       }
 
-      const response = await api.post('/generate-block', {
+      const response = await api.post('/ai/generate-block', {
         description,
         organization_id: orgId
       });
 
-      setGeneratedBlock(response.data.block_data);
+      setGeneratedBlock(response.block_data);
       setActiveTab('block');
 
       // Add success message to chat
       const successMessage: ChatMessage = {
         role: 'assistant',
-        content: `✅ Block "${response.data.block_data.name}" generated successfully! Check the Block tab to review and test it.`,
+        content: `✅ Block "${response.block_data.name}" generated successfully! Check the Block tab to review and test it.`,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, successMessage]);
@@ -141,7 +213,7 @@ const BlockTestLab: React.FC = () => {
       console.error('Block generation error:', error);
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: `❌ Block generation failed: ${error.response?.data?.detail || error.message}`,
+        content: `❌ Block generation failed: ${error.message}`,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -150,9 +222,40 @@ const BlockTestLab: React.FC = () => {
     }
   };
 
+  // Save Block
+  const saveBlock = async () => {
+    if (!generatedBlock) {
+      alert('No block to save!');
+      return;
+    }
+
+    if (generatedBlock.id) {
+      alert('Block is already saved!');
+      return;
+    }
+
+    try {
+      const response = await api.post('/blocks', {
+        ...generatedBlock,
+        organization_id: import.meta.env.VITE_ORG_ID || 'default_org'
+      });
+
+      // Update the generated block with the saved ID
+      setGeneratedBlock({
+        ...generatedBlock,
+        id: response.id
+      });
+
+      alert(`Block saved successfully! ID: ${response.id}`);
+    } catch (error: any) {
+      console.error('Save error:', error);
+      alert(`Failed to save block: ${error.message}`);
+    }
+  };
+
   // Execute Block
   const executeBlock = async () => {
-    if (!generatedBlock?.id) {
+    if (!generatedBlock) {
       alert('No block generated yet!');
       return;
     }
@@ -161,26 +264,54 @@ const BlockTestLab: React.FC = () => {
     setExecutionResult(null);
 
     try {
-      const response = await api.post(`/blocks/execute/${generatedBlock.id}`, {
-        block_id: generatedBlock.id,
-        inputs: blockInputs,
-        context: { source: 'test-lab' },
-        dry_run: false
-      });
+      let response;
 
-      setExecutionResult(response.data);
+      // If block has an ID (persisted), use normal execution endpoint
+      if (generatedBlock.id) {
+        response = await api.post(`/blocks/execute/${generatedBlock.id}`, {
+          block_id: generatedBlock.id,
+          inputs: blockInputs,
+          context: { source: 'test-lab' },
+          dry_run: false
+        });
+      } else {
+        // For non-persisted blocks, use preview execution endpoint
+        const previewResponse = await api.post('/ai/preview-execute-block', {
+          block_spec: generatedBlock,
+          inputs: blockInputs
+        });
+
+        // Format preview response as execution response
+        response = {
+          execution_id: 'preview-' + Date.now(),
+          block_id: 'preview',
+          status: previewResponse.status,
+          outputs: previewResponse.outputs,
+          error: previewResponse.error || null,
+          duration_ms: 0,
+          retry_count: 0,
+          executed_at: new Date().toISOString(),
+          logs: [
+            `Preview execution with inputs: ${JSON.stringify(previewResponse.inputs_used)}`,
+            `Token usage: ${JSON.stringify(previewResponse.token_usage)}`,
+            'Execution completed successfully'
+          ]
+        };
+      }
+
+      setExecutionResult(response);
       setActiveTab('results');
     } catch (error: any) {
       console.error('Execution error:', error);
       setExecutionResult({
         execution_id: 'error',
-        block_id: generatedBlock.id,
+        block_id: generatedBlock.id || 'preview',
         status: 'failure',
-        error: error.response?.data?.detail || error.message,
+        error: error.message,
         duration_ms: 0,
         retry_count: 0,
         executed_at: new Date().toISOString(),
-        logs: [`Error: ${error.response?.data?.detail || error.message}`]
+        logs: [`Error: ${error.message}`]
       });
       setActiveTab('results');
     } finally {
@@ -378,20 +509,20 @@ const BlockTestLab: React.FC = () => {
           {generatedBlock.io?.inputs?.length > 0 ? (
             <div className="space-y-3">
               {generatedBlock.io.inputs.map((input: any) => (
-                <div key={input.name}>
+                <div key={input.key || input.name}>
                   <label className="block text-sm text-gray-300 mb-1">
-                    {input.name}
+                    {input.key || input.name}
                     {input.required && <span className="text-red-400 ml-1">*</span>}
                     <span className="text-gray-500 ml-2">({input.type})</span>
                   </label>
                   <input
                     type={input.type === 'number' ? 'number' : 'text'}
-                    value={blockInputs[input.name] || ''}
+                    value={blockInputs[input.key || input.name] || ''}
                     onChange={(e) => setBlockInputs(prev => ({
                       ...prev,
-                      [input.name]: input.type === 'number' ? Number(e.target.value) : e.target.value
+                      [input.key || input.name]: input.type === 'number' ? Number(e.target.value) : e.target.value
                     }))}
-                    placeholder={input.description || `Enter ${input.name}`}
+                    placeholder={input.description || `Enter ${input.key || input.name}`}
                     className="w-full bg-gray-800 text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -487,12 +618,48 @@ const BlockTestLab: React.FC = () => {
 
         {/* Logs */}
         {executionResult.logs && executionResult.logs.length > 0 && (
-          <div className="bg-gray-700 rounded-lg p-4">
+          <div className="bg-gray-700 rounded-lg p-4 mb-4">
             <h4 className="text-sm font-semibold text-white mb-2">Execution Logs</h4>
             <div className="bg-gray-900 text-gray-300 text-xs p-3 rounded space-y-1 font-mono">
               {executionResult.logs.map((log, idx) => (
                 <div key={idx}>{log}</div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Save Block Button - Only show for successful preview executions */}
+        {isSuccess && !generatedBlock?.id && executionResult.block_id === 'preview' && (
+          <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-500/50 rounded-lg p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <h4 className="text-white font-semibold mb-1">Preview Execution Successful!</h4>
+                <p className="text-sm text-gray-300 mb-3">
+                  Your block has been tested and validated. You can now save it to your block library for use in workflows.
+                </p>
+                <button
+                  onClick={saveBlock}
+                  className="bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600 font-semibold flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Block to Library
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Already Saved Indicator */}
+        {generatedBlock?.id && (
+          <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-blue-400" />
+              <div>
+                <h4 className="text-white font-semibold">Block Saved</h4>
+                <p className="text-sm text-gray-300">
+                  Block ID: <code className="bg-gray-900 px-2 py-1 rounded text-xs">{generatedBlock.id}</code>
+                </p>
+              </div>
             </div>
           </div>
         )}

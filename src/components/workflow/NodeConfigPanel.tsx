@@ -14,6 +14,7 @@ interface NodeConfigPanelProps {
   workflowEnvVars?: Record<string, any>
   onUpdate: (nodeId: string, update: any) => void
   onClose: () => void
+  theme?: 'day' | 'night'
 }
 
 const tabConfig: Record<
@@ -34,7 +35,9 @@ export default function NodeConfigPanel({
   workflowEnvVars = {},
   onUpdate,
   onClose,
+  theme = 'night',
 }: NodeConfigPanelProps) {
+  const isDay = theme === 'day'
   const [activeTab, setActiveTab] = useState<ActiveTab>('configure')
   const [schema, setSchema] = useState<any>(null)
   const [loadingSchema, setLoadingSchema] = useState(false)
@@ -120,17 +123,17 @@ export default function NodeConfigPanel({
   if (!blockType) {
     return (
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose}></div>
-        <div className="relative w-full max-w-xl bg-white rounded-xl shadow-2xl z-10 p-6 space-y-4 text-center">
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-800">Select a block to configure</h2>
-          <p className="text-gray-600">
+        <div className={`absolute inset-0 ${isDay ? 'bg-black/20' : 'bg-gray-900/40'} backdrop-blur-sm`} onClick={onClose}></div>
+        <div className={`relative w-full max-w-xl rounded-xl shadow-2xl z-10 p-6 space-y-4 text-center ${isDay ? 'bg-white text-gray-900' : 'bg-[#120c1a] text-white'}`}>
+          <AlertCircle className={`w-10 h-10 mx-auto ${isDay ? 'text-red-500' : 'text-red-400'}`} />
+          <h2 className={`text-xl font-semibold ${isDay ? 'text-gray-800' : 'text-white'}`}>Select a block to configure</h2>
+          <p className={`${isDay ? 'text-gray-600' : 'text-gray-300'}`}>
             Drag a block from the library and select it to configure parameters, inspect I/O schema,
             and run isolated tests.
           </p>
           <button
             onClick={onClose}
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg ${isDay ? 'text-white bg-blue-600 hover:bg-blue-700' : 'text-white bg-blue-600 hover:bg-blue-700'}`}
           >
             Close
           </button>
@@ -243,36 +246,39 @@ export default function NodeConfigPanel({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl z-10 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className={`absolute inset-0 ${isDay ? 'bg-black/20' : 'bg-gray-900/40'} backdrop-blur-sm`} onClick={onClose}></div>
+      <div className={`relative w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl z-10 flex flex-col ${isDay ? 'bg-white text-gray-900' : 'bg-[#120c1a] text-white'}`}>
+        <div className={`flex items-center justify-between px-6 py-4 ${isDay ? 'border-b border-gray-100' : 'border-b border-[#27202a]'}`}>
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+            <div className={`${isDay ? 'p-2 rounded-lg bg-blue-50 text-blue-600' : 'p-2 rounded-lg bg-[#1a0f22] text-blue-400'}`}>
               <Zap className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{blockLabel}</h2>
-              <p className="text-xs text-gray-500 font-mono">{blockType}</p>
+              <h2 className={`text-xl font-semibold ${isDay ? 'text-gray-900' : 'text-white'}`}>{blockLabel}</h2>
+              <p className={`text-xs ${isDay ? 'text-gray-500' : 'text-gray-300'} font-mono`}>{blockType}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900"
+            className={`p-2 rounded-full ${isDay ? 'hover:bg-gray-100 text-gray-500 hover:text-gray-900' : 'hover:bg-[#1a0f22] text-gray-300 hover:text-white'}`}
             title="Close panel"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex border-b border-gray-100 px-6 bg-gray-50/60">
+        <div className={`${isDay ? 'flex border-b border-gray-100 px-6 bg-gray-50/60' : 'flex border-b border-[#27202a] px-6 bg-[#150b1e]/10'}`}>
           {(Object.keys(tabConfig) as ActiveTab[]).map(tab => {
             const Icon = tabConfig[tab].icon
             const isActive = activeTab === tab
+            const activeClasses = isActive
+              ? (isDay ? 'border-blue-500 text-blue-600 bg-white' : 'border-blue-500 text-blue-300 bg-[#150b1e]')
+              : (isDay ? 'border-transparent text-gray-500 hover:text-gray-700' : 'border-transparent text-gray-400 hover:text-gray-300')
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex items-center space-x-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${isActive ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`flex items-center space-x-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${activeClasses}`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tabConfig[tab].label}</span>
@@ -281,7 +287,7 @@ export default function NodeConfigPanel({
           })}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-white">{renderTabContent()}</div>
+        <div className={`flex-1 overflow-y-auto p-6 ${isDay ? 'bg-white' : 'bg-[#120c1a]'}`}>{renderTabContent()}</div>
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+import AnimatedBlobs from "../components/background.AnimatedBlob";
 import { useState } from 'react'
 import {
   Plus,
@@ -55,8 +56,9 @@ const getCategoryColor = (category: string) => {
   }
   return colorMap[category?.toLowerCase()] || 'text-gray-600'
 }
+const Blocks = () => {
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
-export default function Blocks() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
@@ -74,11 +76,11 @@ export default function Blocks() {
   // Filter blocks based on search term
   const filteredBlocks = Array.isArray(blocks)
     ? blocks.filter(
-        (block: any) =>
-          block.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          block.manifest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          block.manifest?.summary?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      (block: any) =>
+        block.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        block.manifest?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        block.manifest?.summary?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : []
 
   const handleGenerateBlock = async (description: string, autoDeploy?: boolean) => {
@@ -124,12 +126,12 @@ export default function Blocks() {
   /* --- IMPROVED LOADING STATE --- */
   if (isLoading) {
     return (
-      <div className="min-h-screen p-10 bg-gray-50 flex items-start justify-center">
-        <div className="p-8 bg-white rounded-2xl shadow-xl border border-gray-200 mt-20">
+      <div className="flex items-start justify-center min-h-screen p-10 bg-gray-50">
+        <div className="p-8 mt-20 bg-white border border-gray-200 shadow-xl rounded-2xl">
           <div className="flex flex-col items-center">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+            <Loader2 className="w-10 h-10 mb-4 text-indigo-600 animate-spin" />
             <h2 className="text-xl font-semibold text-gray-800">Loading Block Registry</h2>
-            <p className="text-sm text-gray-500 mt-1">Fetching all available workflow blocks...</p>
+            <p className="mt-1 text-sm text-gray-500">Fetching all available workflow blocks...</p>
           </div>
         </div>
       </div>
@@ -142,7 +144,7 @@ export default function Blocks() {
     (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')
   ) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen p-8 bg-gray-50">
         <NoBlocksFoundPanel
           hasError={hasApiError}
           errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
@@ -160,19 +162,21 @@ export default function Blocks() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="relative min-h-screen  bg-gray-950">
+
+      <AnimatedBlobs />
       {/* --- 1. Enhanced Header & Action Bar --- */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-5 shadow-lg">
+      <header className="top-0 z-10 px-8 py-5 shadow-lg ">
         <div className="flex items-center justify-between">
           {/* Left Side: Title and Stats */}
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Block Manager <span className="text-indigo-600">🚀</span>
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-100">
+              Block Manager
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-300">
               Manage & extend your workflow library.
               {registryStats && (
-                <span className="ml-2 font-medium text-gray-700">
+                <span className="ml-2 font-medium text-gray-200">
                   (
                   <span className="font-bold text-green-600">
                     {(registryStats as any).enabled_blocks}
@@ -191,12 +195,12 @@ export default function Blocks() {
             className="
                             flex items-center space-x-2 
                             px-6 py-2.5 
-                            bg-indigo-600 text-white font-semibold 
+                            bg-[#D4AF37] text-white font-semibold 
                             rounded-xl 
-                            shadow-xl shadow-indigo-200 hover:shadow-2xl 
-                            hover:bg-indigo-700 
+                            shadow-l shadow-[#d4af3770] hover:shadow-2xl 
+                            hover:bg-[#d4a037] 
                             transition duration-300 ease-in-out 
-                            transform hover:scale-[1.03]
+                            transform hover:scale-[1.01]
                         "
             title="Open modal to generate a new AI-powered workflow block"
           >
@@ -206,73 +210,109 @@ export default function Blocks() {
         </div>
       </header>
 
+
+
       <main className="p-8 space-y-8">
+        <div className="px-4 mb-8 text-gray-200 border bg-neutral-800 rounded-xl sm:p-0 lg:px-4 sm:px-4 lg:p-0 border-neutral-700 max-h-52">
+          <div className="flex flex-col items-center justify-between gap-6 lg:flex-row lg:gap-8">
+            {/* Left Image */}
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <img
+                src="/BlocksHeader1.svg"
+                alt="blocks header"
+                className="object-contain w-full h-32 mx-auto sm:w-auto sm:h-36 lg:h-44"
+              />
+            </div>
+
+            {/* Center Text */}
+            <div className="text-center lg:text-left">
+              <h2 className="mb-1 text-xl sm:text-2xl lg:text-3xl sm:mb-2">
+                Explore{" "}
+                <span className="text-yellow-500">templates</span>{" "}
+                or
+              </h2>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl">
+                <span className="text-yellow-500">customize</span>{" "}
+                them
+              </h2>
+            </div>
+
+            {/* Right Image */}
+            <div className="flex-shrink-0 w-full sm:w-auto">
+              <img
+                src="/BlocksHeader2.svg"
+                alt="blocks header"
+                className="object-contain w-full h-32 mx-auto sm:w-auto sm:h-40 lg:h-52"
+              />
+            </div>
+          </div>
+        </div>
         {/* --- 2. Registry Stats Cards --- */}
         {registryStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 ">
             {/* Card 1: Total Blocks */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
+            <div className="p-6 transition duration-300 transform border border-gray-100 shadow-xl  rounded-s-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-sm font-medium tracking-wider text-gray-100 uppercase">
                     Total Blocks
                   </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
+                  <p className="mt-2 text-4xl font-extrabold text-gray-200">
                     {(registryStats as any).total_blocks}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600 shadow-inner">
+                <div className="p-3 text-blue-600 shadow-inner rounded-xl bg-blue-50">
                   <Layers className="w-8 h-8" />
                 </div>
               </div>
             </div>
 
             {/* Card 2: Enabled Blocks */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
+            <div className="p-6 transition duration-300 transform border border-gray-100 shadow-xl ">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-sm font-medium tracking-wider text-gray-100 uppercase">
                     Active Status
                   </p>
-                  <p className="text-4xl font-extrabold text-green-600 mt-2">
+                  <p className="mt-2 text-4xl font-extrabold text-gray-200">
                     {(registryStats as any).enabled_blocks}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-green-50 text-green-600 shadow-inner">
+                <div className="p-3 text-green-600 shadow-inner rounded-xl bg-green-50">
                   <Power className="w-8 h-8" />
                 </div>
               </div>
             </div>
 
             {/* Card 3: Categories */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
+            <div className="p-6 transition duration-300 transform border border-gray-100 shadow-xl ">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-sm font-medium tracking-wider text-gray-100 uppercase">
                     Categories
                   </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
+                  <p className="mt-2 text-4xl font-extrabold text-gray-200">
                     {Array.isArray(categories) ? categories.length : 0}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-purple-50 text-purple-600 shadow-inner">
+                <div className="p-3 text-purple-600 shadow-inner rounded-xl bg-purple-50">
                   <Grid className="w-8 h-8" />
                 </div>
               </div>
             </div>
 
             {/* Card 4: Plugins */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
+            <div className="p-6 transition duration-300 transform border border-gray-100 shadow-xl  rounded-e-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-sm font-medium tracking-wider text-gray-100 uppercase">
                     Plugins
                   </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
+                  <p className="mt-2 text-4xl font-extrabold text-gray-200">
                     {(registryStats as any)?.plugins_loaded || 0}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-yellow-50 text-yellow-600 shadow-inner">
+                <div className="p-3 text-yellow-600 shadow-inner rounded-xl bg-yellow-50">
                   <Code className="w-8 h-8" />
                 </div>
               </div>
@@ -280,137 +320,252 @@ export default function Blocks() {
           </div>
         )}
 
-        {/* --- 3. Main Block Content Area --- */}
-        <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100">
-          {/* Modern Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search blocks by name, type, or summary..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 
-                                            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner"
-              />
-            </div>
-
-            {/* Category Select */}
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              <select
-                value={selectedCategory}
-                onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-auto pl-12 pr-5 py-3.5 border border-gray-300 rounded-xl bg-white text-gray-700 
-                                            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer transition duration-150 shadow-inner"
+        {/* Filters and Search */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            {/* {filters.map((filter) => (
+              <button
+                key={filter}
+                className={`px-4 py-2 rounded-lg text-sm transition-colors ${filter === "All"
+                  ? "bg-neutral-700 text-white"
+                  : "bg-transparent border border-neutral-700 text-neutral-400 hover:text-white"
+                  }`}
               >
-                <option value="">All Categories</option>
-                {Array.isArray(categories) &&
-                  categories.map((category: string) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-              </select>
-              {/* Custom dropdown arrow to replace default appearance-none */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
-              </div>
+                {filter}
+              </button>
+            ))} */}
+            <div className="relative w-full sm:w-auto">
+              <button
+                onClick={() => setCategoryOpen(!categoryOpen)}
+                className="flex items-center w-full px-4 py-3 bg-transparent border sm:w-auto border-neutral-700 rounded-xl text-neutral-300"
+              >
+                <Filter className="mr-2 text-neutral-500" size={18} />
+                {selectedCategory || "All Categories"}
+              </button>
+
+              {categoryOpen && (
+                <>
+                  {/* Overlay to close dropdown */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setCategoryOpen(false)}
+                  />
+
+                  {/* Dropdown - horizontal scrollable */}
+                  <div
+                    className="absolute left-0 z-50 p-3 mt-2 border shadow-lg bg-black/70 backdrop-blur-md border-neutral-700 rounded-xl"
+                  >
+                    <div className="flex flex-row gap-2 overflow-x-auto max-w-[90vw]">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory("");
+                          setCategoryOpen(false);
+                        }}
+                        className={`px-4 py-2 rounded-lg border border-neutral-600 flex-shrink-0 whitespace-nowrap ${selectedCategory === ""
+                          ? "bg-neutral-700 text-white"
+                          : "bg-neutral-900 text-neutral-300"
+                          }`}
+                      >
+                        All
+                      </button>
+
+                      {Array.isArray(categories) &&
+                        categories.map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setCategoryOpen(false);
+                            }}
+                            className={`px-4 py-2 rounded-lg border border-neutral-600 flex-shrink-0 whitespace-nowrap ${selectedCategory === cat
+                              ? "bg-neutral-700 text-white"
+                              : "bg-neutral-900 text-neutral-300"
+                              }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search blocks by name, type, or summary..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="px-4 py-2 pl-4 pr-10 text-sm bg-transparent border rounded-lg w-52 border-neutral-700 text-neutral-400 placeholder-neutral-500 focus:outline-none focus:border-neutral-600"
+            />
+            <Search className="absolute w-4 h-4 -translate-y-1/2 text-neutral-500 right-3 top-1/2" />
+          </div>
+        </div>
+
+
+        {/* --- 3. Main Block Content Area --- */}
+        <div className="p-8 border border-gray-100 shadow-2xl  rounded-2xl">
 
           {/* Block Grid Display */}
           {filteredBlocks.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {filteredBlocks.map((block: any) => {
-                const BlockIcon = getBlockIcon(block.type)
+                // const BlockIcon = getBlockIcon(block.type)
                 const category = block.manifest?.category || block.type.split('_')[0] || 'general'
                 const color = getCategoryColor(category)
-                const bgColor = color.replace('text-', 'bg-').replace('-600', '-50')
+                // const bgColor = color.replace('text-', 'bg-').replace('-600', '-50')
 
                 return (
                   <div
                     key={block.type}
-                    className="bg-white border border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-between"
+                    className="flex flex-col p-4 transition-all duration-300 border shadow-lg bg-neutral-900/90 backdrop-blur-md border-neutral-700 rounded-2xl hover:shadow-2xl hover:border-neutral-600"
                   >
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-4">
-                        {/* Icon with a distinct, larger background */}
-                        <div className={`p-3 rounded-xl ${bgColor} shadow-lg shadow-gray-100`}>
-                          <BlockIcon className={`w-8 h-8 ${color}`} />
-                        </div>
-
-                        {/* Status Tag and Toggle */}
-                        <div className="flex space-x-2 items-center">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              handleToggleBlock(block)
-                            }}
-                            disabled={
-                              enableBlockMutation.isPending || disableBlockMutation.isPending
-                            }
-                            className={`p-2 rounded-full transition-colors duration-200 ${
-                              block.enabled
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                : 'bg-green-50 text-green-600 hover:bg-green-100'
-                            }`}
-                            title={block.enabled ? 'Disable Block' : 'Enable Block'}
-                          >
-                            {block.enabled ? (
-                              <PowerOff className="w-5 h-5" />
-                            ) : (
-                              <Power className="w-5 h-5" />
-                            )}
-                          </button>
-
-                          <div
-                            className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-widest ${block.enabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                          >
-                            {block.enabled ? 'Active' : 'Disabled'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Block Title and Summary */}
-                      <h3 className="text-xl font-extrabold mb-2 text-gray-900 leading-snug">
-                        {block.manifest?.name || block.type.replace(/_/g, ' ')}
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-6 line-clamp-3">
-                        {block.manifest?.summary ||
-                          `Block type: ${block.type}. No summary provided in manifest.`}
-                      </p>
+                    {/* Preview Image */}
+                    <div className="flex items-center justify-center w-full h-40 mb-4 overflow-hidden bg-neutral-800 rounded-xl">
+                      <img
+                        src="/blocks.svg"
+                        alt="block preview"
+                        className="object-contain w-28 h-28"
+                      />
                     </div>
 
-                    {/* Footer: Category Tag and Action Button */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    {/* Title + Views */}
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-lg font-semibold text-gray-100">
+                        {block.manifest?.name || block.type.replace(/_/g, ' ')}
+                      </h3>
+
+                      <div className="flex items-center text-sm text-gray-400">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="2"
+                          stroke="currentColor"
+                          className="w-4 h-4 mr-1"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 
+                               4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                        <span>3.7k</span>
+                      </div>
+                    </div>
+
+                    {/* Summary */}
+                    <p className="mb-4 text-sm text-gray-400 line-clamp-2">
+                      {block.manifest?.summary ||
+                        `Block type: ${block.type}. No summary provided.`}
+                    </p>
+
+                    {/* Footer — Category + Button */}
+                    <div className="flex items-center justify-between pt-3 mt-auto border-t border-neutral-700">
                       <span
-                        className={`text-xs ${color} bg-gray-100 px-3 py-1 rounded-full font-bold uppercase`}
+                        className={`text-xs ${color} bg-neutral-800 px-3 py-1 rounded-full font-bold uppercase`}
                       >
                         {category}
                       </span>
+
                       <button
                         onClick={() => setSelectedBlock(block)}
-                        className="px-4 py-2 text-sm bg-indigo-600 text-white font-semibold hover:bg-indigo-700 rounded-lg transition-colors shadow-md"
+                        className="px-3 py-1.5 text-xs bg-yellow-600 text-black font-semibold 
+                                   hover:bg-yellow-500 rounded-lg transition shadow"
                       >
-                        Details & Config
+                        Details & config
                       </button>
                     </div>
                   </div>
-                )
+                );
+
               })}
             </div>
           )}
         </div>
       </main>
+
+      {/* Generate Block Modal (Frosted Glass Style) */}
+      {showGenerateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/50 backdrop-blur-md"
+          onClick={() => setShowGenerateModal(false)}
+        >
+          <div
+            className="w-full max-w-lg p-6 mx-auto transition-all duration-300 transform scale-100 border shadow-2xl bg-gray-900/50 backdrop-blur-xl rounded-2xl border-white/20"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="flex items-center pb-3 mb-6 text-3xl font-extrabold text-gray-100 border-b">
+              <Zap className="w-6 h-6 mr-3 text-gray-100" />
+              AI Block Generator
+            </h3>
+            <div className="space-y-6">
+              {/* Description Input Area */}
+              <div>
+                <label
+                  htmlFor="block-description"
+                  className="block mb-3 text-base font-semibold text-gray-300"
+                >
+                  Describe the block's function in detail:
+                </label>
+                <textarea
+                  id="block-description"
+                  value={generateDescription}
+                  onChange={e => setGenerateDescription(e.target.value)}
+                  placeholder="e.g., 'A block that fetches the current stock price for a given ticker, then uses a pre-trained sentiment model to classify the latest 10 news headlines about the company as positive, negative, or neutral.'"
+                  className="w-full h-40 p-4 text-sm text-gray-300 transition duration-150 border border-gray-800 shadow-inner resize-none rounded-xl bg-black/10 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  The more detail you provide, the better the generated block will be.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end pt-4 space-x-3">
+                {/* Secondary Button: Cancel */}
+                <button
+                  onClick={() => setShowGenerateModal(false)}
+                  className="px-6 py-3 text-base font-medium text-gray-700 transition-colors bg-gray-100 shadow-md rounded-xl hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+
+                {/* Primary Button: Generate */}
+                <button
+                  onClick={handleGenerateBlock}
+                  disabled={!generateDescription.trim() || generateBlockMutation.isPending}
+                  className={`px-6 py-3 text-base font-medium text-white rounded-xl  transition-all duration-300
+                                        ${!generateDescription.trim() ||
+                      generateBlockMutation.isPending
+                      ? 'bg-[#D4AF37]/55 cursor-not-allowed opacity-80'
+                      : 'bg-[#D4AF37] hover:bg-[#D4AF37]/90 hover:shadow-xl shadow-indigo-300'
+                    }
+                                        flex items-center justify-center space-x-2`}
+                >
+                  {generateBlockMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Generating Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5" />
+                      <span>Generate Block</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Block Modal */}
       {/* Note: I'm assuming BlockDetails handles its own modal/overlay logic, if not,
@@ -450,3 +605,4 @@ export default function Blocks() {
     </div>
   )
 }
+export default Blocks;

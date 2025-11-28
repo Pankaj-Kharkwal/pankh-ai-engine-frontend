@@ -16,7 +16,9 @@ import Analytics from './pages/Analytics'
 import WorkflowManager from './pages/WorkflowManager'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
+import WorkflowBuilderRedesignPage from './pages/WorkflowBuilderRedesignPage'
 import { useAuth } from './contexts/AuthContext'
+import DashboardRedesign from './pages/DashboardRedesign'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +52,21 @@ function App() {
     <ErrorBoundary showDetails={import.meta.env.DEV}>
       <QueryClientProvider client={queryClient}>
         <Routes>
+          {/* Full-page workflow redesign route (outside Layout) */}
+          {/* <Route
+            path="/workflows/redesign"
+            element={
+              <ProtectedRoute>
+                <WorkflowBuilderRedesignPage />
+              </ProtectedRoute>
+            }
+          /> */}
+            <Route path="workflows/create" element={<ProtectedRoute>
+                <WorkflowBuilderRedesignPage />
+              </ProtectedRoute> }/>
+            <Route path="workflows/:id" element={<ProtectedRoute>
+                <WorkflowBuilderRedesignPage />
+              </ProtectedRoute>} />
           <Route
             path="/"
             element={
@@ -58,10 +75,9 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={<DashboardRedesign />} />
             <Route path="workflows" element={<Workflows />} />
-            <Route path="workflows/create" element={<WorkflowBuilder />} />
-            <Route path="workflows/:id" element={<WorkflowBuilder />} />
+            <Route path="workflows/old" element={<WorkflowBuilder />} />
             <Route path="workflows/demo" element={<WorkflowDemo />} />
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="chatbot" element={<BYOChatbot />} />

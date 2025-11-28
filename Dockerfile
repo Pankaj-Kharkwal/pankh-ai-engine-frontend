@@ -2,6 +2,14 @@
 # Stage 1: Build the application
 FROM node:22-slim AS builder
 
+ARG NODE_ENV=production
+ARG VITE_API_URL=/api/v1
+ARG VITE_WS_URL=/ws
+
+ENV NODE_ENV=${NODE_ENV}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_WS_URL=${VITE_WS_URL}
+
 # Set working directory
 WORKDIR /app
 
