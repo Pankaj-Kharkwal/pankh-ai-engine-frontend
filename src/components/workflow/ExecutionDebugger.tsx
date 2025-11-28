@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Play,
   Pause,
   Square,
-  SkipForward,
-  Circle,
-  AlertCircle,
   CheckCircle,
-  Settings,
+  AlertCircle,
   X,
   Loader,
-  ArrowRight, // New: Used for 'Step' button, clearer than SkipForward
+  ArrowRight,
+  Circle,
+  Settings,
 } from 'lucide-react'
 import type { Node, Edge } from '@xyflow/react'
 
@@ -23,6 +23,7 @@ interface ExecutionDebuggerProps {
   onExecuteStep?: (nodeId: string) => void
   onExecuteToBreakpoint?: (breakpointNodeId: string) => void
   onStopExecution?: () => void
+  isDay?: boolean // THEME PROP: true = light mode, false = dark mode
 }
 
 interface Breakpoint {
@@ -49,7 +50,9 @@ export default function ExecutionDebugger({
   onExecuteStep,
   onExecuteToBreakpoint,
   onStopExecution,
+  isDay = false,
 }: ExecutionDebuggerProps) {
+  // --- state (kept your logic) ---
   const [breakpoints, setBreakpoints] = useState<Breakpoint[]>([])
   const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([])
   const [currentStepIndex, setCurrentStepIndex] = useState(-1)
@@ -57,9 +60,9 @@ export default function ExecutionDebugger({
   const [executionMode, setExecutionMode] = useState<'normal' | 'step' | 'breakpoint'>('normal')
   const [selectedStep, setSelectedStep] = useState<number | null>(null)
 
-  const panelRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
 
-  // --- EXISTING LOGIC REMAINS (useEffect, toggleBreakpoint, etc.) ---
+  // --- keep existing parsing logic (unchanged behavior) ---
   useEffect(() => {
     if (executionData?.nodeResults) {
       const steps: ExecutionStep[] = []
@@ -73,10 +76,8 @@ export default function ExecutionDebugger({
         const visit = (nodeId: string) => {
           if (visited.has(nodeId) || visiting.has(nodeId)) return
           visiting.add(nodeId)
-
           const incomingEdges = edges.filter(edge => edge.target === nodeId)
           incomingEdges.forEach(edge => visit(edge.source))
-
           visiting.delete(nodeId)
           visited.add(nodeId)
           order.push(nodeId)
@@ -88,19 +89,14 @@ export default function ExecutionDebugger({
             visit(node.id)
           }
         })
-
-        // Ensure all nodes are included in the execution steps, even if they have cycles or no connections
         nodes.forEach(node => {
           if (!order.includes(node.id)) {
             order.push(node.id)
           }
         })
-
         return order
       }
-
       const executionOrder = getExecutionOrder()
-
       executionOrder.forEach(nodeId => {
         const result = executionData.nodeResults[nodeId]
         if (result) {
@@ -122,7 +118,6 @@ export default function ExecutionDebugger({
           })
         }
       })
-
       setExecutionSteps(steps)
       setCurrentStepIndex(
         steps.findIndex(step => step.status === 'running') !== -1
@@ -135,14 +130,13 @@ export default function ExecutionDebugger({
     }
   }, [executionData, nodes, edges])
 
+  // --- breakpoint helpers (same behavior) ---
   const toggleBreakpoint = (nodeId: string) => {
     setBreakpoints(prev => {
       const existing = prev.find(bp => bp.nodeId === nodeId)
       if (existing) {
-        // Toggle the enabled status if it exists
         return prev.map(bp => (bp.nodeId === nodeId ? { ...bp, enabled: !bp.enabled } : bp))
       } else {
-        // Add new enabled breakpoint
         return [...prev, { nodeId, enabled: true }]
       }
     })
@@ -152,6 +146,7 @@ export default function ExecutionDebugger({
     return breakpoints.some(bp => bp.nodeId === nodeId && bp.enabled)
   }
 
+  // --- execution controls (same behavior) ---
   const startDebugging = () => {
     setIsDebugging(true)
     setExecutionMode('step')
@@ -192,27 +187,22 @@ export default function ExecutionDebugger({
     const node = nodes.find(n => n.id === nodeId)
     return node?.data?.label || node?.type || nodeId
   }
-  // --- END OF EXISTING LOGIC ---
 
-  // --- NEW UI HELPER FUNCTIONS ---
-
+  // --- UI helpers (modified for theme) ---
   const getStepStatusIcon = (status: ExecutionStep['status']) => {
     const baseClasses = 'w-4 h-4'
     switch (status) {
       case 'running':
-        // IMPROVEMENT: Loader icon is prominent
-        return <Loader className={`${baseClasses} text-indigo-500 animate-spin`} />
+        return <Loader className={`${baseClasses} animate-spin text-indigo-500`} />
       case 'completed':
         return <CheckCircle className={`${baseClasses} text-green-500`} />
       case 'error':
         return <AlertCircle className={`${baseClasses} text-red-500`} />
       default:
-        // IMPROVEMENT: Darker gray for better contrast
-        return <Circle className={`${baseClasses} text-gray-500 fill-gray-200`} />
+        return <Circle className={`${baseClasses} text-gray-400`} />
     }
   }
 
-  // IMPROVEMENT: This function now returns classes for a left border accent, reducing card background noise
   const getStepAccentClasses = (status: ExecutionStep['status']) => {
     switch (status) {
       case 'running':
@@ -226,221 +216,214 @@ export default function ExecutionDebugger({
     }
   }
 
-  // --- COMPONENT RENDER ---
+  // theme helpers
+  const bgMain = isDay ? 'bg-white' : 'bg-[#071020]'
+  const panelGlass = isDay ? 'bg-white/90' : 'bg-[#0b1220]/70 backdrop-blur-md'
+  const headerBg = isDay ? 'bg-gradient-to-r from-indigo-50 to-white' : 'bg-gradient-to-r from-[#071428]/40 to-[#071020]/10'
+  const textPrimary = isDay ? 'text-gray-900' : 'text-white'
+  const textMuted = isDay ? 'text-gray-600' : 'text-gray-300'
 
-  if (!isVisible) {
-    return (
-      <div className="fixed top-[55%] right-4 z-40">
-        <button
-          onClick={onToggleVisibility}
-          className="bg-white border border-gray-300 rounded-full p-3 shadow-xl hover:bg-gray-100 transition-colors transform hover:scale-105"
-          title="Show Execution Debugger"
-        >
-          <Settings className="w-6 h-6 text-indigo-600" />
-        </button>
-      </div>
-    )
-  }
+  // --- Render ---
 
   return (
-    <div
-      ref={panelRef}
-      className="fixed bottom-4 right-4 w-[400px] max-h-[80vh] bg-white border border-gray-200 rounded-xl shadow-2xl z-40 flex flex-col font-sans"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-indigo-50/70 rounded-t-xl">
-        <h3 className="text-xl font-extrabold text-gray-800 flex items-center space-x-2">
-          <Settings className="w-5 h-5 text-indigo-700" />
-          <span>Workflow Debugger</span>
-        </h3>
-        <button
-          onClick={onToggleVisibility}
-          className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors rounded-full hover:bg-white"
-          title="Hide Execution Debugger"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+    <>
+      <AnimatePresence>
+          <motion.div
+            key="execution-debugger-panel"
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: 0.22 }}
+            className={`fixed bottom-4 right-4 z-50 w-[420px] max-h-[82vh] rounded-xl shadow-2xl ${panelGlass} border ${isDay ? 'border-gray-200' : 'border-[#162033]'}`}
+            ref={panelRef}
+          >
+            {/* Header */}
+            <div className={`flex items-center justify-between px-4 py-3 rounded-t-xl ${headerBg} border-b ${isDay ? 'border-gray-100' : 'border-[#111827]'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-md ${isDay ? 'bg-indigo-100' : 'bg-indigo-900/20'}`}>
+                  <Settings className={`w-5 h-5 ${isDay ? 'text-indigo-700' : 'text-indigo-300'}`} />
+                </div>
+                <div>
+                  <div className={`text-sm font-bold ${textPrimary}`}>Workflow Debugger</div>
+                  <div className={`text-[12px] ${textMuted}`}>Step through execution, inspect I/O, set breakpoints</div>
+                </div>
+              </div>
 
-      {/* Controls */}
-      <div className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center space-x-2">
-          {!isDebugging ? (
-            <button
-              onClick={startDebugging}
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-colors text-base font-semibold disabled:opacity-50"
-              disabled={executionSteps.length === 0}
-            >
-              <Play className="w-5 h-5 fill-white" />
-              <span>Start Debugging</span>
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={executeNextStep}
-                disabled={currentStepIndex >= executionSteps.length - 1}
-                className="flex items-center space-x-1 px-3 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                title="Execute Next Step (F10)"
-              >
-                <ArrowRight className="w-4 h-4" /> {/* Changed to ArrowRight for clarity */}
-                <span>Step Over</span>
-              </button>
-              <button
-                onClick={executeToNextBreakpoint}
-                className="flex items-center space-x-1 px-3 py-2 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700 transition-colors text-sm font-medium"
-                title="Continue to Next Breakpoint (F5)"
-              >
-                <Pause className="w-4 h-4" />
-                <span>Continue</span>
-              </button>
-              <button
-                onClick={stopDebugging}
-                className="flex items-center space-x-1 px-3 py-2 bg-gray-700 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors text-sm font-medium"
-                title="Stop Execution"
-              >
-                <Square className="w-4 h-4" />
-                <span>Stop</span>
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Status Indicators (Improved Layout) */}
-        <div className="mt-4 flex text-xs font-semibold border-b border-gray-200">
-          <div className="flex-1 text-center p-3 text-gray-700 border-r border-gray-100 bg-gray-50 rounded-tl-lg">
-            <div className="text-gray-500 font-medium text-xs">Mode</div>
-            <div className="text-gray-900 font-extrabold text-sm capitalize">
-              {isDebugging ? executionMode : 'Normal'}
-            </div>
-          </div>
-          <div className="flex-1 text-center p-3 text-gray-700 border-r border-gray-100 bg-gray-50">
-            <div className="text-gray-500 font-medium text-xs">Progress</div>
-            <div className="text-gray-900 font-extrabold text-sm">
-              {currentStepIndex + 1} / {executionSteps.length}
-            </div>
-          </div>
-          <div className="flex-1 text-center p-3 text-gray-700 bg-gray-50 rounded-tr-lg">
-            <div className="text-gray-500 font-medium text-xs">Breakpoints</div>
-            <div className="text-gray-900 font-extrabold text-sm">
-              {breakpoints.filter(bp => bp.enabled).length}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Execution Steps */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="p-4 space-y-2">
-          {executionSteps.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Settings className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">Execution Steps Empty</p>
-              <p className="text-xs mt-1">Run the workflow to populate the history.</p>
-            </div>
-          ) : (
-            executionSteps.map((step, index) => {
-              const hasBreakpoint = isBreakpointEnabled(step.nodeId)
-              const isCurrentStep = index === currentStepIndex && isDebugging
-              const isSelected = selectedStep === index
-              const nodeName = getNodeName(step.nodeId)
-
-              return (
-                <div
-                  key={`${step.nodeId}-${index}`}
-                  className={`border rounded-xl p-3 cursor-pointer transition-all duration-150 shadow-sm bg-white hover:bg-gray-50
-                    ${
-                      isSelected
-                        ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50 shadow-lg'
-                        : isCurrentStep
-                          ? 'border-yellow-500 ring-2 ring-yellow-200 bg-yellow-50'
-                          : getStepAccentClasses(step.status) // Stronger left border accent
-                    }`}
-                  onClick={() => setSelectedStep(index)}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onToggleVisibility}
+                  className={`p-1.5 rounded-md transition-colors ${isDay ? 'hover:bg-gray-100' : 'hover:bg-[#081422]'}`}
+                  title="Hide"
                 >
-                  <div className="flex items-center space-x-3">
-                    {/* Breakpoint Toggle */}
+                  <X className={`${isDay ? 'text-gray-700' : 'text-gray-200'} w-5 h-5`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className={`px-4 py-3 border-b ${isDay ? 'border-gray-100' : 'border-[#0f2433]'} ${isDay ? 'bg-white/60' : 'bg-transparent'}`}>
+              <div className="flex items-center gap-2">
+                {!isDebugging ? (
+                  <button
+                    onClick={startDebugging}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${isDay ? 'bg-indigo-600 text-white' : 'bg-indigo-500/90 text-white'} shadow-sm hover:brightness-105 transition-all`}
+                    disabled={executionSteps.length === 0}
+                  >
+                    <Play className="w-4 h-4" />
+                    Start Debugging
+                  </button>
+                ) : (
+                  <>
                     <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        toggleBreakpoint(step.nodeId)
-                      }}
-                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 border-2
-                        ${
-                          hasBreakpoint
-                            ? 'bg-red-500 border-red-700'
-                            : 'bg-transparent border-gray-300 hover:border-red-500'
-                        }`}
-                      title={hasBreakpoint ? 'Remove breakpoint' : 'Add breakpoint'}
+                      onClick={executeNextStep}
+                      disabled={currentStepIndex >= executionSteps.length - 1}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-600 text-white font-medium shadow-sm hover:brightness-105 disabled:opacity-60"
+                      title="Step Over"
                     >
-                      {hasBreakpoint && <Circle className="w-2.5 h-2.5 fill-white text-white" />}
+                      <ArrowRight className="w-4 h-4" />
+                      Step
                     </button>
 
-                    {/* Status Icon */}
-                    <div className="flex-shrink-0">{getStepStatusIcon(step.status)}</div>
+                    <button
+                      onClick={executeToNextBreakpoint}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-600 text-white font-medium shadow-sm hover:brightness-105"
+                      title="Continue to Breakpoint"
+                    >
+                      <Pause className="w-4 h-4" />
+                      Continue
+                    </button>
 
-                    {/* Node Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-900 truncate">{nodeName}</div>
-                      <div className="text-xs text-gray-600 flex items-center space-x-2">
-                        <span className="capitalize">{step.status}</span>
-                        {step.executionTime !== undefined && step.status !== 'pending' && (
-                          <>
-                            <span className="text-gray-400">•</span>
-                            <span className="font-mono">{step.executionTime}ms</span>
-                          </>
+                    <button
+                      onClick={stopDebugging}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700 text-white font-medium shadow-sm hover:brightness-95"
+                      title="Stop"
+                    >
+                      <Square className="w-4 h-4" />
+                      Stop
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Stats row */}
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-medium">
+                <div className={`text-center rounded-md px-2 py-1 ${isDay ? 'bg-white' : 'bg-[#071827]/40'}`}>
+                  <div className={`text-[11px] ${textMuted}`}>Mode</div>
+                  <div className={`text-sm ${textPrimary}`}>{isDebugging ? executionMode : 'Normal'}</div>
+                </div>
+                <div className={`text-center rounded-md px-2 py-1 ${isDay ? 'bg-white' : 'bg-[#071827]/40'}`}>
+                  <div className={`text-[11px] ${textMuted}`}>Progress</div>
+                  <div className={`text-sm ${textPrimary}`}>{currentStepIndex + 1} / {executionSteps.length}</div>
+                </div>
+                <div className={`text-center rounded-md px-2 py-1 ${isDay ? 'bg-white' : 'bg-[#071827]/40'}`}>
+                  <div className={`text-[11px] ${textMuted}`}>Breakpoints</div>
+                  <div className={`text-sm ${textPrimary}`}>{breakpoints.filter(bp => bp.enabled).length}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps list */}
+            <div className="overflow-y-auto max-h-[48vh] px-3 py-3 space-y-2">
+              {executionSteps.length === 0 ? (
+                <div className="text-center py-12">
+                  <Settings className={`w-12 h-12 mx-auto mb-3 ${isDay ? 'text-indigo-600' : 'text-indigo-300'}`} />
+                  <div className={`text-sm font-semibold ${textPrimary}`}>No execution steps yet</div>
+                  <div className={`text-xs mt-1 ${textMuted}`}>Run the workflow to populate the history.</div>
+                </div>
+              ) : (
+                executionSteps.map((step, index) => {
+                  const hasBreakpoint = isBreakpointEnabled(step.nodeId)
+                  const isCurrentStep = index === currentStepIndex && isDebugging
+                  const isSelected = selectedStep === index
+                  const nodeName = getNodeName(step.nodeId)
+
+                  const selectedClasses = isSelected ? (isDay ? 'ring-2 ring-indigo-200 bg-indigo-50' : 'ring-2 ring-indigo-600 bg-[#071a2b]') : ''
+                  const currentClasses = isCurrentStep ? 'bg-amber-50 border-amber-300' : ''
+
+                  return (
+                    <motion.div
+                      key={`${step.nodeId}-${index}`}
+                      layout
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      transition={{ duration: 0.16 }}
+                      onClick={() => setSelectedStep(index)}
+                      className={`rounded-lg p-3 border ${getStepAccentClasses(step.status)} cursor-pointer ${selectedClasses} ${currentClasses} ${isDay ? 'bg-white' : 'bg-[#071a2b]/60'} shadow-sm`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Breakpoint toggle */}
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleBreakpoint(step.nodeId) }}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors border-2 ${hasBreakpoint ? 'bg-red-500 border-red-700' : `${isDay ? 'border-gray-200' : 'border-gray-600'} bg-transparent hover:border-red-500`}`}
+                          title={hasBreakpoint ? 'Disable breakpoint' : 'Enable breakpoint'}
+                        >
+                          {hasBreakpoint ? <Circle className="w-3 h-3 fill-white text-white" /> : <div className="w-2.5 h-2.5 rounded-full bg-transparent" />}
+                        </button>
+
+                        {/* Status icon */}
+                        <div className="flex-shrink-0">
+                          {getStepStatusIcon(step.status)}
+                        </div>
+
+                        {/* Node info */}
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-sm font-semibold truncate ${isDay ? 'text-gray-900' : 'text-white'}`}>{nodeName}</div>
+                          <div className={`text-xs mt-0.5 flex items-center gap-2 ${isDay ? 'text-gray-500' : 'text-gray-300'}`}>
+                            <span className="capitalize">{step.status}</span>
+                            {step.executionTime !== undefined && step.status !== 'pending' && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono text-[12px]">{step.executionTime}ms</span>
+                              </>
+                            )}
+                            <span className="ml-auto text-[11px] text-gray-400">{new Date(step.timestamp).toLocaleTimeString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Current indicator */}
+                        {isCurrentStep && (
+                          <div className="px-2 py-0.5 bg-amber-500 text-xs font-bold text-gray-900 rounded-full border border-amber-700">
+                            PAUSED
+                          </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Current Step Indicator (Visual Cue) */}
-                    {isCurrentStep && (
-                      <div className="px-2 py-0.5 bg-yellow-500 text-xs font-bold text-gray-800 rounded-full flex-shrink-0 border border-yellow-700">
-                        PAUSED
-                      </div>
-                    )}
-                  </div>
+                      {/* Details — expand when selected */}
+                      {isSelected && (
+                        <div className="mt-3 pl-10 pt-3 border-t pt-3">
+                          {step.error && (
+                            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-800 mb-3">
+                              <div className="flex items-center gap-2 font-bold mb-1">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>Error</span>
+                              </div>
+                              <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto">{String(step.error)}</pre>
+                            </div>
+                          )}
 
-                  {/* Step Details */}
-                  {isSelected && (
-                    <div className="mt-3 pl-8 space-y-3 pt-3 border-t border-gray-200">
-                      {step.error && (
-                        <div className="p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-800">
-                          <div className="flex items-center space-x-2 font-bold mb-1">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>Error:</span>
-                          </div>
-                          <pre className="mt-1 whitespace-pre-wrap font-mono text-xs overflow-x-auto text-red-900">
-                            {step.error}
-                          </pre>
+                          {[
+                            { title: 'Input Data', data: step.inputData },
+                            { title: 'Output Data', data: step.outputData },
+                          ].map(({ title, data }) =>
+                            data ? (
+                              <div key={title} className="mb-3">
+                                <div className={`text-xs font-bold mb-1 ${isDay ? 'text-gray-700' : 'text-gray-300'}`}>{title}</div>
+                                <pre className={`text-xs font-mono p-2 rounded border ${isDay ? 'bg-gray-50 border-gray-200 text-gray-800' : 'bg-[#021024] border-[#062033] text-gray-200' } overflow-x-auto max-h-48`}>
+                                  {JSON.stringify(data, null, 2)}
+                                </pre>
+                              </div>
+                            ) : null
+                          )}
                         </div>
                       )}
-
-                      {/* Data Sections */}
-                      {[
-                        { title: 'Input Data', data: step.inputData, Icon: ArrowRight },
-                        { title: 'Output Data', data: step.outputData, Icon: CheckCircle },
-                      ].map(
-                        ({ title, data, Icon }) =>
-                          data && (
-                            <div key={title}>
-                              <div className="text-xs font-bold text-gray-700 mb-1 flex items-center">
-                                <Icon className="w-3 h-3 mr-1 text-indigo-500" />
-                                {title}:
-                              </div>
-                              <pre className="text-xs bg-gray-100 p-2 rounded-lg border border-gray-300 overflow-x-auto max-h-40 text-gray-800 font-mono shadow-inner">
-                                {JSON.stringify(data, null, 2)}
-                              </pre>
-                            </div>
-                          )
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-    </div>
+                    </motion.div>
+                  )
+                })
+              )}
+            </div>
+          </motion.div>
+      </AnimatePresence>
+    </>
   )
 }
