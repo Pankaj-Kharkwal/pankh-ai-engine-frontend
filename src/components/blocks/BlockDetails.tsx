@@ -33,17 +33,17 @@ interface BlockDetailsProps {
 const InfoContent: React.FC<{ block: any }> = ({ block }) => (
   <div className="space-y-6">
     <div>
-      <h3 className="text-lg font-bold text-gray-800 mb-3">Block Metadata</h3>
+      <h3 className="text-lg font-bold text-gray-100 mb-3">Block Metadata</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-semibold uppercase text-gray-500">Type</label>
+            <label className="text-xs font-semibold uppercase text-gray-300">Type</label>
             <p className="text-sm text-gray-900 font-mono bg-gray-100 p-2 rounded break-all">
               {block?.type}
             </p>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-gray-500">Category</label>
+            <label className="text-xs font-semibold uppercase text-gray-300">Category</label>
             <p className="text-sm text-gray-900 p-2 rounded border border-transparent">
               {block?.manifest?.category || 'Unknown'}
             </p>
@@ -51,13 +51,13 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-semibold uppercase text-gray-500">Plugin Path</label>
+            <label className="text-xs font-semibold uppercase text-gray-300">Plugin Path</label>
             <p className="text-sm text-gray-900 font-mono bg-gray-100 p-2 rounded break-all">
               {block?.plugin_path || 'Built-in'}
             </p>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-gray-500">Last Modified</label>
+            <label className="text-xs font-semibold uppercase text-gray-300">Last Modified</label>
             <p className="text-sm text-gray-900 p-2 rounded border border-transparent">
               {block?.last_modified
                 ? new Date(block.last_modified * 1000).toLocaleString()
@@ -69,7 +69,7 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
     </div>
 
     <div className="flex items-center space-x-2">
-      <label className="text-xs font-semibold uppercase text-gray-500">Status:</label>
+      <label className="text-xs font-semibold uppercase text-gray-300">Status:</label>
       <div className={`w-3 h-3 rounded-full ${block?.enabled ? 'bg-green-500' : 'bg-red-500'}`} />
       <span className={`text-sm font-medium ${block?.enabled ? 'text-green-700' : 'text-red-700'}`}>
         {block?.enabled ? 'Enabled' : 'Disabled'}
@@ -93,8 +93,8 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
 
     {block?.manifest?.summary && (
       <div>
-        <h3 className="text-lg font-bold text-gray-800 mb-3">Description</h3>
-        <p className="text-gray-700 bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-inner">
+        <h3 className="text-lg font-bold text-gray-100 mb-3">Description</h3>
+        <p className="text-gray-700 bg-gray-100 border border-[#D4AF37]/30 p-4 rounded-lg shadow-inner">
           {block.manifest.summary}
         </p>
       </div>
@@ -114,10 +114,10 @@ const InfoContent: React.FC<{ block: any }> = ({ block }) => (
 // Helper component for the Results tab content
 const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
   <div className="space-y-4">
-    <h3 className="text-xl font-bold text-gray-800">Test Results Summary</h3>
+    <h3 className="text-xl font-bold text-gray-100">Test Results Summary</h3>
 
     {!testResults && (
-      <div className="text-center py-12 text-gray-500 border border-dashed rounded-lg p-8">
+      <div className="text-center py-12 text-gray-300 border border-dashed rounded-lg p-8">
         <Play className="w-10 h-10 mx-auto mb-4 opacity-50" />
         <p className="text-lg font-medium">No test results yet.</p>
         <p className="text-sm">Run a test from the 'Test' sub-tab to see the output here.</p>
@@ -147,7 +147,7 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
               {testResults.success ? 'Test Passed Successfully' : 'Test Failed'}
             </h4>
             {testResults.timestamp && (
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-xs text-gray-300 mt-0.5">
                 Run on: {new Date(testResults.timestamp).toLocaleString()}
               </p>
             )}
@@ -155,8 +155,8 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
         </div>
 
         {testResults.output && (
-          <div className="bg-gray-50 border rounded-lg p-4 shadow-sm">
-            <h5 className="font-semibold text-gray-800 mb-2 border-b pb-1">Test Output</h5>
+          <div className="bg-black border rounded-lg p-4 shadow-sm">
+            <h5 className="font-semibold text-gray-100 mb-2 border-b pb-1">Test Output</h5>
             <pre className="text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto font-mono">
               {typeof testResults.output === 'string'
                 ? testResults.output
@@ -166,11 +166,11 @@ const ResultsContent: React.FC<{ testResults: any }> = ({ testResults }) => (
         )}
 
         {testResults.result && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
-            <h5 className="font-semibold text-blue-900 mb-2 border-b border-blue-200 pb-1">
+          <div className="bg-[#D4AF37] border border-[#D4AF37]/30 rounded-lg p-4 shadow-sm">
+            <h5 className="font-semibold text-[#D4AF37] mb-2 border-b border-[#D4AF37]/30 pb-1">
               Final Result
             </h5>
-            <pre className="text-sm text-blue-800 whitespace-pre-wrap max-h-64 overflow-y-auto font-mono">
+            <pre className="text-sm text-[#D4AF37] whitespace-pre-wrap max-h-64 overflow-y-auto font-mono">
               {JSON.stringify(testResults.result, null, 2)}
             </pre>
           </div>
@@ -284,29 +284,29 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
   const getTabButtonClass = (tabName: string) =>
     `flex items-center space-x-2 px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
       activeTab === tabName
-        ? 'border-b-4 border-blue-600 text-blue-700 bg-blue-50/50'
-        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+        ? 'border-b-4 border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10'
+        : 'text-gray-300 hover:text-gray-100 hover:bg-black'
     }`
 
   const getSubTabButtonClass = (subTabName: string) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
       activeDetailsSubTab === subTabName
-        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-        : 'text-gray-500 hover:bg-gray-100'
+        ? 'bg-gray-900 text-[#D4AF37] border-b-2 border-[#D4AF37]/50'
+        : 'text-gray-300 hover:bg-gray-700'
     }`
 
   const getTestSubTabButtonClass = (subTabName: string) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
       activeTestSubTab === subTabName
-        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-        : 'text-gray-500 hover:bg-gray-100'
+        ? 'bg-gray-900 text-[#D4AF37] border-b-2 border-[#D4AF37]/50'
+        : 'text-gray-300 hover:bg-gray-700'
     }`
 
   const getAnalyticsSubTabButtonClass = (subTabName: string) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-150 ${
       activeAnalyticsSubTab === subTabName
-        ? 'bg-white text-blue-600 border-b-2 border-blue-600'
-        : 'text-gray-500 hover:bg-gray-100'
+        ? 'bg-gray-900 text-[#D4AF37] border-b-2 border-[#D4AF37]/50'
+        : 'text-gray-300 hover:bg-gray-700'
     }`
 
   if (!block) {
@@ -314,22 +314,22 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col transform transition-all duration-300">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-black rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col transform transition-all duration-300">
         <div className="flex justify-between items-center p-5 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-200">
             {block.manifest?.name || block.type} Details
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            className="text-gray-300 hover:text-gray-300 transition-colors p-1 rounded-full "
           >
             <XCircle className="w-6 h-6" />
           </button>
         </div>
 
         {/* Main Tabs Navigation */}
-        <div className="flex border-b border-gray-200 bg-gray-50 overflow-x-auto">
+        <div className="flex border-b border-gray-200 bg-black overflow-x-auto">
           <button className={getTabButtonClass('details')} onClick={() => setActiveTab('details')}>
             <Grid className="w-5 h-5" />
             <span>Details</span>
@@ -349,7 +349,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 bg-black">
           {error && (
             <div
               className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4"
@@ -362,7 +362,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
 
           {/* Details Tab Content */}
           {activeTab === 'details' && (
-            <div className="bg-white p-5 rounded-lg shadow-md h-full">
+            <div className="bg-gray-900 p-5 rounded-lg shadow-md h-full">
               <div className="border-b flex space-x-2">
                 <button
                   className={getSubTabButtonClass('info')}
@@ -389,13 +389,13 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
 
                 {activeDetailsSubTab === 'parameters' && (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-gray-800">
+                    <h3 className="text-xl font-bold text-gray-100">
                       Block Parameters Configuration
                     </h3>
                     {isLoading && !schema && (
                       <div className="flex items-center justify-center py-8">
-                        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                        <span className="ml-3 text-gray-600">Loading parameter schema...</span>
+                        <Loader2 className="w-6 h-6 animate-spin text-[#D4AF37]" />
+                        <span className="ml-3 text-gray-300">Loading parameter schema...</span>
                       </div>
                     )}
                     {schema && (
@@ -418,7 +418,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
 
           {/* Test & Results Tab Content */}
           {activeTab === 'test' && (
-            <div className="bg-white p-5 rounded-lg shadow-md h-full">
+            <div className="bg-gray-900 p-5 rounded-lg shadow-md h-full">
               <div className="border-b flex space-x-2">
                 <button
                   className={getTestSubTabButtonClass('run_test')}
@@ -458,7 +458,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
 
           {/* Logs & Metrics Tab Content */}
           {activeTab === 'metrics' && (
-            <div className="bg-white p-5 rounded-lg shadow-md h-full">
+            <div className="bg-gray-900 p-5 rounded-lg shadow-md h-full">
               <div className="border-b flex space-x-2">
                 <button
                   className={getAnalyticsSubTabButtonClass('metrics')}
@@ -478,7 +478,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                 {activeAnalyticsSubTab === 'metrics' && <BlockMetrics blockType={block.type} />}
 
                 {activeAnalyticsSubTab === 'logs' && (
-                  <div className="text-center py-12 text-gray-500 border border-dashed rounded-lg p-8">
+                  <div className="text-center py-12 text-gray-300 border border-dashed rounded-lg p-8">
                     <ScrollText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <h3 className="text-xl font-bold mb-2">Execution Logs</h3>
                     <p className="text-sm">
@@ -613,7 +613,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t border-gray-200 p-5 flex justify-end space-x-3 bg-gray-50 rounded-b-xl">
+        <div className="border-t border-gray-200 p-5 flex justify-end space-x-3 bg-black rounded-b-xl">
           <button
             onClick={onClose}
             className="px-6 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors font-medium"
@@ -628,8 +628,8 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
             disabled={activeTab !== 'details' || activeDetailsSubTab !== 'parameters'}
             className={`px-6 py-2 text-white rounded-lg transition-all font-semibold ${
               activeTab === 'details' && activeDetailsSubTab === 'parameters'
-                ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
-                : 'bg-gray-400 cursor-not-allowed opacity-75'
+                  ? 'bg-[#D4AF37] hover:bg-[#D4AF37]/90 shadow-md'
+                : 'bg-gray-700 text-gray-300 cursor-not-allowed opacity-75'
             }`}
             title={
               activeTab !== 'details' || activeDetailsSubTab !== 'parameters'
