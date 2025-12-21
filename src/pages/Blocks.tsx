@@ -8,14 +8,14 @@ import {
   Search,
   Filter,
   Loader2,
-  AlertCircle,
   Power,
   PowerOff,
   Layers,
   Grid,
   BarChart3,
   Settings,
-  CheckCircle,
+  Sparkles,
+  ChevronRight,
 } from 'lucide-react'
 import {
   useBlocks,
@@ -28,9 +28,25 @@ import {
 import BlockDetails from '../components/blocks/BlockDetails'
 import { apiClient } from '../services/api'
 import AIAssistantEnhanced from '../components/ai/AIAssistantEnhanced'
-import NoBlocksFoundPanel from '../components/blocks/NoBlocksFoundPanel' // Import the new component
+import NoBlocksFoundPanel from '../components/blocks/NoBlocksFoundPanel'
+import { toast } from 'sonner'
 
-// Icon mapping for different block types - ADDED ICONS FOR DIVERSITY
+// shadcn components
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+
+// Icon mapping for different block types
 const getBlockIcon = (blockType: string) => {
   if (blockType.toLowerCase().includes('data') || blockType.toLowerCase().includes('input'))
     return Database
@@ -44,22 +60,124 @@ const getBlockIcon = (blockType: string) => {
   return Code
 }
 
-// Color mapping for categories
-const getCategoryColor = (category: string) => {
-  const colorMap: { [key: string]: string } = {
-    data: 'text-blue-600',
-    ai: 'text-purple-600',
-    communication: 'text-yellow-600',
-    processing: 'text-green-600',
-    input: 'text-cyan-600', // Added new color for input
-    output: 'text-orange-600',
+// Color mapping for categories (dark theme compatible)
+const getCategoryConfig = (category: string): { color: string; bgColor: string; borderColor: string } => {
+  const colorMap: { [key: string]: { color: string; bgColor: string; borderColor: string } } = {
+    data: { color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
+    ai: { color: 'text-purple-400', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
+    communication: { color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+    processing: { color: 'text-green-400', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
+    input: { color: 'text-cyan-400', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
+    output: { color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
   }
-  return colorMap[category?.toLowerCase()] || 'text-gray-600'
+  return colorMap[category?.toLowerCase()] || { color: 'text-muted-foreground', bgColor: 'bg-muted/50', borderColor: 'border-border' }
+}
+
+// Stats card component
+interface StatCardProps {
+  label: string
+  value: number | string
+  icon: React.ElementType
+  color: 'blue' | 'green' | 'purple' | 'yellow'
+}
+
+function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
+  const colorStyles = {
+    blue: 'from-blue-500/20 to-blue-600/5 border-blue-500/30 text-blue-400',
+    green: 'from-green-500/20 to-green-600/5 border-green-500/30 text-green-400',
+    purple: 'from-purple-500/20 to-purple-600/5 border-purple-500/30 text-purple-400',
+    yellow: 'from-yellow-500/20 to-yellow-600/5 border-yellow-500/30 text-yellow-400',
+  }
+
+  return (
+    <Card className={cn(
+      "relative overflow-hidden border bg-gradient-to-br transition-all duration-300 hover:scale-[1.02]",
+      colorStyles[color]
+    )}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {label}
+            </p>
+            <p className="text-3xl font-bold mt-2">{value}</p>
+          </div>
+          <div className={cn("p-3 rounded-xl", colorStyles[color].split(' ')[0].replace('from-', 'bg-'))}>
+            <Icon className="w-6 h-6" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Block card skeleton for loading state
+function BlockCardSkeleton() {
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <Skeleton className="h-12 w-12 rounded-xl" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+        <Skeleton className="h-6 w-3/4 mt-4" />
+        <Skeleton className="h-4 w-full mt-2" />
+        <Skeleton className="h-4 w-2/3 mt-1" />
+      </CardHeader>
+      <CardFooter className="pt-3 border-t border-border/50">
+        <div className="flex items-center justify-between w-full">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-lg" />
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
+
+// Loading skeleton component
+function BlocksLoadingSkeleton() {
+  return (
+    <div className="min-h-screen p-8 space-y-8">
+      {/* Stats skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="border-border/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-xl" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Search skeleton */}
+      <Card className="border-border/50">
+        <CardContent className="p-8">
+          <div className="flex gap-4 mb-8">
+            <Skeleton className="h-12 flex-1 rounded-xl" />
+            <Skeleton className="h-12 w-48 rounded-xl" />
+          </div>
+
+          {/* Block cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <BlockCardSkeleton key={i} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 export default function Blocks() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
 
   // Generation progress state
@@ -69,42 +187,15 @@ export default function Blocks() {
     blockName?: string
   } | null>(null)
 
-  // Success notification state
-  const [showSuccessNotification, setShowSuccessNotification] = useState(false)
-  const [generatedBlockInfo, setGeneratedBlockInfo] = useState<{
-    name: string
-    type: string
-    blockId?: string
-  } | null>(null)
-
-  const { data: blocks, isLoading, error, refetch } = useBlocks(selectedCategory)
-  const { data: categories, error: categoriesError } = useBlockCategories() // Get error for categories
-  const { data: registryStats, error: registryStatsError } = useRegistryStats() // Get error for registry stats
+  const { data: blocks, isLoading, error, refetch } = useBlocks(selectedCategory === 'all' ? '' : selectedCategory)
+  const { data: categories, error: categoriesError } = useBlockCategories()
+  const { data: registryStats, error: registryStatsError } = useRegistryStats()
   const generateBlockMutation = useGenerateBlock()
   const enableBlockMutation = useEnableBlock()
   const disableBlockMutation = useDisableBlock()
 
-  // Get organization ID from environment
-  const organizationId = import.meta.env.VITE_ORG_ID || '692544df47f2d43416429b38'
-
-  // Debug: Monitor generationProgress state changes
-  useEffect(() => {
-    console.log('🎯 [Blocks] generationProgress state changed:', generationProgress)
-  }, [generationProgress])
-
   // Determine if there's any error related to blocks or registry stats
   const hasApiError = !!error || !!categoriesError || !!registryStatsError
-
-  // Auto-hide success notification after 5 seconds
-  useEffect(() => {
-    if (showSuccessNotification) {
-      const timer = setTimeout(() => {
-        setShowSuccessNotification(false)
-        setGeneratedBlockInfo(null)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [showSuccessNotification])
 
   // Filter blocks based on search term
   const filteredBlocks = Array.isArray(blocks)
@@ -124,7 +215,7 @@ export default function Blocks() {
         description: description,
         autoDeploy: autoDeploy,
       })
-      refetch() // Refetch blocks after successful generation
+      refetch()
       return { success: true }
     } catch (err) {
       console.error('Failed to generate block:', err)
@@ -137,9 +228,11 @@ export default function Blocks() {
 
     try {
       await apiClient.setBlockConfig(selectedBlock.type, parameters)
+      toast.success('Block configuration saved')
       refetch()
     } catch (error) {
       console.error('Failed to save block configuration:', error)
+      toast.error('Failed to save configuration')
     }
   }
 
@@ -148,9 +241,11 @@ export default function Blocks() {
     const mutation = block.enabled ? disableBlockMutation : enableBlockMutation
     try {
       await mutation.mutateAsync(block.type)
+      toast.success(`Block ${block.enabled ? 'disabled' : 'enabled'} successfully`)
       refetch()
     } catch (error) {
       console.error(`Failed to ${block.enabled ? 'disable' : 'enable'} block:`, error)
+      toast.error(`Failed to ${block.enabled ? 'disable' : 'enable'} block`)
     }
   }
 
@@ -158,112 +253,113 @@ export default function Blocks() {
     setSelectedBlock(null)
   }
 
-  /* --- IMPROVED LOADING STATE --- */
+  // Loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen p-10 bg-gray-50 flex items-start justify-center">
-        <div className="p-8 bg-white rounded-2xl shadow-xl border border-gray-200 mt-20">
-          <div className="flex flex-col items-center">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-800">Loading Block Registry</h2>
-            <p className="text-sm text-gray-500 mt-1">Fetching all available workflow blocks...</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <BlocksLoadingSkeleton />
   }
 
-  // --- Graceful Fallback for No Blocks or API Error ---
+  // Graceful Fallback for No Blocks or API Error
   if (
     hasApiError ||
-    (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === '')
+    (Array.isArray(blocks) && blocks.length === 0 && searchTerm === '' && selectedCategory === 'all')
   ) {
     return (
       <>
         {/* Generation Progress Banner */}
-        {(() => {
-          console.log('🎯 [Blocks] Rendering NoBlocks - checking banner condition:', {
-            generationProgress,
-            shouldShow: generationProgress?.isGenerating
-          })
-          return generationProgress?.isGenerating
-        })() && (
-          <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-200 px-8 py-4 z-50 shadow-lg animate-fadeIn">
+        {generationProgress?.isGenerating && (
+          <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 border-b border-primary/30 px-8 py-4 z-50 backdrop-blur-sm">
             <div className="flex items-center justify-between max-w-7xl mx-auto">
               <div className="flex items-center space-x-4">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <div className="relative">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <div className="absolute inset-0 animate-ping">
+                    <Sparkles className="w-6 h-6 text-primary/50" />
+                  </div>
+                </div>
                 <div>
-                  <p className="font-bold text-gray-900">Generating AI Block...</p>
-                  <p className="text-sm text-blue-700">
-                    {generationProgress.stage === 'planning' && '🤔 Analyzing your description and planning...'}
-                    {generationProgress.stage === 'generation' && '⚡ Creating block specification...'}
-                    {generationProgress.stage === 'verification' && '✅ Validating block quality...'}
-                    {generationProgress.stage === 'healing' && '🔧 Fixing issues...'}
-                    {generationProgress.stage === 'persistence' && '💾 Saving to database...'}
+                  <p className="font-semibold text-foreground">Generating AI Block...</p>
+                  <p className="text-sm text-muted-foreground">
+                    {generationProgress.stage === 'planning' && 'Analyzing your description and planning...'}
+                    {generationProgress.stage === 'generation' && 'Creating block specification...'}
+                    {generationProgress.stage === 'verification' && 'Validating block quality...'}
+                    {generationProgress.stage === 'healing' && 'Fixing issues...'}
+                    {generationProgress.stage === 'persistence' && 'Saving to database...'}
                     {!generationProgress.stage && 'Processing...'}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {/* AI assistant is always visible as floating button */}}
-                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-              >
-                View Details →
-              </button>
             </div>
           </div>
         )}
 
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-screen p-8">
           <NoBlocksFoundPanel
-          hasError={hasApiError}
-          errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
-          onRetry={() => {
-            refetch()
-            // Also refetch categories and registry stats if they had errors
-            if (categoriesError) useBlockCategories().refetch()
-            if (registryStatsError) useRegistryStats().refetch()
-          }}
-          onGenerateBlock={handleGenerateBlock}
-          isGeneratingBlock={generateBlockMutation.isPending}
-          organizationId={organizationId}
-          onGenerationStart={() => {
-            console.log('🎯 [Blocks→NoBlocksPanel] onGenerationStart callback invoked!')
-            setGenerationProgress({
-              isGenerating: true,
-              stage: 'planning',
-            })
-          }}
-          onStageChange={(stage) => {
-            console.log('🎯 [Blocks→NoBlocksPanel] onStageChange callback invoked with stage:', stage)
-            setGenerationProgress(prev => ({
-              ...prev,
-              isGenerating: true,
-              stage: stage,
-            }))
-          }}
-        />
+            hasError={hasApiError}
+            errorMessage={error?.message || categoriesError?.message || registryStatsError?.message}
+            onRetry={() => refetch()}
+            onGenerateBlock={handleGenerateBlock}
+            isGeneratingBlock={generateBlockMutation.isPending}
+            onGenerationStart={() => {
+              setGenerationProgress({
+                isGenerating: true,
+                stage: 'planning',
+              })
+            }}
+            onStageChange={(stage) => {
+              setGenerationProgress(prev => ({
+                ...prev,
+                isGenerating: true,
+                stage: stage,
+              }))
+            }}
+          />
         </div>
       </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* --- 1. Enhanced Header & Action Bar --- */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-5 shadow-lg">
+    <div className="min-h-screen">
+      {/* Generation Progress Banner */}
+      {generationProgress?.isGenerating && (
+        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 border-b border-primary/30 px-8 py-4 z-50 backdrop-blur-sm">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <div className="absolute inset-0 animate-ping">
+                  <Sparkles className="w-6 h-6 text-primary/50" />
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Generating AI Block...</p>
+                <p className="text-sm text-muted-foreground">
+                  {generationProgress.stage === 'planning' && 'Analyzing your description and planning...'}
+                  {generationProgress.stage === 'generation' && 'Creating block specification...'}
+                  {generationProgress.stage === 'verification' && 'Validating block quality...'}
+                  {generationProgress.stage === 'healing' && 'Fixing issues...'}
+                  {generationProgress.stage === 'persistence' && 'Saving to database...'}
+                  {!generationProgress.stage && 'Processing...'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border/50 px-8 py-6 backdrop-blur-xl bg-background/80">
         <div className="flex items-center justify-between">
-          {/* Left Side: Title and Stats */}
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Block Manager <span className="text-indigo-600">🚀</span>
+            <h1 className="text-3xl font-bold tracking-tight">
+              <span className="gradient-text">Block Manager</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage & extend your workflow library.
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage & extend your workflow library
               {registryStats && (
-                <span className="ml-2 font-medium text-gray-700">
+                <span className="ml-2">
                   (
-                  <span className="font-bold text-green-600">
+                  <span className="font-semibold text-green-400">
                     {(registryStats as any).enabled_blocks}
                   </span>{' '}
                   / {(registryStats as any).total_blocks} Active)
@@ -272,316 +368,210 @@ export default function Blocks() {
             </p>
           </div>
 
-          {/* Right Side: Primary Action Button */}
-          <button
-            onClick={() => {
-              /* This button will now be handled by the NoBlocksFoundPanel or a dedicated AI Assistant */
-            }}
-            className="
-                            flex items-center space-x-2 
-                            px-6 py-2.5 
-                            bg-indigo-600 text-white font-semibold 
-                            rounded-xl 
-                            shadow-xl shadow-indigo-200 hover:shadow-2xl 
-                            hover:bg-indigo-700 
-                            transition duration-300 ease-in-out 
-                            transform hover:scale-[1.03]
-                        "
-            title="Open modal to generate a new AI-powered workflow block"
+          <Button
+            onClick={() => {}}
+            className="glow-effect-hover"
           >
-            <Plus className="w-5 h-5" />
-            <span>Generate AI Block</span>
-          </button>
+            <Plus className="w-4 h-4 mr-2" />
+            Generate AI Block
+          </Button>
         </div>
       </header>
 
       <main className="p-8 space-y-8">
-        {/* --- 2. Registry Stats Cards --- */}
+        {/* Registry Stats Cards */}
         {registryStats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1: Total Blocks */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Total Blocks
-                  </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
-                    {(registryStats as any).total_blocks}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600 shadow-inner">
-                  <Layers className="w-8 h-8" />
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Enabled Blocks */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Active Status
-                  </p>
-                  <p className="text-4xl font-extrabold text-green-600 mt-2">
-                    {(registryStats as any).enabled_blocks}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-green-50 text-green-600 shadow-inner">
-                  <Power className="w-8 h-8" />
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Categories */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Categories
-                  </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
-                    {Array.isArray(categories) ? categories.length : 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-purple-50 text-purple-600 shadow-inner">
-                  <Grid className="w-8 h-8" />
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Plugins */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 transform hover:translate-y-[-2px] transition duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Plugins
-                  </p>
-                  <p className="text-4xl font-extrabold text-gray-900 mt-2">
-                    {(registryStats as any)?.plugins_loaded || 0}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-yellow-50 text-yellow-600 shadow-inner">
-                  <Code className="w-8 h-8" />
-                </div>
-              </div>
-            </div>
+            <StatCard
+              label="Total Blocks"
+              value={(registryStats as any).total_blocks}
+              icon={Layers}
+              color="blue"
+            />
+            <StatCard
+              label="Active Status"
+              value={(registryStats as any).enabled_blocks}
+              icon={Power}
+              color="green"
+            />
+            <StatCard
+              label="Categories"
+              value={Array.isArray(categories) ? categories.length : 0}
+              icon={Grid}
+              color="purple"
+            />
+            <StatCard
+              label="Plugins"
+              value={(registryStats as any)?.plugins_loaded || 0}
+              icon={Code}
+              color="yellow"
+            />
           </div>
         )}
 
-        {/* --- 3. Main Block Content Area --- */}
-        <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100">
-          {/* Modern Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search blocks by name, type, or summary..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 
-                                            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner"
-              />
-            </div>
-
-            {/* Category Select */}
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              <select
-                value={selectedCategory}
-                onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-auto pl-12 pr-5 py-3.5 border border-gray-300 rounded-xl bg-white text-gray-700 
-                                            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer transition duration-150 shadow-inner"
-              >
-                <option value="">All Categories</option>
-                {Array.isArray(categories) &&
-                  categories.map((category: string) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-              </select>
-              {/* Custom dropdown arrow to replace default appearance-none */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
+        {/* Main Block Content Area */}
+        <Card className="border-border/50">
+          <CardContent className="p-8">
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              {/* Search Input */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search blocks by name, type, or summary..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="pl-11 h-12 bg-muted/50 border-border/50 focus:border-primary/50"
+                />
               </div>
+
+              {/* Category Select */}
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-full sm:w-[200px] h-12 bg-muted/50 border-border/50">
+                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Array.isArray(categories) &&
+                    categories.map((category: string) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          {/* Block Grid Display */}
-          {filteredBlocks.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredBlocks.map((block: any) => {
-                const BlockIcon = getBlockIcon(block.type)
-                const category = block.metadata?.category || block.manifest?.category || block.type || 'general'
-                const color = getCategoryColor(category)
-                const bgColor = color.replace('text-', 'bg-').replace('-600', '-50')
+            {/* Block Grid Display */}
+            {filteredBlocks.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredBlocks.map((block: any) => {
+                  const BlockIcon = getBlockIcon(block.type)
+                  const category = block.metadata?.category || block.manifest?.category || block.type || 'general'
+                  const { color, bgColor, borderColor } = getCategoryConfig(category)
 
-                return (
-                  <div
-                    key={block.id}
-                    className="bg-white border border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-between"
-                  >
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-4">
-                        {/* Icon with a distinct, larger background */}
-                        <div className={`p-3 rounded-xl ${bgColor} shadow-lg shadow-gray-100`}>
-                          <BlockIcon className={`w-8 h-8 ${color}`} />
-                        </div>
+                  return (
+                    <Card
+                      key={block.id}
+                      className={cn(
+                        "group relative overflow-hidden border transition-all duration-300",
+                        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
+                        "hover:scale-[1.02] cursor-pointer",
+                        borderColor
+                      )}
+                      onClick={() => setSelectedBlock(block)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          {/* Icon with background */}
+                          <div className={cn("p-3 rounded-xl", bgColor)}>
+                            <BlockIcon className={cn("w-6 h-6", color)} />
+                          </div>
 
-                        {/* Status Tag and Toggle */}
-                        <div className="flex space-x-2 items-center">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              handleToggleBlock(block)
-                            }}
-                            disabled={
-                              enableBlockMutation.isPending || disableBlockMutation.isPending
-                            }
-                            className={`p-2 rounded-full transition-colors duration-200 ${
-                              block.enabled
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                : 'bg-green-50 text-green-600 hover:bg-green-100'
-                            }`}
-                            title={block.enabled ? 'Disable Block' : 'Enable Block'}
-                          >
-                            {block.enabled ? (
-                              <PowerOff className="w-5 h-5" />
-                            ) : (
-                              <Power className="w-5 h-5" />
-                            )}
-                          </button>
+                          {/* Status and Toggle */}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleToggleBlock(block)
+                              }}
+                              disabled={enableBlockMutation.isPending || disableBlockMutation.isPending}
+                              className={cn(
+                                "h-8 w-8 rounded-full",
+                                block.enabled
+                                  ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  : "text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                              )}
+                            >
+                              {block.enabled ? (
+                                <PowerOff className="w-4 h-4" />
+                              ) : (
+                                <Power className="w-4 h-4" />
+                              )}
+                            </Button>
 
-                          <div
-                            className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-widest ${block.enabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                          >
-                            {block.enabled ? 'Active' : 'Disabled'}
+                            <Badge
+                              variant={block.enabled ? "default" : "secondary"}
+                              className={cn(
+                                "text-xs font-medium",
+                                block.enabled
+                                  ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                  : "bg-red-500/20 text-red-400 border-red-500/30"
+                              )}
+                            >
+                              {block.enabled ? 'Active' : 'Disabled'}
+                            </Badge>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Block Title and Summary */}
-                      <h3 className="text-xl font-extrabold mb-2 text-gray-900 leading-snug">
-                        {block.name || block.manifest?.name || block.type.replace(/_/g, ' ')}
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-6 line-clamp-3">
-                        {block.metadata?.description || block.manifest?.summary ||
-                          `Block type: ${block.type}. No summary provided.`}
-                      </p>
-                    </div>
+                        <CardTitle className="text-lg font-semibold mt-4 group-hover:text-primary transition-colors">
+                          {block.name || block.manifest?.name || block.type.replace(/_/g, ' ')}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {block.metadata?.description || block.manifest?.summary ||
+                            `Block type: ${block.type}. No summary provided.`}
+                        </CardDescription>
+                      </CardHeader>
 
-                    {/* Footer: Category Tag and Action Button */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <span
-                        className={`text-xs ${color} bg-gray-100 px-3 py-1 rounded-full font-bold uppercase`}
-                      >
-                        {category}
-                      </span>
-                      <button
-                        onClick={() => setSelectedBlock(block)}
-                        className="px-4 py-2 text-sm bg-indigo-600 text-white font-semibold hover:bg-indigo-700 rounded-lg transition-colors shadow-md"
-                      >
-                        Details & Config
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                      <CardFooter className="pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-between w-full">
+                          <Badge
+                            variant="outline"
+                            className={cn("text-xs font-medium uppercase", color, borderColor)}
+                          >
+                            {category}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-primary group-hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedBlock(block)
+                            }}
+                          >
+                            Details
+                            <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </CardFooter>
+
+                      {/* Hover glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No blocks found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search or filter criteria
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
 
-      {/* Block Modal */}
-      {/* Note: I'm assuming BlockDetails handles its own modal/overlay logic, if not,
-                you might need to wrap it in a similar div as the generate modal for a consistent look. */}
+      {/* Block Details Modal */}
       <BlockDetails
         block={selectedBlock}
         onClose={closeBlockModal}
         onSave={handleSaveBlockConfig}
-        // Pass mutations for the component to handle its own toggle state and visual feedback
         enableBlockMutation={enableBlockMutation}
         disableBlockMutation={disableBlockMutation}
       />
-
-      {/* Generation Progress Banner */}
-      {(() => {
-        console.log('🎯 [Blocks] Rendering - checking banner condition:', {
-          generationProgress,
-          shouldShow: generationProgress?.isGenerating
-        })
-        return generationProgress?.isGenerating
-      })() && (
-        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-200 px-8 py-4 z-50 shadow-lg animate-fadeIn">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center space-x-4">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <div>
-                <p className="font-bold text-gray-900">Generating AI Block...</p>
-                <p className="text-sm text-blue-700">
-                  {generationProgress.stage === 'planning' && '🤔 Analyzing your description and planning...'}
-                  {generationProgress.stage === 'generation' && '⚡ Creating block specification...'}
-                  {generationProgress.stage === 'verification' && '✅ Validating block quality...'}
-                  {generationProgress.stage === 'healing' && '🔧 Fixing issues...'}
-                  {generationProgress.stage === 'persistence' && '💾 Saving to database...'}
-                  {!generationProgress.stage && 'Processing...'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {/* AI assistant is always visible as floating button */}}
-              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-            >
-              View Details →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Success Notification */}
-      {showSuccessNotification && generatedBlockInfo && (
-        <div className="fixed top-20 right-8 bg-green-50 border-2 border-green-500 rounded-xl shadow-2xl px-6 py-4 z-50 animate-slideInRight max-w-md">
-          <div className="flex items-start space-x-3">
-            <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-bold text-green-900 mb-1">Block Generated Successfully!</h4>
-              <p className="text-sm text-green-700 mb-2">
-                <span className="font-semibold">{generatedBlockInfo.name}</span> ({generatedBlockInfo.type})
-              </p>
-              {generatedBlockInfo.blockId && (
-                <button
-                  onClick={() => {
-                    // Find and open the generated block
-                    const block = blocks?.find((b: any) => b.id === generatedBlockInfo.blockId || b._id === generatedBlockInfo.blockId)
-                    if (block) {
-                      setSelectedBlock(block)
-                      setShowSuccessNotification(false)
-                    }
-                  }}
-                  className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
-                >
-                  Open Block Details →
-                </button>
-              )}
-            </div>
-            <button
-              onClick={() => setShowSuccessNotification(false)}
-              className="text-green-600 hover:text-green-800"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* AI Assistant - Enhanced with Block Generation Mode */}
       <AIAssistantEnhanced
@@ -591,7 +581,6 @@ export default function Blocks() {
             : 'Block management and configuration'
         }
         contextType="block_generation"
-        organizationId={organizationId}
         suggestions={[
           'Create an HTTP request block',
           'Make a JSON data transformer',
@@ -599,52 +588,34 @@ export default function Blocks() {
           'Create an LLM chat block',
         ]}
         onGenerationStart={() => {
-          console.log('🎯 [Blocks] onGenerationStart callback invoked!')
-          console.log('🎯 [Blocks] Setting generationProgress state:', { isGenerating: true, stage: 'planning' })
           setGenerationProgress({
             isGenerating: true,
             stage: 'planning',
           })
-          console.log('🎯 [Blocks] State setter called')
         }}
         onStageChange={(stage) => {
-          console.log('🎯 [Blocks] onStageChange callback invoked with stage:', stage)
-          setGenerationProgress(prev => {
-            console.log('🎯 [Blocks] Previous state:', prev)
-            const newState = {
-              ...prev,
-              isGenerating: true,
-              stage: stage,
-            }
-            console.log('🎯 [Blocks] New state:', newState)
-            return newState
-          })
+          setGenerationProgress(prev => ({
+            ...prev,
+            isGenerating: true,
+            stage: stage,
+          }))
         }}
         onBlockGenerated={(block, blockId) => {
-          console.log('Block generated:', block)
-
           // Stop generation progress
           setGenerationProgress(null)
 
-          // Show success notification
-          setGeneratedBlockInfo({
-            name: block.name || 'New Block',
-            type: block.type || 'utility',
-            blockId: blockId,
+          // Show success toast
+          toast.success('Block Generated Successfully', {
+            description: `${block.name || 'New Block'} (${block.type || 'utility'})`,
           })
-          setShowSuccessNotification(true)
 
           if (blockId) {
-            // Refetch blocks to show the new one
             refetch()
-
-            // Auto-open block details after brief delay for refetch
             setTimeout(() => {
               const updatedBlock = blocks?.find((b: any) => b.id === blockId || b._id === blockId)
               if (updatedBlock) {
                 setSelectedBlock(updatedBlock)
               } else {
-                // If block not found in list yet, use the generated block data
                 setSelectedBlock({ ...block, id: blockId })
               }
             }, 1000)

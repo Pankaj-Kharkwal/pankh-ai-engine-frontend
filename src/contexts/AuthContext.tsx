@@ -22,11 +22,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Demo mode - set to true to bypass auth for UI testing
+const DEMO_MODE = true
+const DEMO_USER: User = {
+  id: 'demo-user-123',
+  email: 'demo@pankh.ai',
+  full_name: 'Demo User',
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(DEMO_MODE ? DEMO_USER : null)
+  const [loading, setLoading] = useState(!DEMO_MODE)
 
   useEffect(() => {
+    if (DEMO_MODE) return // Skip auth check in demo mode
+
     const checkAuthStatus = async () => {
       try {
         const userData = await apiCheckAuthStatus()

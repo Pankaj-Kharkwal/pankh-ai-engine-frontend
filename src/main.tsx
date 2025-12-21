@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { ApplicationInsights } from '@microsoft/applicationinsights-web'
 import { ReactPlugin } from '@microsoft/applicationinsights-react-js'
 import { AuthProvider } from './contexts/AuthContext.tsx'
+import { Toaster } from '@/components/ui/sonner'
 import LoginPage from './pages/auth/LoginPage.tsx'
 import SignupPage from './pages/auth/SignupPage.tsx'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage.tsx'
@@ -46,6 +47,7 @@ createRoot(document.getElementById('root')!).render(
           />
         </Routes>
       </BrowserRouter>
+      <Toaster richColors position="top-right" />
     </AuthProvider>
   </StrictMode>
 )

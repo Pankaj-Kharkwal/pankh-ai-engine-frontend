@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { Plus, Zap, AlertCircle, Loader2, Search } from 'lucide-react'
-import AIAssistantEnhanced from '../ai/AIAssistantEnhanced' // Updated to use Enhanced version
+import { Plus, Zap, AlertCircle, Loader2, Search, Sparkles, RefreshCw } from 'lucide-react'
+import AIAssistantEnhanced from '../ai/AIAssistantEnhanced'
+
+// shadcn components
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 interface NoBlocksFoundPanelProps {
   hasError: boolean
@@ -28,76 +34,125 @@ export default function NoBlocksFoundPanel({
   const handleGenerateClick = async () => {
     if (!generateDescription.trim()) return
     await onGenerateBlock(generateDescription, true)
-    setGenerateDescription('') // Clear description after generation
+    setGenerateDescription('')
   }
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl shadow-xl border border-gray-200 text-center">
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-8">
       {hasError ? (
-        <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-8 shadow-2xl max-w-lg">
-          <div className="flex items-start space-x-4 text-red-800">
-            <AlertCircle className="w-8 h-8 flex-shrink-0 mt-1" />
-            <div>
-              <div className="text-xl font-bold">Failed to Load Registry</div>
-              <div className="text-base text-red-700 mt-2">
-                {errorMessage ||
-                  'Could not connect to the block API. Please ensure the backend service is running and accessible.'}
+        <Card className="max-w-lg border-red-500/30 bg-red-500/5">
+          <CardContent className="p-8">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 rounded-xl bg-red-500/10">
+                <AlertCircle className="w-6 h-6 text-red-400" />
               </div>
-              <button
-                onClick={onRetry}
-                className="mt-4 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Retry Connection
-              </button>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-red-400">Failed to Load Registry</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {errorMessage ||
+                    'Could not connect to the block API. Please ensure the backend service is running and accessible.'}
+                </p>
+                <Button
+                  onClick={onRetry}
+                  variant="destructive"
+                  className="mt-4"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry Connection
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : (
-        <>
-          <Search className="w-16 h-16 mx-auto mb-6 text-gray-400" />
-          <h3 className="text-3xl font-extrabold mb-3 text-gray-900">No Blocks Found Yet!</h3>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl">
-            It looks like you haven't created any blocks, or the registry is empty. Let our AI
-            assistant help you generate your first custom block!
-          </p>
-
-          {/* AI Assistant for Block Generation */}
-          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
-            <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-indigo-600" /> AI Block Generator
-            </h4>
-            <textarea
-              value={generateDescription}
-              onChange={e => setGenerateDescription(e.target.value)}
-              placeholder="Describe the block you want to create (e.g., 'A block that fetches weather data for a city and returns the temperature in Celsius')."
-              rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 text-sm resize-none"
-            />
-            <button
-              onClick={handleGenerateClick}
-              disabled={!generateDescription.trim() || isGeneratingBlock}
-              className={`mt-4 w-full flex items-center justify-center space-x-2 px-6 py-3 text-base font-medium text-white rounded-xl shadow-lg transition-all duration-300
-                ${
-                  !generateDescription.trim() || isGeneratingBlock
-                    ? 'bg-indigo-400 cursor-not-allowed opacity-80'
-                    : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-xl shadow-indigo-300'
-                }`}
-            >
-              {isGeneratingBlock ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Generating Block...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  <span>Generate Custom Block</span>
-                </>
-              )}
-            </button>
+        <div className="w-full max-w-3xl space-y-8">
+          {/* Empty State Header */}
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
+              <Search className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-3xl font-bold mb-3">
+              <span className="gradient-text">No Blocks Found Yet!</span>
+            </h3>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              It looks like you haven't created any blocks, or the registry is empty.
+              Let our AI assistant help you generate your first custom block!
+            </p>
           </div>
 
-          {/* Optional: AIAssistantEnhanced as a floating panel for block generation */}
+          {/* AI Block Generator Card */}
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <div className="p-2 rounded-lg bg-primary/10 mr-3">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                AI Block Generator
+              </CardTitle>
+              <CardDescription>
+                Describe what you want and let AI create it for you
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                value={generateDescription}
+                onChange={e => setGenerateDescription(e.target.value)}
+                placeholder="Describe the block you want to create (e.g., 'A block that fetches weather data for a city and returns the temperature in Celsius')."
+                rows={4}
+                className="resize-none bg-background/50 border-border/50 focus:border-primary/50"
+              />
+              <Button
+                onClick={handleGenerateClick}
+                disabled={!generateDescription.trim() || isGeneratingBlock}
+                className={cn(
+                  "w-full h-12 text-base glow-effect-hover",
+                  isGeneratingBlock && "opacity-80"
+                )}
+              >
+                {isGeneratingBlock ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Generating Block...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5 mr-2" />
+                    Generate Custom Block
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Quick Start Suggestions */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base">Quick Start Ideas</CardTitle>
+              <CardDescription>Click any suggestion to get started</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'HTTP Request Block', description: 'Fetch data from APIs' },
+                  { label: 'JSON Transformer', description: 'Parse and transform data' },
+                  { label: 'Condition Checker', description: 'Add branching logic' },
+                  { label: 'LLM Chat Block', description: 'AI-powered responses' },
+                ].map((suggestion) => (
+                  <Button
+                    key={suggestion.label}
+                    variant="outline"
+                    className="h-auto py-3 px-4 flex flex-col items-start text-left border-border/50 hover:border-primary/50 hover:bg-primary/5"
+                    onClick={() => setGenerateDescription(`Create a ${suggestion.label.toLowerCase()}: ${suggestion.description}`)}
+                  >
+                    <span className="font-medium">{suggestion.label}</span>
+                    <span className="text-xs text-muted-foreground">{suggestion.description}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Assistant for more complex generation */}
           <AIAssistantEnhanced
             context="No blocks found in the registry. User might need help generating their first block."
             contextType="block_generation"
@@ -112,10 +167,9 @@ export default function NoBlocksFoundPanel({
             onStageChange={onStageChange}
             onBlockGenerated={(block, blockId) => {
               console.log('Block generated:', block, blockId)
-              // Refresh blocks list would happen here
             }}
           />
-        </>
+        </div>
       )}
     </div>
   )
