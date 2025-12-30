@@ -2,11 +2,11 @@
 # Stage 1: Build the application
 FROM node:22-slim AS builder
 
-ARG NODE_ENV=production
 ARG VITE_API_URL=/api/v1
 ARG VITE_WS_URL=/ws
 
-ENV NODE_ENV=${NODE_ENV}
+# Use development mode for build stage to include devDependencies (vite, etc.)
+ENV NODE_ENV=development
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
@@ -16,7 +16,7 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
+# Install all dependencies including devDependencies for build
 RUN npm install --legacy-peer-deps
 
 # Copy source code

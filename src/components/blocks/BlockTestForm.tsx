@@ -74,6 +74,7 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
     try {
       // Use the real node testing API for actual execution
       const result = await apiClient.testNode({
+        block_id: block.id || block._id,
         block_type: block.type,
         parameters: testParams,
       })
@@ -254,13 +255,78 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
             </div>
           </div>
 
-          {/* Full Result */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h5 className="text-sm font-medium text-gray-900 mb-2">Full Response</h5>
-            <pre className="text-xs text-gray-700 overflow-auto max-h-96 bg-white p-3 rounded border">
+          {/* Output Result */}
+          {testResult.success && testResult.output && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-blue-900 mb-2">Output</h5>
+              <pre className="text-sm text-blue-800 overflow-auto max-h-64 bg-white p-3 rounded border">
+                {JSON.stringify(testResult.output, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {/* Error Details */}
+          {!testResult.success && testResult.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-red-900 mb-2">Error</h5>
+              <p className="text-sm text-red-800">{testResult.error}</p>
+            </div>
+          )}
+
+          {/* Execution Logs */}
+          {testResult.logs && testResult.logs.length > 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-gray-900 mb-2">Execution Logs</h5>
+              <div className="space-y-1 max-h-48 overflow-auto bg-white p-3 rounded border font-mono text-xs">
+                {testResult.logs.map((log: string, idx: number) => (
+                  <div key={idx} className="text-gray-700">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Execution Metrics */}
+          {(testResult.duration_ms || testResult.execution_id) && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-purple-900 mb-2">Execution Metrics</h5>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {testResult.duration_ms && (
+                  <div>
+                    <span className="text-purple-700 font-medium">Duration:</span>
+                    <span className="ml-2 text-purple-900">{testResult.duration_ms.toFixed(2)}ms</span>
+                  </div>
+                )}
+                {testResult.execution_id && (
+                  <div>
+                    <span className="text-purple-700 font-medium">Execution ID:</span>
+                    <span className="ml-2 text-purple-900 font-mono text-xs">{testResult.execution_id}</span>
+                  </div>
+                )}
+                {testResult.executed_at && (
+                  <div>
+                    <span className="text-purple-700 font-medium">Executed At:</span>
+                    <span className="ml-2 text-purple-900">{new Date(testResult.executed_at).toLocaleString()}</span>
+                  </div>
+                )}
+                {testResult.retry_count !== undefined && testResult.retry_count > 0 && (
+                  <div>
+                    <span className="text-purple-700 font-medium">Retries:</span>
+                    <span className="ml-2 text-purple-900">{testResult.retry_count}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Full Result (collapsed by default) */}
+          <details className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <summary className="text-sm font-medium text-gray-900 cursor-pointer">Full Response (Debug)</summary>
+            <pre className="text-xs text-gray-700 overflow-auto max-h-96 bg-white p-3 rounded border mt-2">
               {JSON.stringify(testResult, null, 2)}
             </pre>
-          </div>
+          </details>
         </div>
       )}
     </div>

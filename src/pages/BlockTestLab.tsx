@@ -235,10 +235,8 @@ const BlockTestLab: React.FC = () => {
     }
 
     try {
-      const response = await api.post('/blocks', {
-        ...generatedBlock,
-        organization_id: import.meta.env.VITE_ORG_ID || 'default_org'
-      });
+      // Organization ID is handled by the API client based on authenticated user
+      const response = await api.post('/blocks', generatedBlock);
 
       // Update the generated block with the saved ID
       setGeneratedBlock({

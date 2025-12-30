@@ -93,19 +93,31 @@ export default function AIAssistantEnhanced({
       }
 
       try {
+        const apiKey = import.meta.env.VITE_API_KEY || ''
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        }
+        if (apiKey) {
+          headers['X-API-Key'] = apiKey
+        }
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/users/me/organizations`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers
         })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
         const orgs = await response.json()
         if (orgs && orgs.length > 0) {
           console.log('📋 Using organization:', orgs[0].id, orgs[0].name)
           setResolvedOrgId(orgs[0].id)
         } else {
-          setResolvedOrgId('default_org')
+          console.warn('No organizations found for user')
+          setResolvedOrgId(null)
         }
       } catch (error) {
         console.error('Failed to fetch organizations:', error)
-        setResolvedOrgId('default_org')
+        setResolvedOrgId(null)
       }
     }
 
@@ -145,7 +157,7 @@ export default function AIAssistantEnhanced({
     setMessages(prev => prev.map(msg => (msg.id === id ? { ...msg, ...updates } : msg)))
   }
 
-  const handleGenerateBlock = async (description: string, persist: boolean = false) => {
+  const handleGenerateBlock = async (description: string, persist: boolean = true) => {
     setIsGeneratingBlock(true)
     setCurrentStage('Initializing...')
 
@@ -288,9 +300,13 @@ export default function AIAssistantEnhanced({
       })
 
       // Start generation
+      const effectiveOrgId = resolvedOrgId || organizationId
+      if (!effectiveOrgId) {
+        throw new Error('No organization ID available. Please log in again.')
+      }
       const request: BlockGenerationRequest = {
         description,
-        organization_id: resolvedOrgId || organizationId || 'default_org',
+        organization_id: effectiveOrgId,
         persist,
         verify: true,
         run_preview: false,
@@ -318,7 +334,7 @@ export default function AIAssistantEnhanced({
 
     // Check if we're in block generation mode
     if (contextType === 'block_generation') {
-      await handleGenerateBlock(userMessage, false)
+      await handleGenerateBlock(userMessage, true)  // Persist blocks by default
       return
     }
 

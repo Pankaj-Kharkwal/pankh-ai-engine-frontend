@@ -613,6 +613,7 @@ Return issues found and suggestions.`
 
   // Node Testing API
   async testNode(payload: {
+    block_id?: string
     block_type: string
     parameters: Record<string, any>
     context?: Record<string, any>

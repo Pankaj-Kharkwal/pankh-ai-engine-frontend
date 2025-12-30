@@ -23,7 +23,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Demo mode - set to true to bypass auth for UI testing
-const DEMO_MODE = true
+const DEMO_MODE = false
 const DEMO_USER: User = {
   id: 'demo-user-123',
   email: 'demo@pankh.ai',

@@ -16,6 +16,9 @@ import Analytics from './pages/Analytics'
 import WorkflowManager from './pages/WorkflowManager'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
+import OAuthCallbackPage from './pages/auth/OAuthCallbackPage'
 import { useAuth } from './contexts/AuthContext'
 
 const queryClient = new QueryClient({
@@ -50,6 +53,13 @@ function App() {
     <ErrorBoundary showDetails={import.meta.env.DEV}>
       <QueryClientProvider client={queryClient}>
         <Routes>
+          {/* Public auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+
+          {/* Protected routes */}
           <Route
             path="/"
             element={
