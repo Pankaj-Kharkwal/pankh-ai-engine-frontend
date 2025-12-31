@@ -98,35 +98,36 @@ export default function WorkflowBuilder() {
       setWorkflowName(existingWorkflow.name || 'Untitled Workflow')
       setCurrentWorkflowId(workflowId)
 
-      // Convert backend workflow graph to React Flow nodes and edges
-      if (existingWorkflow.graph) {
-        const { nodes: graphNodes, edges: graphEdges } = existingWorkflow.graph
+      // Convert backend workflow data to React Flow nodes and edges
+      // Support both old format (graph.nodes/edges) and new format (blocks/connections)
+      const graphNodes = existingWorkflow.graph?.nodes || existingWorkflow.blocks || []
+      const graphEdges = existingWorkflow.graph?.edges || existingWorkflow.connections || []
 
-        // Convert nodes
-        const loadedNodes: Node[] =
-          graphNodes?.map((node: any, index: number) => ({
-            id: node.id,
-            type: 'workflowNode',
-            position: node.position || {
-              x: 100 + index * 300,
-              y: 100 + Math.floor(index / 3) * 200,
-            },
-            data: {
-              label: node.name || node.type,
-              blockType: node.type,
-              config: node.parameters || {},
-              parameters: node.parameters || {},
-              status: 'idle',
-            },
-          })) || []
+      if (graphNodes.length > 0 || graphEdges.length > 0) {
+        // Convert nodes/blocks to React Flow nodes
+        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => ({
+          id: node.id,
+          type: 'workflowNode',
+          position: node.position || {
+            x: 100 + index * 300,
+            y: 100 + Math.floor(index / 3) * 200,
+          },
+          data: {
+            label: node.name || node.type,
+            blockType: node.type,
+            config: node.parameters || node.input_mapping || {},
+            parameters: node.parameters || node.input_mapping || {},
+            status: 'idle',
+          },
+        }))
 
-        // Convert edges
-        const loadedEdges: Edge[] =
-          graphEdges?.map((edge: any, index: number) => ({
-            id: edge.id || `e-${edge.from_node}-${edge.to_node}-${index}`,
-            source: edge.from_node,
-            target: edge.to_node,
-          })) || []
+        // Convert edges/connections to React Flow edges
+        const loadedEdges: Edge[] = graphEdges.map((edge: any, index: number) => ({
+          id: edge.id || `e-${edge.from_node || edge.source_node_id}-${edge.to_node || edge.target_node_id}-${index}`,
+          source: edge.from_node || edge.source_node_id,
+          target: edge.to_node || edge.target_node_id,
+          label: edge.condition || edge.label,
+        }))
 
         setNodes(loadedNodes)
         setEdges(loadedEdges)
