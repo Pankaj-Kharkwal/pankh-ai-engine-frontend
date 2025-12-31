@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@azure/openai": "^2.0.0",
+    "@hookform/resolvers": "^5.2.2",
     "@microsoft/applicationinsights-react-js": "^3.0.7",
     "@microsoft/applicationinsights-web": "^3.3.0",
     "@monaco-editor/react": "^4.7.0",
@@ -28,8 +29,11 @@
     "monaco-editor": "^0.53.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hook-form": "^7.69.0",
     "react-router-dom": "^7.9.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
+    "zod": "^4.2.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

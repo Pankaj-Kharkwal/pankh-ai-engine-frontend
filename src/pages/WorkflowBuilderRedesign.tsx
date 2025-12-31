@@ -746,57 +746,7 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
               RUN
             </button>
           </div>
-          {/* Icon Buttons */}
-        <div className="flex gap-4 m-auto justify-center">
-            {/* Debugger Button */}
-            <button
-              onClick={() =>
-                setActivePanel(activePanel === "debugger" ? null : "debugger")
-              }
-              className={`p-2 rounded transition-colors ${
-                activePanel === "debugger"
-                  ? "bg-yellow-600 text-white"
-                  : isDay
-                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  : "bg-[#150b1e] hover:bg-[#2a172e]"
-              }`}
-              title="Execution Manager"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            {/* Monitor Button */}
-            <button
-              onClick={() =>
-                setActivePanel(activePanel === "monitor" ? null : "monitor")
-              }
-              className={`p-2 rounded transition-colors ${
-                activePanel === "monitor"
-                  ? "bg-yellow-600 text-white"
-                  : isDay
-                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  : "bg-[#150b1e] hover:bg-[#2a172e]"
-              }`}
-              title="Analytics"
-            >
-              <BarChart3 className="w-4 h-4" />
-            </button>
-            {/* Collaboration Button */}
-            <button
-              onClick={() =>
-                setActivePanel(activePanel === "collaboration" ? null : "collaboration")
-              }
-              className={`p-2 rounded transition-colors ${
-                activePanel === "collaboration"
-                  ? "bg-yellow-600 text-white"
-                  : isDay
-                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  : "bg-[#150b1e] hover:bg-[#2a172e]"
-              }`}
-              title="Collaboration"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </button>
-          </div>
+          
           {/* SLIDING PANELS */}
           <div
             className={`transition-all duration-300 overflow-hidden ${
@@ -1092,8 +1042,65 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
 
         {/* Bottom Bar: Node/Edge Count */}
         <div className={`${isDay ? 'bg-gray-100 border-t border-gray-200 text-gray-700' : 'bg-[#120c1a] border-t border-[#27202a] text-sm text-gray-400'} px-4 py-2 text-sm`}>
-          Nodes :- <span className={`${isDay ? 'text-gray-900' : 'text-white'} font-semibold`}>{nodes.length}</span> Edges :-{' '}
+            <div className="flex ">
+            <div className="flex-1">
+               Nodes :- <span className={`${isDay ? 'text-gray-900' : 'text-white'} font-semibold`}>{nodes.length}</span> Edges :-{' '}
           <span className={`${isDay ? 'text-gray-900' : 'text-white'} font-semibold`}>{edges.length}</span>
+          </div>
+        {/* Icon Buttons */}
+        <div className="flex gap-4 m-auto justify-center">
+            {/* Debugger Button */}
+            <button
+              onClick={() =>
+                setActivePanel(activePanel === "debugger" ? null : "debugger")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "debugger"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
+              title="Execution Manager"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            {/* Monitor Button */}
+            <button
+              onClick={() =>
+                setActivePanel(activePanel === "monitor" ? null : "monitor")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "monitor"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
+              title="Analytics"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+            {/* Collaboration Button */}
+            <button
+              onClick={() =>
+                setActivePanel(activePanel === "collaboration" ? null : "collaboration")
+              }
+              className={`p-2 rounded transition-colors ${
+                activePanel === "collaboration"
+                  ? "bg-yellow-600 text-white"
+                  : isDay
+                  ? "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  : "bg-[#150b1e] hover:bg-[#2a172e]"
+              }`}
+              title="Collaboration"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+          </div>
+            </div>
+         
+                
         </div>
 
         {/* Execution Table */}
