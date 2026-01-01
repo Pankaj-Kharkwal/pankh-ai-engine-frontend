@@ -37,7 +37,14 @@ import {
   Globe,
   MessageSquare,
   Sparkles,
+  LayoutGrid,
+  ArrowRight,
+  ArrowDown,
+  ChevronDown,
 } from 'lucide-react' // Assuming lucide-react or similar
+import {
+  getLayoutedElements,
+} from '../utils/workflowLayout'
 
 const initialNodes: Node[] = [
   {
@@ -69,6 +76,8 @@ export default function WorkflowBuilder() {
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(workflowId || null)
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false)
   const [sseConnection, setSseConnection] = useState<EventSource | null>(null)
+  const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>('LR')
+  const [layoutDropdownOpen, setLayoutDropdownOpen] = useState(false)
 
   // --- New State for Header/Execution ---
   const [workflowName, setWorkflowName] = useState('Untitled Workflow')
@@ -243,6 +252,19 @@ export default function WorkflowBuilder() {
   const onTogglePalette = useCallback(() => {
     setPaletteVisible(prev => !prev)
   }, [])
+
+  // --- Auto-Layout Function ---
+  const applyAutoLayout = useCallback((direction: 'TB' | 'LR' = layoutDirection) => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      nodes,
+      edges,
+      { direction, spacing: 'normal' }
+    )
+    setNodes(layoutedNodes)
+    setEdges(layoutedEdges)
+    setLayoutDirection(direction)
+    setLayoutDropdownOpen(false)
+  }, [nodes, edges, setNodes, setEdges, layoutDirection])
 
   // --- Workflow helpers ---
   const buildWorkflowPayload = useCallback(() => {
@@ -653,6 +675,46 @@ export default function WorkflowBuilder() {
               <Sparkles className="w-4 h-4" />
               <span>AI Generate</span>
             </button>
+
+            {/* Auto-Layout Button with Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => applyAutoLayout()}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white pl-4 pr-2 py-2 flex items-center space-x-2 rounded-lg transition-all text-sm font-medium shadow-md hover:shadow-lg"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span>Auto-Align</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setLayoutDropdownOpen(!layoutDropdownOpen)
+                  }}
+                  className="ml-1 p-1 hover:bg-white/20 rounded"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </button>
+              {layoutDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
+                  <button
+                    onClick={() => applyAutoLayout('LR')}
+                    className={`flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg ${layoutDirection === 'LR' ? 'text-emerald-600 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Horizontal Flow
+                    {layoutDirection === 'LR' && <span className="ml-auto text-emerald-500">✓</span>}
+                  </button>
+                  <button
+                    onClick={() => applyAutoLayout('TB')}
+                    className={`flex items-center w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-lg ${layoutDirection === 'TB' ? 'text-emerald-600 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    <ArrowDown className="w-4 h-4 mr-2" />
+                    Vertical Flow
+                    {layoutDirection === 'TB' && <span className="ml-auto text-emerald-500">✓</span>}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* --- FIX: Load Demo Dropdown ---
                         The parent div (relative group) now covers both the button and the dropdown area,
