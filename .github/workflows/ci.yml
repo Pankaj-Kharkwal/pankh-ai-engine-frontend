@@ -25,9 +25,9 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          VITE_API_URL: https://backend-dev.pankh.ai/api/v1
-          VITE_WS_URL: wss://backend-dev.pankh.ai/ws
-          VITE_API_PROXY_TARGET: https://backend-dev.pankh.ai
+          VITE_API_URL: https://dev.pankh.ai/api/v1
+          VITE_WS_URL: wss://dev.pankh.ai/ws
+          VITE_API_PROXY_TARGET: https://dev.pankh.ai
           VITE_APP_TITLE: 'Pankh AI Engine'
           VITE_APP_DESCRIPTION: 'AI-Native Workflow Automation Platform'
 
