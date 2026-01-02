@@ -11,6 +11,7 @@ import {
 import type { Connection, Edge, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useBlocks, useBlockCategories, useCreateWorkflow, useRunWorkflow, useWorkflow, useWorkflows } from '../hooks/useApi'
+import { toast } from 'sonner'
 import { useAuth } from '../contexts/AuthContext'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
@@ -368,7 +369,7 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   const saveWorkflow = async (options: { silent?: boolean } = {}) => {
     if (!hasConfigurableNodes) {
       if (!options.silent) {
-        alert('Add at least one configured block before saving the workflow.')
+        toast.warning('Add at least one configured block before saving the workflow.')
       }
       throw new Error('No configured nodes to save')
     }
@@ -379,13 +380,13 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       const workflow = await createWorkflowMutation.mutateAsync(payload) as any
       setCurrentWorkflowId(workflow.id)
       if (!options.silent) {
-        alert('Workflow saved successfully!')
+        toast.success('Workflow saved successfully!')
       }
       return workflow
     } catch (error) {
       console.error('Failed to save workflow:', error)
       if (!options.silent) {
-        alert('Failed to save workflow. Please try again.')
+        toast.error('Failed to save workflow. Please try again.')
       }
       throw error
     }
@@ -393,7 +394,7 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
 
   const runWorkflow = async () => {
     if (!hasConfigurableNodes) {
-      alert('Please add and configure at least one block before running the workflow.')
+      toast.warning('Please add and configure at least one block before running the workflow.')
       return
     }
 
@@ -414,9 +415,10 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       const execution = await runWorkflowMutation.mutateAsync(workflowIdToRun)
       setExecutionResult(execution)
       setExecutionData(execution)
+      toast.success('Workflow execution started!')
     } catch (error) {
       console.error('Failed to run workflow:', error)
-      alert('Failed to run workflow. Please check your configuration.')
+      toast.error('Failed to run workflow. Please check your configuration.')
     } finally {
       setIsExecuting(false)
     }
