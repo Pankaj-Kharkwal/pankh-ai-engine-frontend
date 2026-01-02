@@ -240,7 +240,7 @@ export default function Blocks() {
   const handleToggleBlock = async (block: any) => {
     const mutation = block.enabled ? disableBlockMutation : enableBlockMutation
     try {
-      await mutation.mutateAsync(block.type)
+      const blockIdentifier = block.id || block.name; await mutation.mutateAsync(blockIdentifier)
       toast.success(`Block ${block.enabled ? 'disabled' : 'enabled'} successfully`)
       refetch()
     } catch (error) {
