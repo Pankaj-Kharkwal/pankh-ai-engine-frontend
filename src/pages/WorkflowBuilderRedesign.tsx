@@ -183,27 +183,29 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       setWorkflowName(workflow.name || 'Workflow :- 01')
       setCurrentWorkflowId(workflowId)
 
-      if (workflow.graph) {
-        const { nodes: graphNodes, edges: graphEdges } = workflow.graph
+      // Support both old format (graph.nodes/edges) and new format (blocks/connections)
+      const graphNodes = workflow.graph?.nodes || workflow.blocks || []
+      const graphEdges = workflow.graph?.edges || workflow.connections || []
 
-        const loadedNodes: Node[] = graphNodes?.map((node: any, index: number) => ({
+      if (graphNodes.length > 0) {
+        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => ({
           id: node.id,
           type: 'workflowNode',
           position: node.position || { x: 100 + index * 300, y: 100 + Math.floor(index / 3) * 200 },
           data: {
             label: node.name || node.type,
-            blockType: node.type,
-            config: node.parameters || {},
-            parameters: node.parameters || {},
+            blockType: node.block_id || node.type,
+            config: node.input_mapping || node.parameters || {},
+            parameters: node.input_mapping || node.parameters || {},
             status: 'idle',
           },
-        })) || []
+        }))
 
-        const loadedEdges: Edge[] = graphEdges?.map((edge: any, index: number) => ({
-          id: edge.id || `e-${edge.from_node}-${edge.to_node}-${index}`,
-          source: edge.from_node,
-          target: edge.to_node,
-        })) || []
+        const loadedEdges: Edge[] = graphEdges.map((edge: any, index: number) => ({
+          id: edge.id || `e-${edge.source_node_id || edge.from_node}-${edge.target_node_id || edge.to_node}-${index}`,
+          source: edge.source_node_id || edge.from_node,
+          target: edge.target_node_id || edge.to_node,
+        }))
 
         setNodes(loadedNodes)
         setEdges(loadedEdges)
