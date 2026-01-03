@@ -438,11 +438,15 @@ export default function Blocks() {
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {Array.isArray(categories) &&
-                    categories.map((category: string) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    categories.map((cat: any) => {
+                      // Handle both string and object formats
+                      const categoryName = typeof cat === 'string' ? cat : cat.category
+                      return (
+                        <SelectItem key={categoryName} value={categoryName}>
+                          {categoryName}
+                        </SelectItem>
+                      )
+                    })}
                 </SelectContent>
               </Select>
             </div>
