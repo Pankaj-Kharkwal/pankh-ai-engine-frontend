@@ -75,13 +75,15 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
 
     if (value !== undefined && value !== null && value !== '') {
       if (fieldSchema.type === 'string') {
-        if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
+        // Type guard: ensure value is a string before calling string methods
+        const strValue = typeof value === 'string' ? value : String(value)
+        if (fieldSchema.minLength && strValue.length < fieldSchema.minLength) {
           return `Minimum length is ${fieldSchema.minLength}`
         }
-        if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
+        if (fieldSchema.maxLength && strValue.length > fieldSchema.maxLength) {
           return `Maximum length is ${fieldSchema.maxLength}`
         }
-        if (fieldSchema.pattern && !new RegExp(fieldSchema.pattern).test(value)) {
+        if (fieldSchema.pattern && !new RegExp(fieldSchema.pattern).test(strValue)) {
           return 'Invalid format'
         }
       }
