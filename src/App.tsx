@@ -11,7 +11,7 @@ import BYOChatbot from './pages/BYOChatbot'
 import WorkflowDemo from './pages/WorkflowDemo'
 import Blocks from './pages/Blocks'
 import BlockTestLab from './pages/BlockTestLab'
-import Executions from './pages/Executions'
+// Executions page deprecated - use WorkflowManager instead
 import Debug from './pages/Debug'
 import Analytics from './pages/Analytics'
 import WorkflowManager from './pages/WorkflowManager'
@@ -95,7 +95,7 @@ function App() {
             <Route path="chatbot" element={<BYOChatbot />} />
             <Route path="blocks" element={<Blocks />} />
             <Route path="blocks/test-lab" element={<BlockTestLab />} />
-            <Route path="executions" element={<Executions />} />
+            {/* Executions page deprecated - use WorkflowManager instead */}
             <Route path="debug" element={<Debug />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="workflow-manager" element={<WorkflowManager />} />
