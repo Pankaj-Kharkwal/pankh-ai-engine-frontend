@@ -18,8 +18,15 @@ export const login = async (email: string, password: string) => {
   }
 
   const data = await response.json()
-  console.log('Access Token:', data.access_token)
-  console.log('Refresh Token:', data.refresh_token)
+  
+  // Store tokens in localStorage for Bearer auth fallback
+  if (data.access_token) {
+    localStorage.setItem('access_token', data.access_token)
+  }
+  if (data.refresh_token) {
+    localStorage.setItem('refresh_token', data.refresh_token)
+  }
+  
   return data
 }
 
@@ -41,27 +48,49 @@ export const signup = async (fullName: string, email: string, password: string) 
     throw new Error('Failed to sign up')
   }
 
-  return response.json()
+  const data = await response.json()
+  
+  // Store tokens in localStorage for Bearer auth fallback
+  if (data.access_token) {
+    localStorage.setItem('access_token', data.access_token)
+  }
+  if (data.refresh_token) {
+    localStorage.setItem('refresh_token', data.refresh_token)
+  }
+
+  return data
 }
 
 export const logout = async () => {
-  const response = await fetch(`${API_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to log out')
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch (error) {
+    console.error('Logout failed:', error)
+  } finally {
+    // Always clear local tokens
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
   }
 
-  return response.json()
+  return { success: true }
 }
 
 export const checkAuthStatus = async () => {
-  console.log('Checking auth status. Document cookies:', document.cookie)
+  const headers: Record<string, string> = {}
+
+  // Add Bearer token from localStorage for authentication
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_URL}/users/me`, {
     method: 'GET',
     credentials: 'include',
+    headers,
   })
 
   if (!response.ok) {
