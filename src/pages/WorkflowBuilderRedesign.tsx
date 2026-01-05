@@ -132,6 +132,58 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   useBlockCategories() // Categories are used in categoryInfo mapping
   const { data: workflows, isLoading: workflowsLoading } = useWorkflows()
   const [workflowSearch, setWorkflowSearch] = useState('')
+  const registryBlocks = useMemo(() => {
+    return Array.isArray(apiBlocks) ? apiBlocks : []
+  }, [apiBlocks])
+
+  const findRegistryBlock = useCallback(
+    (aliases: string[]) => {
+      if (!registryBlocks.length) return undefined
+      const normalizedAliases = aliases.map(alias => alias.toLowerCase())
+      return registryBlocks.find(block => {
+        const haystack = [
+          block?.type,
+          block?.name,
+          block?.manifest?.name,
+          block?.manifest?.description,
+          block?.manifest?.category,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return normalizedAliases.some(alias => haystack.includes(alias))
+      })
+    },
+    [registryBlocks]
+  )
+
+  const buildDemoNode = useCallback(
+    (options: {
+      id: string
+      position: { x: number; y: number }
+      aliases: string[]
+      fallbackLabel: string
+      parameters: Record<string, any>
+    }): Node => {
+      const blockMatch = findRegistryBlock(options.aliases)
+      const blockId = blockMatch?.id || blockMatch?._id
+      const blockLabel = blockMatch?.manifest?.name || blockMatch?.name || options.fallbackLabel
+      return {
+        id: options.id,
+        type: 'workflowNode',
+        position: options.position,
+        data: {
+          label: blockLabel,
+          blockType: blockLabel,
+          blockId,
+          config: options.parameters,
+          parameters: options.parameters,
+          status: 'idle',
+        },
+      }
+    },
+    [findRegistryBlock]
+  )
 
   const isTerminalStatus = useCallback((status?: string) => {
     return status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timeout'
@@ -314,18 +366,25 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       const graphEdges = workflow.graph?.edges || workflow.connections || []
 
       if (graphNodes.length > 0) {
-        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => ({
-          id: node.id,
-          type: 'workflowNode',
-          position: node.position || { x: 100 + index * 300, y: 100 + Math.floor(index / 3) * 200 },
-          data: {
-            label: node.name || node.type,
-            blockType: node.block_id || node.type,
-            config: node.input_mapping || node.parameters || {},
-            parameters: node.input_mapping || node.parameters || {},
-            status: 'idle',
-          },
-        }))
+        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => {
+          const blockLabel = node.name || node.type
+          const blockType = node.name || node.type || node.block_type || blockLabel
+          const blockId = node.block_id || node.blockId
+
+          return {
+            id: node.id,
+            type: 'workflowNode',
+            position: node.position || { x: 100 + index * 300, y: 100 + Math.floor(index / 3) * 200 },
+            data: {
+              label: blockLabel,
+              blockType,
+              blockId,
+              config: node.input_mapping || node.parameters || {},
+              parameters: node.input_mapping || node.parameters || {},
+              status: 'idle',
+            },
+          }
+        })
 
         const loadedEdges: Edge[] = graphEdges.map((edge: any, index: number) => ({
           id: edge.id || `e-${edge.source_node_id || edge.from_node}-${edge.target_node_id || edge.to_node}-${index}`,
@@ -374,12 +433,15 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   const onAddNode = useCallback(
     (block: any, position?: { x: number; y: number }) => {
       const newId = `${block.type}-${Date.now()}`
+      const blockId = block?.id || block?._id
+      const blockLabel = block?.manifest?.name || block?.name || block?.type
       const newNode: Node = {
         id: newId,
         position: position || { x: Math.random() * 400 + 200, y: Math.random() * 400 + 200 },
         data: {
-          label: block.manifest?.name || block.type,
-          blockType: block.type,
+          label: blockLabel,
+          blockType: blockLabel || block?.type,
+          blockId,
           config: {},
           status: 'idle',
         },
@@ -468,8 +530,11 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       .filter(node => Boolean(node.data?.blockType))
       .map(node => ({
         id: node.id,
+        name: node.data?.label || node.data?.blockType,
         type: node.data.blockType,
+        block_id: node.data?.blockId || node.data?.block_id,
         parameters: node.data?.parameters || node.data?.config || {},
+        position: node.position,
       }))
 
     const graphEdges = edges.map(edge => ({
@@ -566,185 +631,121 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
 
       if (workflowType === 'simple') {
         name = 'Simple Search Demo'
-        const searchNode: Node = {
+        const searchNode = buildDemoNode({
           id: 'search_demo',
-          type: 'workflowNode',
           position: { x: 100, y: 100 },
-          data: {
-            label: 'Search Demo (searxng_search)',
-            blockType: 'searxng_search',
-            config: {
-              query: 'machine learning tutorials 2025',
-              limit: 5,
-              timeout_sec: 15,
-            },
-            parameters: {
-              query: 'machine learning tutorials 2025',
-              limit: 5,
-              timeout_sec: 15,
-            },
-            status: 'idle',
+          aliases: ['web search', 'search', 'searxng'],
+          fallbackLabel: 'Web Search',
+          parameters: {
+            query: 'machine learning tutorials 2025',
+            limit: 5,
+            time_range: 'month',
           },
-        }
+        })
 
-        const echoNode: Node = {
-          id: 'display_results',
-          type: 'workflowNode',
+        const conditionNode = buildDemoNode({
+          id: 'condition_check',
           position: { x: 400, y: 100 },
-          data: {
-            label: 'Display Results (echo)',
-            blockType: 'echo',
-            config: {
-              message: 'Search Results: {{search_demo.output}}',
-            },
-            parameters: {
-              message: 'Search Results: {{search_demo.output}}',
-            },
-            status: 'idle',
+          aliases: ['condition'],
+          fallbackLabel: 'Condition Check',
+          parameters: {
+            value: 5,
+            operator: '>',
+            compare_to: 3,
           },
-        }
+        })
 
-        const edge: Edge = {
-          id: 'e-simple-1',
-          source: 'search_demo',
-          target: 'display_results',
-        }
-
-        demoNodes = [searchNode, echoNode]
-        demoEdges = [edge]
+        demoNodes = [searchNode, conditionNode]
+        demoEdges = [{ id: 'e-simple-1', source: 'search_demo', target: 'condition_check' }]
         count = 2
       } else if (workflowType === 'ai_research') {
         name = 'AI Research & Analysis'
-        demoNodes = [
-          {
-            id: 'search_ai_news',
-            type: 'workflowNode',
-            position: { x: 100, y: 100 },
-            data: {
-              label: 'Search AI News (searxng_search)',
-              blockType: 'searxng_search',
-              config: {
-                query: 'artificial intelligence news 2025 latest developments',
-                limit: 6,
-                timeout_sec: 20,
-              },
-              parameters: {
-                query: 'artificial intelligence news 2025 latest developments',
-                limit: 6,
-                timeout_sec: 20,
-              },
-              status: 'idle',
-            },
+        const searchNode = buildDemoNode({
+          id: 'search_ai_news',
+          position: { x: 100, y: 100 },
+          aliases: ['web search', 'search', 'searxng'],
+          fallbackLabel: 'Web Search',
+          parameters: {
+            query: 'artificial intelligence news 2025 latest developments',
+            limit: 6,
+            time_range: 'month',
           },
-          {
-            id: 'scrape_articles',
-            type: 'workflowNode',
-            position: { x: 400, y: 100 },
-            data: {
-              label: 'Scrape Articles (scrape_urls)',
-              blockType: 'scrape_urls',
-              config: {
-                top_n_from_searx: 4,
-                max_chars_per_doc: 4000,
-                timeout_sec: 25,
-              },
-              parameters: {
-                top_n_from_searx: 4,
-                max_chars_per_doc: 4000,
-                timeout_sec: 25,
-              },
-              status: 'idle',
-            },
-          },
-          {
-            id: 'analyze_trends',
-            type: 'workflowNode',
-            position: { x: 700, y: 100 },
-            data: {
-              label: 'Analyze Trends (azure_chat)',
-              blockType: 'azure_chat',
-              config: {
-                system: 'You are an AI research analyst.',
-                prompt: 'Analyze these AI developments: {context}',
-                temperature: 0.3,
-              },
-              parameters: {
-                system: 'You are an AI research analyst.',
-                prompt: 'Analyze these AI developments: {context}',
-                temperature: 0.3,
-              },
-              status: 'idle',
-            },
-          },
-        ]
+        })
 
+        const mapNode = buildDemoNode({
+          id: 'map_summary',
+          position: { x: 400, y: 100 },
+          aliases: ['json', 'mapper'],
+          fallbackLabel: 'JSON Mapper',
+          parameters: {
+            input_data: { headline: 'Sample headline', summary: 'Sample summary' },
+            mapping: {
+              headline: '$.headline',
+              summary: '$.summary',
+            },
+          },
+        })
+
+        const conditionNode = buildDemoNode({
+          id: 'review_gate',
+          position: { x: 700, y: 100 },
+          aliases: ['condition'],
+          fallbackLabel: 'Condition Check',
+          parameters: {
+            value: 'ready',
+            operator: '==',
+            compare_to: 'ready',
+          },
+        })
+
+        demoNodes = [searchNode, mapNode, conditionNode]
         demoEdges = [
-          { id: 'e-ai-1', source: 'search_ai_news', target: 'scrape_articles' },
-          { id: 'e-ai-2', source: 'scrape_articles', target: 'analyze_trends' },
+          { id: 'e-ai-1', source: 'search_ai_news', target: 'map_summary' },
+          { id: 'e-ai-2', source: 'map_summary', target: 'review_gate' },
         ]
         count = 3
-
-        // Add final echo node
-        const finalEcho: Node = {
-          id: 'final_report',
-          type: 'workflowNode',
-          position: { x: 1000, y: 100 },
-          data: {
-            label: 'Final Report (echo)',
-            blockType: 'echo',
-            config: {
-              message: 'AI Analysis Complete: {{analyze_trends.output}}',
-            },
-            parameters: {
-              message: 'AI Analysis Complete: {{analyze_trends.output}}',
-            },
-            status: 'idle',
-          },
-        }
-        demoNodes.push(finalEcho)
-        demoEdges.push({ id: 'e-ai-3', source: 'analyze_trends', target: 'final_report' })
-        count += 1
       } else if (workflowType === 'full_pipeline') {
         name = 'Full Data Pipeline'
         // Placeholder for full pipeline - can be expanded later
-        demoNodes = [
-          {
-            id: 'extract',
-            type: 'workflowNode',
-            position: { x: 100, y: 100 },
-            data: {
-              label: 'Extract Data',
-              blockType: 'searxng_search',
-              config: { query: 'data source' },
-              parameters: { query: 'data source' },
-              status: 'idle',
+        const extractNode = buildDemoNode({
+          id: 'extract',
+          position: { x: 100, y: 100 },
+          aliases: ['web search', 'search', 'searxng'],
+          fallbackLabel: 'Web Search',
+          parameters: {
+            query: 'data pipeline patterns',
+            limit: 3,
+            time_range: 'year',
+          },
+        })
+
+        const transformNode = buildDemoNode({
+          id: 'transform',
+          position: { x: 400, y: 100 },
+          aliases: ['json', 'mapper'],
+          fallbackLabel: 'JSON Mapper',
+          parameters: {
+            input_data: { value: 10, label: 'sample' },
+            mapping: {
+              value: '$.value',
+              label: '$.label',
             },
           },
-          {
-            id: 'transform',
-            type: 'workflowNode',
-            position: { x: 400, y: 100 },
-            data: {
-              label: 'Transform Data',
-              blockType: 'echo',
-              config: { message: 'Transform logic' },
-              parameters: { message: 'Transform logic' },
-              status: 'idle',
-            },
+        })
+
+        const loadNode = buildDemoNode({
+          id: 'load',
+          position: { x: 700, y: 100 },
+          aliases: ['condition'],
+          fallbackLabel: 'Condition Check',
+          parameters: {
+            value: 1,
+            operator: '==',
+            compare_to: 1,
           },
-          {
-            id: 'load',
-            type: 'workflowNode',
-            position: { x: 700, y: 100 },
-            data: {
-              label: 'Load Data',
-              blockType: 'echo',
-              config: { message: 'Load destination' },
-              parameters: { message: 'Load destination' },
-              status: 'idle',
-            },
-          },
-        ]
+        })
+
+        demoNodes = [extractNode, transformNode, loadNode]
         demoEdges = [
           { id: 'e-pipeline-1', source: 'extract', target: 'transform' },
           { id: 'e-pipeline-2', source: 'transform', target: 'load' },
@@ -757,7 +758,7 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       setWorkflowName(name)
       setNodeCounter(count)
     },
-    [setNodes, setEdges]
+    [buildDemoNode, setEdges, setNodes]
   )
 
   // Execution table data
