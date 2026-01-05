@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   ReactFlow,
@@ -18,6 +18,8 @@ import {
   useRunWorkflow,
   useWorkflow,
 } from '../hooks/useApi' // Assuming these hooks are available
+import { getApiBaseUrl } from '../services/apiConfig'
+import { apiClient } from '../services/api'
 import BlockPalette from '../components/workflow/BlockPalette'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
@@ -76,6 +78,8 @@ export default function WorkflowBuilder() {
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(workflowId || null)
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false)
   const [sseConnection, setSseConnection] = useState<EventSource | null>(null)
+  const executionPollRef = useRef<number | null>(null)
+  const executionPollCancelRef = useRef<(() => void) | null>(null)
   const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>('LR')
   const [layoutDropdownOpen, setLayoutDropdownOpen] = useState(false)
 
@@ -97,6 +101,146 @@ export default function WorkflowBuilder() {
 
   const { data: apiBlocks, isLoading: blocksLoading } = useBlocks()
   const { data: categoriesData } = useBlockCategories()
+
+  const isTerminalStatus = useCallback((status?: string) => {
+    return status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timeout'
+  }, [])
+
+  const normalizeExecution = useCallback((execution: any) => {
+    if (!execution) return execution
+    const executionId = execution.id || execution.execution_id || execution.executionId
+    return {
+      ...execution,
+      id: executionId,
+      execution_id: execution.execution_id || executionId,
+    }
+  }, [])
+
+  const buildNodeResults = useCallback((execution: any) => {
+    if (!execution) return null
+    if (execution.nodeResults) return execution.nodeResults
+
+    const nodeExecutions = execution.node_executions || execution.nodeExecutions
+    if (!Array.isArray(nodeExecutions)) return null
+
+    const results: Record<string, any> = {}
+    nodeExecutions.forEach((nodeExec: any) => {
+      const nodeId = nodeExec.node_id || nodeExec.nodeId
+      if (!nodeId) return
+      const nodeResult = nodeExec.result || {}
+      const outputData =
+        nodeResult.result ??
+        nodeResult.outputs ??
+        nodeResult.output ??
+        nodeResult
+
+      results[nodeId] = {
+        nodeId,
+        success: nodeExec.success !== false && nodeResult.success !== false,
+        inputData: nodeResult.inputs ?? nodeResult.input,
+        outputData,
+        error: nodeResult.error || nodeExec.error_message || nodeExec.error,
+        executionTime:
+          nodeResult.execution_time_ms ??
+          nodeResult.executionTime ??
+          nodeExec.execution_time_ms ??
+          nodeExec.executionTime,
+        timestamp: nodeExec.executed_at || nodeExec.timestamp || nodeResult.timestamp,
+      }
+    })
+
+    return results
+  }, [])
+
+  const applyExecutionUpdate = useCallback((execution: any) => {
+    const normalized = normalizeExecution(execution)
+    const nodeResults = buildNodeResults(normalized)
+    const nextExecution = nodeResults ? { ...normalized, nodeResults } : normalized
+
+    setExecutionData(nextExecution)
+    setExecutionResult((prev: any) => {
+      if (!prev || prev.id === nextExecution?.id) {
+        return { ...prev, ...nextExecution }
+      }
+      return prev
+    })
+
+    if (nodeResults) {
+      setNodes(nds =>
+        nds.map(node => {
+          const nodeResult = nodeResults[node.id]
+          if (!nodeResult) return node
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              status: nodeResult.success ? 'success' : 'error',
+              output: nodeResult.outputData,
+            },
+          }
+        })
+      )
+    }
+
+    if (normalized?.node_states) {
+      setNodes(nds =>
+        nds.map(node => {
+          const nodeState = normalized.node_states.find((ns: any) => ns.node_id === node.id)
+          if (nodeState) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status: nodeState.status,
+              },
+            }
+          }
+          return node
+        })
+      )
+    }
+
+    if (isTerminalStatus(normalized?.status)) {
+      setIsExecuting(false)
+    }
+  }, [buildNodeResults, isTerminalStatus, normalizeExecution, setNodes])
+
+  const stopExecutionPolling = useCallback(() => {
+    if (executionPollCancelRef.current) {
+      executionPollCancelRef.current()
+      executionPollCancelRef.current = null
+    }
+  }, [])
+
+  const startExecutionPolling = useCallback((executionId: string) => {
+    stopExecutionPolling()
+
+    let cancelled = false
+    const poll = async () => {
+      if (cancelled) return
+      try {
+        const execution = await apiClient.getExecution(executionId)
+        applyExecutionUpdate(execution)
+        const status = execution?.status
+        if (!isTerminalStatus(status)) {
+          executionPollRef.current = window.setTimeout(poll, 2000)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          executionPollRef.current = window.setTimeout(poll, 4000)
+        }
+      }
+    }
+
+    poll()
+
+    executionPollCancelRef.current = () => {
+      cancelled = true
+      if (executionPollRef.current) {
+        window.clearTimeout(executionPollRef.current)
+      }
+    }
+  }, [applyExecutionUpdate, isTerminalStatus, stopExecutionPolling])
 
   // Load existing workflow when workflowId is present
   useEffect(() => {
@@ -338,11 +482,14 @@ export default function WorkflowBuilder() {
       }
 
       const execution = await runWorkflowMutation.mutateAsync(workflowId)
-      setExecutionResult(execution)
-      setExecutionData(execution)
+      applyExecutionUpdate(execution)
 
       // Setup SSE connection for real-time progress
-      setupSSEConnection(execution.id)
+      const executionId = execution?.id || execution?.execution_id
+      if (executionId) {
+        startExecutionPolling(executionId)
+        setupSSEConnection(executionId)
+      }
     } catch (error) {
       console.error('Failed to run workflow:', error)
       alert('Failed to run workflow. Please check your configuration.')
@@ -358,8 +505,7 @@ export default function WorkflowBuilder() {
       sseConnection.close()
     }
 
-    const apiBase = import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
-    const sseUrl = `${apiBase}/executions/${executionId}/stream`
+    const sseUrl = `${getApiBaseUrl()}/executions/${executionId}/stream`
 
     const eventSource = new EventSource(sseUrl, { withCredentials: true })
 
@@ -368,33 +514,10 @@ export default function WorkflowBuilder() {
         const update = JSON.parse(event.data)
         console.log('SSE Update:', update)
 
-        // Update execution data
-        setExecutionData((prev: any) => ({
-          ...prev,
-          ...update,
-        }))
-
-        // Update node statuses on canvas
-        if (update.node_states) {
-          setNodes(nds =>
-            nds.map(node => {
-              const nodeState = update.node_states.find((ns: any) => ns.node_id === node.id)
-              if (nodeState) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    status: nodeState.status,
-                  },
-                }
-              }
-              return node
-            })
-          )
-        }
+        applyExecutionUpdate(update)
 
         // Close connection when execution completes
-        if (update.status === 'completed' || update.status === 'failed') {
+        if (isTerminalStatus(update.status)) {
           eventSource.close()
           setSseConnection(null)
           setIsExecuting(false)
@@ -408,7 +531,7 @@ export default function WorkflowBuilder() {
       console.error('SSE Error:', error)
       eventSource.close()
       setSseConnection(null)
-      setIsExecuting(false)
+      startExecutionPolling(executionId)
     }
 
     setSseConnection(eventSource)
@@ -420,8 +543,9 @@ export default function WorkflowBuilder() {
       if (sseConnection) {
         sseConnection.close()
       }
+      stopExecutionPolling()
     }
-  }, [sseConnection])
+  }, [sseConnection, stopExecutionPolling])
 
   // Handle AI-generated workflow
   const handleApplyAIWorkflow = (workflow: any) => {
@@ -813,14 +937,15 @@ export default function WorkflowBuilder() {
               </span>
             )}
           </div>
-          {executionResult && (
-            <div className="p-2 bg-green-50 border border-green-200 rounded-md flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-green-800">
-                Execution **{executionResult.status}**! ID: {executionResult.id.slice(-4)}
-              </span>
-            </div>
-          )}
+            {executionResult && (executionResult.id || executionResult.execution_id) && (
+              <div className="p-2 bg-green-50 border border-green-200 rounded-md flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-green-800">
+                  Execution **{executionResult.status}**! ID:{' '}
+                  {(executionResult.id || executionResult.execution_id).slice(-4)}
+                </span>
+              </div>
+            )}
         </div>
       </div>
       {/* ---------------------------- */}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   ReactFlow,
@@ -18,6 +18,7 @@ import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
 import CollaborationPanel from '../components/workflow/CollaborationPanel'
 import ExecutionDebugger from '../components/workflow/ExecutionDebugger'
 import ExecutionMonitor from '../components/workflow/ExecutionMonitor'
+import { apiClient } from '../services/api'
 
 // Icons
 import {
@@ -109,6 +110,8 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   const [debuggerVisible, setDebuggerVisible] = useState(false)
   const [monitorVisible, setMonitorVisible] = useState(false)
   const [activePanel, setActivePanel] = useState<"debugger" | "monitor" | "collaboration" | null>(null);
+  const executionPollRef = useRef<number | null>(null)
+  const executionPollCancelRef = useRef<(() => void) | null>(null)
 
   const [, setNodeCounter] = useState(1)
   const [blocksSearchTerm, setBlocksSearchTerm] = useState('')
@@ -129,6 +132,128 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   useBlockCategories() // Categories are used in categoryInfo mapping
   const { data: workflows, isLoading: workflowsLoading } = useWorkflows()
   const [workflowSearch, setWorkflowSearch] = useState('')
+
+  const isTerminalStatus = useCallback((status?: string) => {
+    return status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timeout'
+  }, [])
+
+  const normalizeExecution = useCallback((execution: any) => {
+    if (!execution) return execution
+    const executionId = execution.id || execution.execution_id || execution.executionId
+    return {
+      ...execution,
+      id: executionId,
+      execution_id: execution.execution_id || executionId,
+    }
+  }, [])
+
+  const buildNodeResults = useCallback((execution: any) => {
+    if (!execution) return null
+    if (execution.nodeResults) return execution.nodeResults
+
+    const nodeExecutions = execution.node_executions || execution.nodeExecutions
+    if (!Array.isArray(nodeExecutions)) return null
+
+    const results: Record<string, any> = {}
+    nodeExecutions.forEach((nodeExec: any) => {
+      const nodeId = nodeExec.node_id || nodeExec.nodeId
+      if (!nodeId) return
+      const nodeResult = nodeExec.result || {}
+      const outputData =
+        nodeResult.result ??
+        nodeResult.outputs ??
+        nodeResult.output ??
+        nodeResult
+
+      results[nodeId] = {
+        nodeId,
+        success: nodeExec.success !== false && nodeResult.success !== false,
+        inputData: nodeResult.inputs ?? nodeResult.input,
+        outputData,
+        error: nodeResult.error || nodeExec.error_message || nodeExec.error,
+        executionTime:
+          nodeResult.execution_time_ms ??
+          nodeResult.executionTime ??
+          nodeExec.execution_time_ms ??
+          nodeExec.executionTime,
+        timestamp: nodeExec.executed_at || nodeExec.timestamp || nodeResult.timestamp,
+      }
+    })
+
+    return results
+  }, [])
+
+  const applyExecutionUpdate = useCallback((execution: any) => {
+    const normalized = normalizeExecution(execution)
+    const nodeResults = buildNodeResults(normalized)
+    const nextExecution = nodeResults ? { ...normalized, nodeResults } : normalized
+
+    setExecutionData(nextExecution)
+    setExecutionResult((prev: any) => {
+      if (!prev || prev.id === nextExecution?.id) {
+        return { ...prev, ...nextExecution }
+      }
+      return prev
+    })
+
+    if (nodeResults) {
+      setNodes(nds =>
+        nds.map(node => {
+          const nodeResult = nodeResults[node.id]
+          if (!nodeResult) return node
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              status: nodeResult.success ? 'success' : 'error',
+              output: nodeResult.outputData,
+            },
+          }
+        })
+      )
+    }
+
+    if (isTerminalStatus(normalized?.status)) {
+      setIsExecuting(false)
+    }
+  }, [buildNodeResults, isTerminalStatus, normalizeExecution, setNodes])
+
+  const stopExecutionPolling = useCallback(() => {
+    if (executionPollCancelRef.current) {
+      executionPollCancelRef.current()
+      executionPollCancelRef.current = null
+    }
+  }, [])
+
+  const startExecutionPolling = useCallback((executionId: string) => {
+    stopExecutionPolling()
+
+    let cancelled = false
+    const poll = async () => {
+      if (cancelled) return
+      try {
+        const execution = await apiClient.getExecution(executionId)
+        applyExecutionUpdate(execution)
+        const status = execution?.status
+        if (!isTerminalStatus(status)) {
+          executionPollRef.current = window.setTimeout(poll, 2000)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          executionPollRef.current = window.setTimeout(poll, 4000)
+        }
+      }
+    }
+
+    poll()
+
+    executionPollCancelRef.current = () => {
+      cancelled = true
+      if (executionPollRef.current) {
+        window.clearTimeout(executionPollRef.current)
+      }
+    }
+  }, [applyExecutionUpdate, isTerminalStatus, stopExecutionPolling])
   const filteredWorkflows = useMemo(() => {
     const list = Array.isArray(workflows) ? workflows : []
     const q = (workflowSearch || '').trim().toLowerCase()
@@ -413,8 +538,11 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
       }
 
       const execution = await runWorkflowMutation.mutateAsync(workflowIdToRun)
-      setExecutionResult(execution)
-      setExecutionData(execution)
+      applyExecutionUpdate(execution)
+      const executionId = execution?.id || execution?.execution_id
+      if (executionId) {
+        startExecutionPolling(executionId)
+      }
       toast.success('Workflow execution started!')
     } catch (error) {
       console.error('Failed to run workflow:', error)
@@ -635,17 +763,36 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   // Execution table data
   const executionTableData = useMemo(() => {
     if (!executionData) return []
-    
-    // This would come from the actual execution data
+    const runId = (executionData?.id || executionData?.execution_id || '').slice(0, 8)
+    const nodeResults = executionData?.nodeResults || {}
+
     return nodes
       .filter(node => node.data?.blockType)
-      .map(node => ({
-        block: node.data.label || node.data.blockType,
-        runId: executionData?.id?.slice(0, 8) || '225510DA',
-        status: node.data.status || 'Running',
-        output: node.data.output || '',
-      }))
+      .map(node => {
+        const nodeResult = nodeResults[node.id]
+        const statusLabel = nodeResult
+          ? nodeResult.success
+            ? 'Completed'
+            : 'Failed'
+          : node.data.status === 'success'
+            ? 'Completed'
+            : node.data.status === 'error'
+              ? 'Failed'
+              : 'Running'
+        return {
+          block: node.data.label || node.data.blockType,
+          runId: runId || 'n/a',
+          status: statusLabel,
+          output: nodeResult?.outputData || node.data.output || '',
+        }
+      })
   }, [executionData, nodes])
+
+  useEffect(() => {
+    return () => {
+      stopExecutionPolling()
+    }
+  }, [stopExecutionPolling])
 
   // Category info for blocks display
   const categoryInfo: Record<
@@ -1424,4 +1571,3 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
     </div>
   )
 }
-

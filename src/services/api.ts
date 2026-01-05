@@ -1,12 +1,11 @@
-const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
-).replace(/\/$/, '')
-let API_KEY = import.meta.env.VITE_API_KEY || ''
+import { getApiBaseUrl, getApiKey } from './apiConfig'
 
 if (import.meta.env?.DEV) {
-  console.log('🔧 Frontend API Configuration:', {
-    API_BASE_URL,
-    API_KEY_SET: API_KEY ? 'YES (***' + API_KEY.slice(-4) + ')' : 'NO',
+  const apiBaseUrl = getApiBaseUrl()
+  const apiKey = getApiKey()
+  console.log('Frontend API Configuration:', {
+    API_BASE_URL: apiBaseUrl,
+    API_KEY_SET: apiKey ? 'YES (***' + apiKey.slice(-4) + ')' : 'NO',
     'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
     'import.meta.env.MODE': import.meta.env.MODE,
     'import.meta.env.DEV': import.meta.env.DEV,
@@ -17,15 +16,109 @@ const getAuthHeaders = () => {
   const headers: Record<string, string> = {}
   // Only add API key if it's explicitly set (M2M scenario). Browser
   // flows rely on cookies/Bearer per unified auth.
-  if (API_KEY && API_KEY.trim()) {
-    headers['X-API-Key'] = API_KEY
+  const apiKey = getApiKey()
+  if (apiKey && apiKey.trim()) {
+    headers['X-API-Key'] = apiKey
   }
+  
+  // Add Bearer token from localStorage if available (fixes cookie issues)
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  
   return headers
 }
 
-// API client with error handling
+// API client with error handling and token refresh
 class ApiClient {
   private currentOrgId: string | null = null
+  private isRefreshing = false
+  private refreshPromise: Promise<boolean> | null = null
+  private failedQueue: Array<{
+    resolve: (value: any) => void
+    reject: (error: any) => void
+    endpoint: string
+    options: RequestInit
+  }> = []
+
+  // Token refresh method - attempts to refresh the auth session
+  private async refreshToken(): Promise<boolean> {
+    try {
+      // If already refreshing, wait for existing refresh to complete
+      if (this.refreshPromise) {
+        return this.refreshPromise
+      }
+
+      this.isRefreshing = true
+      this.refreshPromise = (async () => {
+        try {
+          const apiBaseUrl = getApiBaseUrl()
+          const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
+            },
+          })
+
+          if (response.ok) {
+            console.log('Token refresh successful')
+            // Update local storage with new token if returned
+            try {
+              const data = await response.json()
+              if (data.access_token) {
+                localStorage.setItem('access_token', data.access_token)
+              }
+            } catch (e) {
+              // Ignore JSON parse error if body is empty (cookie-only mode)
+            }
+            return true
+          }
+
+          // If refresh failed, clear org ID and notify user
+          console.warn('Token refresh failed, user may need to re-authenticate')
+          this.clearOrgId()
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          return false
+        } catch (error) {
+          console.error('Token refresh error:', error)
+          return false
+        }
+      })()
+
+      const result = await this.refreshPromise
+      this.isRefreshing = false
+      this.refreshPromise = null
+      return result
+    } catch (error) {
+      this.isRefreshing = false
+      this.refreshPromise = null
+      return false
+    }
+  }
+
+  // Process queued requests after token refresh
+  private async processQueue(success: boolean) {
+    const queue = [...this.failedQueue]
+    this.failedQueue = []
+
+    for (const item of queue) {
+      if (success) {
+        // Retry the request
+        try {
+          const result = await this.request(item.endpoint, item.options)
+          item.resolve(result)
+        } catch (error) {
+          item.reject(error)
+        }
+      } else {
+        item.reject(new Error('Authentication failed - please log in again'))
+      }
+    }
+  }
 
   // Get current organization ID (lazy loaded from user's orgs)
   private async getOrgId(): Promise<string> {
@@ -71,14 +164,15 @@ class ApiClient {
     return `/organizations/${orgId}${normalized}/`
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, isRetry = false): Promise<T> {
     // Normalize endpoint path and avoid double "/api[/vX]" when callers pass a full path
     const normalizedPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-    const baseHasApi = /\/api(\/v\d+)?$/.test(API_BASE_URL)
+    const apiBaseUrl = getApiBaseUrl()
+    const baseHasApi = /\/api(\/v\d+)?$/.test(apiBaseUrl)
     const pathSansApi = baseHasApi
       ? normalizedPath.replace(/^\/api(\/v\d+)?/, '') || '/'
       : normalizedPath
-    const url = `${API_BASE_URL}${pathSansApi}`
+    const url = `${apiBaseUrl}${pathSansApi}`
     const hasJsonBody =
       options.body !== undefined && options.body !== null && !(options.body instanceof FormData)
 
@@ -93,8 +187,43 @@ class ApiClient {
         },
       })
 
+      // Handle 401 Unauthorized - attempt token refresh
+      if (response.status === 401 && !isRetry) {
+        console.log('401 received, attempting token refresh...')
+
+        // If already refreshing, queue this request
+        if (this.isRefreshing) {
+          return new Promise((resolve, reject) => {
+            this.failedQueue.push({ resolve, reject, endpoint, options })
+          })
+        }
+
+        // Attempt refresh
+        const refreshSuccess = await this.refreshToken()
+
+        if (refreshSuccess) {
+          // Process any queued requests
+          await this.processQueue(true)
+          // Retry the original request
+          return this.request<T>(endpoint, options, true)
+        } else {
+          // Refresh failed, process queue with failure
+          await this.processQueue(false)
+          throw new Error('Session expired - please log in again')
+        }
+      }
+
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        // Provide more context for different error codes
+        let errorMessage = `API Error: ${response.status} ${response.statusText}`
+        if (response.status === 403) {
+          errorMessage = 'Access denied - you may not have permission for this action'
+        } else if (response.status === 404) {
+          errorMessage = 'Resource not found'
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error - please try again later'
+        }
+        throw new Error(errorMessage)
       }
 
       return response.json()
@@ -177,9 +306,19 @@ class ApiClient {
 
   async runWorkflow(id: string) {
     const path = await this.orgPath(`/workflows/${id}/run`)
-    return this.request(path, {
+    const response = await this.request(path, {
       method: 'POST',
     })
+    const executionId = response?.id || response?.execution_id || response?.executionId
+    if (executionId) {
+      if (!response.id) {
+        response.id = executionId
+      }
+      if (!response.execution_id) {
+        response.execution_id = executionId
+      }
+    }
+    return response
   }
 
   // Executions API
