@@ -227,7 +227,12 @@ export default function Blocks() {
     if (!selectedBlock) return
 
     try {
-      await apiClient.setBlockConfig(selectedBlock.type, parameters)
+      const blockIdentifier =
+        selectedBlock.id || selectedBlock._id || selectedBlock.name || selectedBlock.type
+      if (!blockIdentifier) {
+        throw new Error('Block identifier is missing')
+      }
+      await apiClient.setBlockConfig(blockIdentifier, parameters)
       toast.success('Block configuration saved')
       refetch()
     } catch (error) {

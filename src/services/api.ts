@@ -424,8 +424,8 @@ class ApiClient {
     })
   }
 
-  async setBlockConfig(blockType: string, config: any) {
-    return this.request(`/blocks/${blockType}/config`, {
+  async setBlockConfig(blockIdentifier: string, config: any) {
+    return this.request(`/blocks/${blockIdentifier}/config`, {
       method: 'POST',
       body: JSON.stringify({ config }),
     })
