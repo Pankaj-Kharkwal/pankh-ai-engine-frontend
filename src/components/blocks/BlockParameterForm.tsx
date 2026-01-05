@@ -306,7 +306,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             value={fieldValue}
             onChange={e => updateFn(e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 bg-white"
           >
             <option value="">Select an option</option>
             {fieldSchema.enum.map(option => (
@@ -429,7 +429,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             minLength={fieldSchema.minLength}
             maxLength={fieldSchema.maxLength}
             pattern={fieldSchema.pattern}
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 bg-white"
             placeholder={fieldSchema.title || key}
           />
         </div>
