@@ -69,18 +69,24 @@ export default function AIWorkflowGenerator({
     try {
       const response = await apiClient.generateWorkflowSuggestions(description.trim())
 
-      if (response.success && response.result?.azure_chat?.text) {
-        const aiResponse = response.result.azure_chat.text
+      if (response && response.id) {
+        // Backend returned a workflow object - convert to component format
+        const workflow: GeneratedWorkflow = {
+          description: response.description || description,
+          nodes: response.nodes || [],
+          connections: response.edges || [],
+          explanation: response.description || 'AI-generated workflow',
+          complexity: response.nodes?.length > 5 ? 'complex' : response.nodes?.length > 2 ? 'medium' : 'simple',
+          estimatedTime: `${response.nodes?.length || 1} min`,
+        }
 
-        // Try to parse the AI response to extract workflow structure
-        const workflow = parseAIWorkflowResponse(aiResponse, description)
         setGeneratedWorkflow(workflow)
 
         if (onWorkflowGenerated) {
           onWorkflowGenerated(workflow)
         }
       } else {
-        setError('Failed to generate workflow suggestions. Please try again.')
+        setError('Failed to generate workflow. Please try again.')
       }
     } catch (err) {
       console.error('Workflow generation error:', err)
@@ -288,7 +294,7 @@ export default function AIWorkflowGenerator({
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="E.g., 'Create a workflow that monitors customer feedback, analyzes sentiment using AI, and sends alerts for negative reviews'"
-              className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full h-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900 placeholder-gray-400"
               disabled={isGenerating}
             />
 
@@ -300,7 +306,7 @@ export default function AIWorkflowGenerator({
                   <button
                     key={index}
                     onClick={() => setDescription(prompt)}
-                    className="text-xs px-3 py-1 bg-gray-100 hover:bg-blue-100 border border-gray-200 rounded-full transition-colors"
+                    className="text-xs px-3 py-1 bg-gray-100 hover:bg-blue-100 border border-gray-200 rounded-full transition-colors text-gray-700 hover:text-gray-900"
                     disabled={isGenerating}
                   >
                     {prompt}
@@ -388,8 +394,8 @@ export default function AIWorkflowGenerator({
                     <div key={node.id} className="bg-white p-3 rounded border">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="text-sm font-medium text-blue-600">{index + 1}.</span>
-                        <span className="text-sm font-medium">{node.label}</span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">{node.type}</span>
+                        <span className="text-sm font-medium text-gray-900">{node.label}</span>
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{node.type}</span>
                       </div>
                       {Object.keys(node.parameters).length > 0 && (
                         <div className="text-xs text-gray-500">

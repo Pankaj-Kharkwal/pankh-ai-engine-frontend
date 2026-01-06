@@ -2,15 +2,16 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import Layout from './components/layout/Layout'
-import Dashboard from './pages/Dashboard'
+import DashboardRedesign from './pages/DashboardRedesign'
 import WorkflowBuilder from './pages/WorkflowBuilder'
+import WorkflowBuilderRedesignPage from './pages/WorkflowBuilderRedesignPage'
 import Workflows from './pages/Workflows'
 import Marketplace from './pages/Marketplace'
 import BYOChatbot from './pages/BYOChatbot'
 import WorkflowDemo from './pages/WorkflowDemo'
 import Blocks from './pages/Blocks'
 import BlockTestLab from './pages/BlockTestLab'
-import Executions from './pages/Executions'
+// Executions page deprecated - use WorkflowManager instead
 import Debug from './pages/Debug'
 import Analytics from './pages/Analytics'
 import WorkflowManager from './pages/WorkflowManager'
@@ -59,7 +60,25 @@ function App() {
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
-          {/* Protected routes */}
+          {/* Full-page workflow builder routes (outside Layout) */}
+          <Route
+            path="workflows/create"
+            element={
+              <ProtectedRoute>
+                <WorkflowBuilderRedesignPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="workflows/:id"
+            element={
+              <ProtectedRoute>
+                <WorkflowBuilderRedesignPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected routes with Layout */}
           <Route
             path="/"
             element={
@@ -68,16 +87,15 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={<DashboardRedesign />} />
             <Route path="workflows" element={<Workflows />} />
-            <Route path="workflows/create" element={<WorkflowBuilder />} />
-            <Route path="workflows/:id" element={<WorkflowBuilder />} />
+            <Route path="workflows/old" element={<WorkflowBuilder />} />
             <Route path="workflows/demo" element={<WorkflowDemo />} />
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="chatbot" element={<BYOChatbot />} />
             <Route path="blocks" element={<Blocks />} />
             <Route path="blocks/test-lab" element={<BlockTestLab />} />
-            <Route path="executions" element={<Executions />} />
+            {/* Executions page deprecated - use WorkflowManager instead */}
             <Route path="debug" element={<Debug />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="workflow-manager" element={<WorkflowManager />} />

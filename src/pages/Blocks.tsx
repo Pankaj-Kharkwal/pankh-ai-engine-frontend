@@ -227,7 +227,12 @@ export default function Blocks() {
     if (!selectedBlock) return
 
     try {
-      await apiClient.setBlockConfig(selectedBlock.type, parameters)
+      const blockIdentifier =
+        selectedBlock.id || selectedBlock._id || selectedBlock.name || selectedBlock.type
+      if (!blockIdentifier) {
+        throw new Error('Block identifier is missing')
+      }
+      await apiClient.setBlockConfig(blockIdentifier, parameters)
       toast.success('Block configuration saved')
       refetch()
     } catch (error) {
@@ -240,7 +245,7 @@ export default function Blocks() {
   const handleToggleBlock = async (block: any) => {
     const mutation = block.enabled ? disableBlockMutation : enableBlockMutation
     try {
-      await mutation.mutateAsync(block.type)
+      const blockIdentifier = block.id || block.name; await mutation.mutateAsync(blockIdentifier)
       toast.success(`Block ${block.enabled ? 'disabled' : 'enabled'} successfully`)
       refetch()
     } catch (error) {
@@ -438,11 +443,15 @@ export default function Blocks() {
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {Array.isArray(categories) &&
-                    categories.map((category: string) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    categories.map((cat: any) => {
+                      // Handle both string and object formats
+                      const categoryName = typeof cat === 'string' ? cat : cat.category
+                      return (
+                        <SelectItem key={categoryName} value={categoryName}>
+                          {categoryName}
+                        </SelectItem>
+                      )
+                    })}
                 </SelectContent>
               </Select>
             </div>

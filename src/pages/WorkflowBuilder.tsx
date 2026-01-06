@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   ReactFlow,
@@ -18,6 +18,8 @@ import {
   useRunWorkflow,
   useWorkflow,
 } from '../hooks/useApi' // Assuming these hooks are available
+import { getApiBaseUrl } from '../services/apiConfig'
+import { apiClient } from '../services/api'
 import BlockPalette from '../components/workflow/BlockPalette'
 import WorkflowNode from '../components/workflow/WorkflowNode'
 import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
@@ -76,6 +78,8 @@ export default function WorkflowBuilder() {
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(workflowId || null)
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false)
   const [sseConnection, setSseConnection] = useState<EventSource | null>(null)
+  const executionPollRef = useRef<number | null>(null)
+  const executionPollCancelRef = useRef<(() => void) | null>(null)
   const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>('LR')
   const [layoutDropdownOpen, setLayoutDropdownOpen] = useState(false)
 
@@ -98,6 +102,146 @@ export default function WorkflowBuilder() {
   const { data: apiBlocks, isLoading: blocksLoading } = useBlocks()
   const { data: categoriesData } = useBlockCategories()
 
+  const isTerminalStatus = useCallback((status?: string) => {
+    return status === 'completed' || status === 'failed' || status === 'cancelled' || status === 'timeout'
+  }, [])
+
+  const normalizeExecution = useCallback((execution: any) => {
+    if (!execution) return execution
+    const executionId = execution.id || execution.execution_id || execution.executionId
+    return {
+      ...execution,
+      id: executionId,
+      execution_id: execution.execution_id || executionId,
+    }
+  }, [])
+
+  const buildNodeResults = useCallback((execution: any) => {
+    if (!execution) return null
+    if (execution.nodeResults) return execution.nodeResults
+
+    const nodeExecutions = execution.node_executions || execution.nodeExecutions
+    if (!Array.isArray(nodeExecutions)) return null
+
+    const results: Record<string, any> = {}
+    nodeExecutions.forEach((nodeExec: any) => {
+      const nodeId = nodeExec.node_id || nodeExec.nodeId
+      if (!nodeId) return
+      const nodeResult = nodeExec.result || {}
+      const outputData =
+        nodeResult.result ??
+        nodeResult.outputs ??
+        nodeResult.output ??
+        nodeResult
+
+      results[nodeId] = {
+        nodeId,
+        success: nodeExec.success !== false && nodeResult.success !== false,
+        inputData: nodeResult.inputs ?? nodeResult.input,
+        outputData,
+        error: nodeResult.error || nodeExec.error_message || nodeExec.error,
+        executionTime:
+          nodeResult.execution_time_ms ??
+          nodeResult.executionTime ??
+          nodeExec.execution_time_ms ??
+          nodeExec.executionTime,
+        timestamp: nodeExec.executed_at || nodeExec.timestamp || nodeResult.timestamp,
+      }
+    })
+
+    return results
+  }, [])
+
+  const applyExecutionUpdate = useCallback((execution: any) => {
+    const normalized = normalizeExecution(execution)
+    const nodeResults = buildNodeResults(normalized)
+    const nextExecution = nodeResults ? { ...normalized, nodeResults } : normalized
+
+    setExecutionData(nextExecution)
+    setExecutionResult((prev: any) => {
+      if (!prev || prev.id === nextExecution?.id) {
+        return { ...prev, ...nextExecution }
+      }
+      return prev
+    })
+
+    if (nodeResults) {
+      setNodes(nds =>
+        nds.map(node => {
+          const nodeResult = nodeResults[node.id]
+          if (!nodeResult) return node
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              status: nodeResult.success ? 'success' : 'error',
+              output: nodeResult.outputData,
+            },
+          }
+        })
+      )
+    }
+
+    if (normalized?.node_states) {
+      setNodes(nds =>
+        nds.map(node => {
+          const nodeState = normalized.node_states.find((ns: any) => ns.node_id === node.id)
+          if (nodeState) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status: nodeState.status,
+              },
+            }
+          }
+          return node
+        })
+      )
+    }
+
+    if (isTerminalStatus(normalized?.status)) {
+      setIsExecuting(false)
+    }
+  }, [buildNodeResults, isTerminalStatus, normalizeExecution, setNodes])
+
+  const stopExecutionPolling = useCallback(() => {
+    if (executionPollCancelRef.current) {
+      executionPollCancelRef.current()
+      executionPollCancelRef.current = null
+    }
+  }, [])
+
+  const startExecutionPolling = useCallback((executionId: string) => {
+    stopExecutionPolling()
+
+    let cancelled = false
+    const poll = async () => {
+      if (cancelled) return
+      try {
+        const execution = await apiClient.getExecution(executionId)
+        applyExecutionUpdate(execution)
+        const status = execution?.status
+        if (!isTerminalStatus(status)) {
+          executionPollRef.current = window.setTimeout(poll, 2000)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          executionPollRef.current = window.setTimeout(poll, 4000)
+        }
+      }
+    }
+
+    poll()
+
+    executionPollCancelRef.current = () => {
+      cancelled = true
+      if (executionPollRef.current) {
+        window.clearTimeout(executionPollRef.current)
+      }
+    }
+  }, [applyExecutionUpdate, isTerminalStatus, stopExecutionPolling])
+
   // Load existing workflow when workflowId is present
   useEffect(() => {
     if (existingWorkflow && workflowId) {
@@ -114,21 +258,28 @@ export default function WorkflowBuilder() {
 
       if (graphNodes.length > 0 || graphEdges.length > 0) {
         // Convert nodes/blocks to React Flow nodes
-        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => ({
-          id: node.id,
-          type: 'workflowNode',
-          position: node.position || {
-            x: 100 + index * 300,
-            y: 100 + Math.floor(index / 3) * 200,
-          },
-          data: {
-            label: node.name || node.type,
-            blockType: node.type,
-            config: node.parameters || node.input_mapping || {},
-            parameters: node.parameters || node.input_mapping || {},
-            status: 'idle',
-          },
-        }))
+        const loadedNodes: Node[] = graphNodes.map((node: any, index: number) => {
+          const blockLabel = node.name || node.type
+          const blockType = node.name || node.type || node.block_type || blockLabel
+          const blockId = node.block_id || node.blockId
+
+          return {
+            id: node.id,
+            type: 'workflowNode',
+            position: node.position || {
+              x: 100 + index * 300,
+              y: 100 + Math.floor(index / 3) * 200,
+            },
+            data: {
+              label: blockLabel,
+              blockType,
+              blockId,
+              config: node.parameters || node.input_mapping || {},
+              parameters: node.parameters || node.input_mapping || {},
+              status: 'idle',
+            },
+          }
+        })
 
         // Convert edges/connections to React Flow edges
         const loadedEdges: Edge[] = graphEdges.map((edge: any, index: number) => ({
@@ -150,20 +301,73 @@ export default function WorkflowBuilder() {
     return categoriesData
   }, [categoriesData])
 
-  const dynamicBlockTypes = useMemo(() => {
-    if (!apiBlocks) return []
-    return apiBlocks
+  const registryBlocks = useMemo(() => {
+    return Array.isArray(apiBlocks) ? apiBlocks : []
   }, [apiBlocks])
+
+  const dynamicBlockTypes = registryBlocks
+
+  const findRegistryBlock = useCallback(
+    (aliases: string[]) => {
+      if (!registryBlocks.length) return undefined
+      const normalizedAliases = aliases.map(alias => alias.toLowerCase())
+      return registryBlocks.find(block => {
+        const haystack = [
+          block?.type,
+          block?.name,
+          block?.manifest?.name,
+          block?.manifest?.description,
+          block?.manifest?.category,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return normalizedAliases.some(alias => haystack.includes(alias))
+      })
+    },
+    [registryBlocks]
+  )
+
+  const buildDemoNode = useCallback(
+    (options: {
+      id: string
+      position: { x: number; y: number }
+      aliases: string[]
+      fallbackLabel: string
+      parameters: Record<string, any>
+    }): Node => {
+      const blockMatch = findRegistryBlock(options.aliases)
+      const blockId = blockMatch?.id || blockMatch?._id
+      const blockLabel = blockMatch?.manifest?.name || blockMatch?.name || options.fallbackLabel
+      return {
+        id: options.id,
+        type: 'workflowNode',
+        position: options.position,
+        data: {
+          label: blockLabel,
+          blockType: blockLabel,
+          blockId,
+          config: options.parameters,
+          parameters: options.parameters,
+          status: 'idle',
+        },
+      }
+    },
+    [findRegistryBlock]
+  )
 
   const onAddNode = useCallback(
     (block: any) => {
       const newId = `${block.type}-${Date.now()}`
+      const blockId = block?.id || block?._id
+      const blockLabel = block?.manifest?.name || block?.name || block?.type
       const newNode: Node = {
         id: newId,
         position: { x: Math.random() * 400 + 200, y: Math.random() * 400 + 200 },
         data: {
-          label: block.name || block.type,
-          blockType: block.type,
+          label: blockLabel,
+          blockType: blockLabel || block?.type,
+          blockId,
           config: {},
           status: 'idle',
         },
@@ -272,8 +476,11 @@ export default function WorkflowBuilder() {
       .filter(node => Boolean(node.data?.blockType))
       .map(node => ({
         id: node.id,
+        name: node.data?.label || node.data?.blockType,
         type: node.data.blockType,
+        block_id: node.data?.blockId || node.data?.block_id,
         parameters: node.data?.parameters || node.data?.config || {},
+        position: node.position,
       }))
 
     const graphEdges = edges.map(edge => ({
@@ -338,11 +545,14 @@ export default function WorkflowBuilder() {
       }
 
       const execution = await runWorkflowMutation.mutateAsync(workflowId)
-      setExecutionResult(execution)
-      setExecutionData(execution)
+      applyExecutionUpdate(execution)
 
       // Setup SSE connection for real-time progress
-      setupSSEConnection(execution.id)
+      const executionId = execution?.id || execution?.execution_id
+      if (executionId) {
+        startExecutionPolling(executionId)
+        setupSSEConnection(executionId)
+      }
     } catch (error) {
       console.error('Failed to run workflow:', error)
       alert('Failed to run workflow. Please check your configuration.')
@@ -358,8 +568,7 @@ export default function WorkflowBuilder() {
       sseConnection.close()
     }
 
-    const apiBase = import.meta.env.VITE_API_URL || 'https://backend-dev.pankh.ai/api/v1'
-    const sseUrl = `${apiBase}/executions/${executionId}/stream`
+    const sseUrl = `${getApiBaseUrl()}/executions/${executionId}/stream`
 
     const eventSource = new EventSource(sseUrl, { withCredentials: true })
 
@@ -368,33 +577,10 @@ export default function WorkflowBuilder() {
         const update = JSON.parse(event.data)
         console.log('SSE Update:', update)
 
-        // Update execution data
-        setExecutionData((prev: any) => ({
-          ...prev,
-          ...update,
-        }))
-
-        // Update node statuses on canvas
-        if (update.node_states) {
-          setNodes(nds =>
-            nds.map(node => {
-              const nodeState = update.node_states.find((ns: any) => ns.node_id === node.id)
-              if (nodeState) {
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    status: nodeState.status,
-                  },
-                }
-              }
-              return node
-            })
-          )
-        }
+        applyExecutionUpdate(update)
 
         // Close connection when execution completes
-        if (update.status === 'completed' || update.status === 'failed') {
+        if (isTerminalStatus(update.status)) {
           eventSource.close()
           setSseConnection(null)
           setIsExecuting(false)
@@ -408,7 +594,7 @@ export default function WorkflowBuilder() {
       console.error('SSE Error:', error)
       eventSource.close()
       setSseConnection(null)
-      setIsExecuting(false)
+      startExecutionPolling(executionId)
     }
 
     setSseConnection(eventSource)
@@ -420,8 +606,9 @@ export default function WorkflowBuilder() {
       if (sseConnection) {
         sseConnection.close()
       }
+      stopExecutionPolling()
     }
-  }, [sseConnection])
+  }, [sseConnection, stopExecutionPolling])
 
   // Handle AI-generated workflow
   const handleApplyAIWorkflow = (workflow: any) => {
@@ -430,21 +617,25 @@ export default function WorkflowBuilder() {
     setEdges([])
 
     // Convert AI-generated workflow to React Flow nodes
-    const newNodes: Node[] = workflow.nodes.map((node: any, index: number) => ({
-      id: node.id,
-      type: 'workflowNode',
-      position: node.position || {
-        x: 100 + index * 250,
-        y: 100 + Math.floor(index / 4) * 200,
-      },
-      data: {
-        label: node.label,
-        blockType: node.type,
-        config: node.parameters,
-        parameters: node.parameters,
-        status: 'idle',
-      },
-    }))
+    const newNodes: Node[] = workflow.nodes.map((node: any, index: number) => {
+      const blockLabel = node.label || node.name || node.type
+      return {
+        id: node.id,
+        type: 'workflowNode',
+        position: node.position || {
+          x: 100 + index * 250,
+          y: 100 + Math.floor(index / 4) * 200,
+        },
+        data: {
+          label: blockLabel,
+          blockType: blockLabel || node.type,
+          blockId: node.block_id || node.blockId,
+          config: node.parameters,
+          parameters: node.parameters,
+          status: 'idle',
+        },
+      }
+    })
 
     // Convert connections to React Flow edges
     const newEdges: Edge[] = workflow.connections.map((conn: any, index: number) => ({
@@ -473,147 +664,79 @@ export default function WorkflowBuilder() {
 
       if (workflowType === 'simple') {
         name = 'Simple Search Demo'
-        const searchNode: Node = {
+        const searchNode = buildDemoNode({
           id: 'search_demo',
-          type: 'workflowNode',
           position: { x: 100, y: 100 },
-          data: {
-            label: 'Search Demo (searxng_search)',
-            blockType: 'searxng_search',
-            config: {
-              query: 'machine learning tutorials 2025',
-              limit: 5,
-              timeout_sec: 15,
-            },
-            parameters: {
-              // Added for save/run structure
-              query: 'machine learning tutorials 2025',
-              limit: 5,
-              timeout_sec: 15,
-            },
-            status: 'idle',
+          aliases: ['web search', 'search', 'searxng'],
+          fallbackLabel: 'Web Search',
+          parameters: {
+            query: 'machine learning tutorials 2025',
+            limit: 5,
+            time_range: 'month',
           },
-        }
+        })
 
-        const echoNode: Node = {
-          id: 'display_results',
-          type: 'workflowNode',
+        const conditionNode = buildDemoNode({
+          id: 'condition_check',
           position: { x: 400, y: 100 },
-          data: {
-            label: 'Display Results (echo)',
-            blockType: 'echo',
-            config: {
-              message: 'Search Results: {{search_demo.output}}', // Assuming output variable name
-            },
-            parameters: {
-              message: 'Search Results: {{search_demo.output}}',
-            },
-            status: 'idle',
+          aliases: ['condition'],
+          fallbackLabel: 'Condition Check',
+          parameters: {
+            value: 5,
+            operator: '>',
+            compare_to: 3,
           },
-        }
+        })
 
-        const edge: Edge = {
-          id: 'e-simple-1',
-          source: 'search_demo',
-          target: 'display_results',
-        }
-
-        demoNodes = [searchNode, echoNode]
-        demoEdges = [edge]
+        demoNodes = [searchNode, conditionNode]
+        demoEdges = [{ id: 'e-simple-1', source: 'search_demo', target: 'condition_check' }]
         count = 2
       } else if (workflowType === 'ai_research') {
         name = 'AI Research & Analysis'
-        demoNodes = [
-          {
-            id: 'search_ai_news',
-            type: 'workflowNode',
-            position: { x: 100, y: 100 },
-            data: {
-              label: 'Search AI News (searxng_search)',
-              blockType: 'searxng_search',
-              config: {
-                query: 'artificial intelligence news 2025 latest developments',
-                limit: 6,
-                timeout_sec: 20,
-              },
-              parameters: {
-                query: 'artificial intelligence news 2025 latest developments',
-                limit: 6,
-                timeout_sec: 20,
-              },
-              status: 'idle',
-            },
+        const searchNode = buildDemoNode({
+          id: 'search_ai_news',
+          position: { x: 100, y: 100 },
+          aliases: ['web search', 'search', 'searxng'],
+          fallbackLabel: 'Web Search',
+          parameters: {
+            query: 'artificial intelligence news 2025 latest developments',
+            limit: 6,
+            time_range: 'month',
           },
-          {
-            id: 'scrape_articles',
-            type: 'workflowNode',
-            position: { x: 400, y: 100 },
-            data: {
-              label: 'Scrape Articles (scrape_urls)',
-              blockType: 'scrape_urls',
-              config: {
-                top_n_from_searx: 4,
-                max_chars_per_doc: 4000,
-                timeout_sec: 25,
-              },
-              parameters: {
-                top_n_from_searx: 4,
-                max_chars_per_doc: 4000,
-                timeout_sec: 25,
-              },
-              status: 'idle',
-            },
-          },
-          {
-            id: 'analyze_trends',
-            type: 'workflowNode',
-            position: { x: 700, y: 100 },
-            data: {
-              label: 'Analyze Trends (azure_chat)',
-              blockType: 'azure_chat',
-              config: {
-                system: 'You are an AI research analyst.',
-                prompt: 'Analyze these AI developments: {context}',
-                temperature: 0.3,
-              },
-              parameters: {
-                system: 'You are an AI research analyst.',
-                prompt: 'Analyze these AI developments: {context}',
-                temperature: 0.3,
-              },
-              status: 'idle',
-            },
-          },
-        ]
+        })
 
+        const mapNode = buildDemoNode({
+          id: 'map_summary',
+          position: { x: 400, y: 100 },
+          aliases: ['json', 'mapper'],
+          fallbackLabel: 'JSON Mapper',
+          parameters: {
+            input_data: { headline: 'Sample headline', summary: 'Sample summary' },
+            mapping: {
+              headline: '$.headline',
+              summary: '$.summary',
+            },
+          },
+        })
+
+        const conditionNode = buildDemoNode({
+          id: 'review_gate',
+          position: { x: 700, y: 100 },
+          aliases: ['condition'],
+          fallbackLabel: 'Condition Check',
+          parameters: {
+            value: 'ready',
+            operator: '==',
+            compare_to: 'ready',
+          },
+        })
+
+        demoNodes = [searchNode, mapNode, conditionNode]
         demoEdges = [
-          { id: 'e-ai-1', source: 'search_ai_news', target: 'scrape_articles' },
-          { id: 'e-ai-2', source: 'scrape_articles', target: 'analyze_trends' },
+          { id: 'e-ai-1', source: 'search_ai_news', target: 'map_summary' },
+          { id: 'e-ai-2', source: 'map_summary', target: 'review_gate' },
         ]
         count = 3
-      }
-
-      // Add a final 'echo' node to display the analysis for AI research workflow
-      if (workflowType === 'ai_research') {
-        const finalEcho: Node = {
-          id: 'final_report',
-          type: 'workflowNode',
-          position: { x: 1000, y: 100 },
-          data: {
-            label: 'Final Report (echo)',
-            blockType: 'echo',
-            config: {
-              message: 'AI Analysis Complete: {{analyze_trends.output}}',
-            },
-            parameters: {
-              message: 'AI Analysis Complete: {{analyze_trends.output}}',
-            },
-            status: 'idle',
-          },
-        }
-        demoNodes.push(finalEcho)
-        demoEdges.push({ id: 'e-ai-3', source: 'analyze_trends', target: 'final_report' })
-        count += 1
       }
 
       setNodes(demoNodes)
@@ -621,7 +744,7 @@ export default function WorkflowBuilder() {
       setWorkflowName(name)
       setNodeCounter(count)
     },
-    [setNodes, setEdges]
+    [buildDemoNode, setEdges, setNodes]
   )
   // ------------------------------------
 
@@ -813,14 +936,15 @@ export default function WorkflowBuilder() {
               </span>
             )}
           </div>
-          {executionResult && (
-            <div className="p-2 bg-green-50 border border-green-200 rounded-md flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-green-800">
-                Execution **{executionResult.status}**! ID: {executionResult.id.slice(-4)}
-              </span>
-            </div>
-          )}
+            {executionResult && (executionResult.id || executionResult.execution_id) && (
+              <div className="p-2 bg-green-50 border border-green-200 rounded-md flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-green-800">
+                  Execution **{executionResult.status}**! ID:{' '}
+                  {(executionResult.id || executionResult.execution_id).slice(-4)}
+                </span>
+              </div>
+            )}
         </div>
       </div>
       {/* ---------------------------- */}

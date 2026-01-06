@@ -27,9 +27,12 @@ export default function ExpressionInput({
   className = '',
   disabled = false,
 }: ExpressionInputProps) {
+  // Safely convert value to string to prevent crashes on non-string inputs
+  const safeValue = typeof value === 'string' ? value : String(value ?? '')
+
   const [isEditing, setIsEditing] = useState(false)
-  const [tempValue, setTempValue] = useState(value)
-  const [isExpression, setIsExpression] = useState(value.startsWith('$'))
+  const [tempValue, setTempValue] = useState(safeValue)
+  const [isExpression, setIsExpression] = useState(safeValue.startsWith('$'))
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean
     error?: string
@@ -40,14 +43,15 @@ export default function ExpressionInput({
 
   // Auto-detect if input is an expression
   useEffect(() => {
-    setIsExpression(value.startsWith('$'))
-  }, [value])
+    setIsExpression(safeValue.startsWith('$'))
+    setTempValue(safeValue)
+  }, [safeValue])
 
   // Validate expressions
   useEffect(() => {
-    if (isExpression && value) {
+    if (isExpression && safeValue) {
       const result = evaluateExpression(
-        value,
+        safeValue,
         availableNodes,
         contextData.workflow,
         contextData.execution,
@@ -61,7 +65,7 @@ export default function ExpressionInput({
     } else {
       setValidationResult({ isValid: true })
     }
-  }, [value, isExpression, availableNodes, contextData])
+  }, [safeValue, isExpression, availableNodes, contextData])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
@@ -72,18 +76,18 @@ export default function ExpressionInput({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       // If it looks like an expression, mark it as such
-      if (tempValue.startsWith('$')) {
+      if (typeof tempValue === 'string' && tempValue.startsWith('$')) {
         setIsExpression(true)
       }
     } else if (e.key === 'Escape') {
-      setTempValue(value)
+      setTempValue(safeValue)
       setIsEditing(false)
     }
   }
 
   const handleFocus = () => {
     setIsEditing(true)
-    setTempValue(value)
+    setTempValue(safeValue)
   }
 
   const handleBlur = () => {
@@ -92,7 +96,7 @@ export default function ExpressionInput({
   }
 
   const openExpressionEditor = () => {
-    setTempValue(value)
+    setTempValue(safeValue)
     setIsEditing(true)
   }
 
@@ -113,8 +117,8 @@ export default function ExpressionInput({
     } else {
       // Switch to expression mode
       setIsExpression(true)
-      if (!value.startsWith('$')) {
-        onChange(`$${value}`)
+      if (!safeValue.startsWith('$')) {
+        onChange(`$${safeValue}`)
       }
     }
   }
@@ -126,7 +130,7 @@ export default function ExpressionInput({
           <input
             ref={inputRef}
             type="text"
-            value={isEditing ? tempValue : value}
+            value={isEditing ? tempValue : safeValue}
             onChange={handleInputChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -134,7 +138,7 @@ export default function ExpressionInput({
             placeholder={placeholder}
             disabled={disabled}
             className={`
-              flex-1 px-3 py-2 border rounded-l-md text-sm
+              flex-1 px-3 py-2 border rounded-l-md text-sm text-gray-900
               ${isExpression ? 'border-blue-300 bg-blue-50' : 'border-gray-300 bg-white'}
               ${validationResult.isValid ? '' : 'border-red-300 bg-red-50'}
               ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus:outline-none focus:ring-2 focus:ring-blue-500'}
@@ -169,7 +173,7 @@ export default function ExpressionInput({
         </div>
 
         {/* Validation feedback */}
-        {isExpression && !validationResult.isValid && value && (
+        {isExpression && !validationResult.isValid && safeValue && (
           <div className="mt-1 text-xs text-red-600 flex items-center gap-1">
             <X className="w-3 h-3" />
             {validationResult.error}

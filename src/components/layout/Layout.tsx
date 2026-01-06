@@ -9,7 +9,6 @@ import {
   Settings,
   Users,
   BarChart3,
-  Activity,
   MessageSquare,
   Zap,
   ChevronRight,
@@ -46,7 +45,6 @@ const primaryNavigation = [
 
 const secondaryNavigation = [
   { name: 'Marketplace', href: '/marketplace', icon: Store },
-  { name: 'Executions', href: '/executions', icon: Activity },
   { name: 'Debug Console', href: '/debug', icon: Bug },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Workflow Manager', href: '/workflow-manager', icon: Zap },

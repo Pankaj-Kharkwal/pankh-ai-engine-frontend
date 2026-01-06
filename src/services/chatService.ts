@@ -575,6 +575,8 @@ export class BlockGenerationStream {
 
         const processStream = async () => {
           try {
+            let currentEventType: string | null = null
+
             while (true) {
               const { done, value } = await reader.read()
 
@@ -589,7 +591,8 @@ export class BlockGenerationStream {
 
               for (const line of lines) {
                 if (line.startsWith('event:')) {
-                  const eventType = line.slice(7).trim()
+                  // Store the event type from SSE format
+                  currentEventType = line.slice(7).trim()
                   continue
                 }
 
@@ -599,20 +602,31 @@ export class BlockGenerationStream {
 
                   try {
                     const data = JSON.parse(dataStr)
+
+                    // Use the event type from SSE if available, otherwise infer from data
                     let eventType: BlockGenSSEEvent['type'] = 'token'
 
-                    // Determine event type from data
-                    if (data.stage !== undefined && data.status !== undefined) {
-                      eventType = 'stage'
-                    } else if (data.token !== undefined) {
-                      eventType = 'token'
-                    } else if (data.block !== undefined) {
-                      eventType = 'complete'
-                    } else if (data.message !== undefined && data.stage === undefined) {
-                      eventType = 'error'
+                    if (currentEventType) {
+                      // Use explicit event type from SSE stream
+                      if (['stage', 'token', 'complete', 'error'].includes(currentEventType)) {
+                        eventType = currentEventType as BlockGenSSEEvent['type']
+                      }
+                    } else {
+                      // Fallback: infer from data structure
+                      if (data.stage !== undefined && data.status !== undefined) {
+                        eventType = 'stage'
+                      } else if (data.token !== undefined) {
+                        eventType = 'token'
+                      } else if (data.block !== undefined) {
+                        eventType = 'complete'
+                      } else if (data.message !== undefined) {
+                        // Error events have a message (may or may not have stage)
+                        eventType = 'error'
+                      }
                     }
 
                     this.emit(eventType, data)
+                    currentEventType = null  // Reset after processing
                   } catch (e) {
                     console.error('Failed to parse SSE data:', e)
                   }

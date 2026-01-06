@@ -38,7 +38,10 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
           // New format: block.io.inputs (array)
           inputs.forEach((input: any) => {
             if (input.examples && input.examples.length > 0) {
-              defaultParams[input.key] = input.examples[0]
+              const inputKey = input.key || input.name
+              if (inputKey) {
+                defaultParams[inputKey] = input.examples[0]
+              }
             }
           })
         } else {
@@ -139,9 +142,13 @@ export const BlockTestForm: React.FC<BlockTestFormProps> = ({ block, onTestCompl
         if (Array.isArray(inputs) && inputs.length > 0) {
           // Convert array format to object format for BlockParameterForm
           const paramSchema = inputs.reduce((acc: any, input: any) => {
-            acc[input.key] = {
+            const inputKey = input.key || input.name
+            if (!inputKey) {
+              return acc
+            }
+            acc[inputKey] = {
               type: input.type,
-              title: input.key,
+              title: inputKey,
               description: input.description,
               required: input.required,
               default: input.examples?.[0],

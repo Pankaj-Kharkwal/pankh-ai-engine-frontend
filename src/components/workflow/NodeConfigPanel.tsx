@@ -67,12 +67,15 @@ export default function NodeConfigPanel({
   const [presetDescription, setPresetDescription] = useState('')
 
   const blockType = node?.data?.blockType
-  const blockLabel = node?.data?.label || blockType
+  const blockId = node?.data?.blockId || node?.data?.block_id
+  const blockIdentifier = blockId || blockType
+  const presetKey = blockType || blockId
+  const blockLabel = node?.data?.label || blockType || blockId
 
   // Load presets from localStorage
   useEffect(() => {
-    if (blockType) {
-      const savedPresets = localStorage.getItem(`presets_${blockType}`)
+    if (presetKey) {
+      const savedPresets = localStorage.getItem(`presets_${presetKey}`)
       if (savedPresets) {
         try {
           setPresets(JSON.parse(savedPresets))
@@ -81,11 +84,11 @@ export default function NodeConfigPanel({
         }
       }
     }
-  }, [blockType])
+  }, [presetKey])
 
   // Save preset
   const handleSavePreset = () => {
-    if (!presetName.trim() || !blockType) return
+    if (!presetName.trim() || !presetKey) return
 
     const newPreset: ParameterPreset = {
       name: presetName.trim(),
@@ -96,7 +99,7 @@ export default function NodeConfigPanel({
 
     const updatedPresets = [...presets, newPreset]
     setPresets(updatedPresets)
-    localStorage.setItem(`presets_${blockType}`, JSON.stringify(updatedPresets))
+    localStorage.setItem(`presets_${presetKey}`, JSON.stringify(updatedPresets))
 
     setPresetName('')
     setPresetDescription('')
@@ -112,14 +115,14 @@ export default function NodeConfigPanel({
   const handleDeletePreset = (index: number) => {
     const updatedPresets = presets.filter((_, i) => i !== index)
     setPresets(updatedPresets)
-    if (blockType) {
-      localStorage.setItem(`presets_${blockType}`, JSON.stringify(updatedPresets))
+    if (presetKey) {
+      localStorage.setItem(`presets_${presetKey}`, JSON.stringify(updatedPresets))
     }
   }
 
   useEffect(() => {
     setConfig(node?.data?.config || node?.data?.parameters || fallbackConfig)
-    if (!blockType) {
+    if (!blockIdentifier) {
       setSchema(null)
       setSchemaError('Select a block type to configure this node.')
       return
@@ -130,7 +133,7 @@ export default function NodeConfigPanel({
       setLoadingSchema(true)
       setSchemaError(null)
       try {
-        const blockSchema = await apiClient.getBlockSchema(blockType)
+        const blockSchema = await apiClient.getBlockSchema(blockIdentifier)
         if (mounted) {
           setSchema(blockSchema)
         }
@@ -150,7 +153,7 @@ export default function NodeConfigPanel({
     return () => {
       mounted = false
     }
-  }, [nodeId, blockType, node?.data?.config, node?.data?.parameters])
+  }, [nodeId, blockIdentifier, node?.data?.config, node?.data?.parameters])
 
   const parameterSchema = useMemo(() => {
     // Try new format first (array)
@@ -210,7 +213,7 @@ export default function NodeConfigPanel({
     return null
   }
 
-  if (!blockType) {
+  if (!blockIdentifier) {
     return (
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose}></div>

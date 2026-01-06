@@ -75,13 +75,15 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
 
     if (value !== undefined && value !== null && value !== '') {
       if (fieldSchema.type === 'string') {
-        if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
+        // Type guard: ensure value is a string before calling string methods
+        const strValue = typeof value === 'string' ? value : String(value)
+        if (fieldSchema.minLength && strValue.length < fieldSchema.minLength) {
           return `Minimum length is ${fieldSchema.minLength}`
         }
-        if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
+        if (fieldSchema.maxLength && strValue.length > fieldSchema.maxLength) {
           return `Maximum length is ${fieldSchema.maxLength}`
         }
-        if (fieldSchema.pattern && !new RegExp(fieldSchema.pattern).test(value)) {
+        if (fieldSchema.pattern && !new RegExp(fieldSchema.pattern).test(strValue)) {
           return 'Invalid format'
         }
       }
@@ -304,7 +306,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             value={fieldValue}
             onChange={e => updateFn(e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 bg-white"
           >
             <option value="">Select an option</option>
             {fieldSchema.enum.map(option => (
@@ -427,7 +429,7 @@ const BlockParameterForm: React.FC<BlockParameterFormProps> = ({
             minLength={fieldSchema.minLength}
             maxLength={fieldSchema.maxLength}
             pattern={fieldSchema.pattern}
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-100 text-gray-900 bg-white"
             placeholder={fieldSchema.title || key}
           />
         </div>

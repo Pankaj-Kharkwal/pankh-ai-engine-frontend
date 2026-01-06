@@ -250,7 +250,9 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
           }
         })
       }
-      setParameters(block.parameters || defaultParams)
+      const staticConfig =
+        block?.config?.static || (block?.config && !block?.config?.static ? block.config : null)
+      setParameters(staticConfig ? { ...defaultParams, ...staticConfig } : defaultParams)
     } catch (err) {
       console.error('Failed to load block schema:', err)
       setError('Failed to load block configuration')
@@ -406,9 +408,13 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({ block, onClose, onSave }) =
                           if (Array.isArray(inputs) && inputs.length > 0) {
                             // Convert array format to object format for BlockParameterForm
                             return inputs.reduce((acc: any, input: any) => {
-                              acc[input.key] = {
+                              const inputKey = input.key || input.name
+                              if (!inputKey) {
+                                return acc
+                              }
+                              acc[inputKey] = {
                                 type: input.type,
-                                title: input.key,
+                                title: inputKey,
                                 description: input.description,
                                 required: input.required,
                                 default: input.examples?.[0],

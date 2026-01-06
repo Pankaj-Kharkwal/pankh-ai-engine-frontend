@@ -50,6 +50,8 @@ interface AIAssistantProps {
   onGenerationStart?: () => void
   onStageChange?: (stage: string) => void
   organizationId?: string
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export default function AIAssistantEnhanced({
@@ -61,8 +63,24 @@ export default function AIAssistantEnhanced({
   onGenerationStart,
   onStageChange,
   organizationId,
+  isOpen: externalIsOpen,
+  onOpenChange,
 }: AIAssistantProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  
+  // Determine if controlled or uncontrolled
+  const isControlled = externalIsOpen !== undefined
+  const isOpen = isControlled ? externalIsOpen : internalIsOpen
+  
+  const setIsOpen = (open: boolean) => {
+    if (!isControlled) {
+      setInternalIsOpen(open)
+    }
+    if (onOpenChange) {
+      onOpenChange(open)
+    }
+  }
+
   const [resolvedOrgId, setResolvedOrgId] = useState<string | null>(null)
   const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -99,6 +117,11 @@ export default function AIAssistantEnhanced({
         }
         if (apiKey) {
           headers['X-API-Key'] = apiKey
+        }
+        // Add Bearer token from localStorage for authentication
+        const token = localStorage.getItem('access_token')
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
         }
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/users/me/organizations`, {
           credentials: 'include',
@@ -234,6 +257,9 @@ export default function AIAssistantEnhanced({
       // Token handler
       stream.on('token', (event: BlockGenSSEEvent) => {
         const { token, stage } = event.data as any
+        if (typeof token !== 'string') {
+          return
+        }
         currentContent += token
         updateMessage(aiMessageId, {
           content: currentContent,
@@ -599,7 +625,8 @@ export default function AIAssistantEnhanced({
                         )}
                       </>
                     )}
-                    {message.error && (
+                    {/* BUG-005 Fix: Only show error line if not in block gen (block gen shows inline) */}
+                    {message.error && !message.metadata?.isBlockGen && (
                       <p className="text-xs text-red-400 mt-1">Error: {message.error}</p>
                     )}
                   </div>
