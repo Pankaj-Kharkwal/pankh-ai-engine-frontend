@@ -678,24 +678,16 @@ class ApiClient {
   }
 
   async generateWorkflowSuggestions(description: string) {
-    const prompt = `Based on this user requirement: "${description}"
-
-Suggest a workflow with these components:
-1. List of blocks/nodes needed
-2. How they should be connected
-3. Example parameter values
-4. Expected workflow output
-
-Focus on practical, achievable automation using available blocks like:
-- azure_chat (AI processing)
-- searxng_search (web search)
-- http_get (API calls)
-- PDF processing blocks
-- Data processing blocks
-
-Return a JSON structure with nodes and connections.`
-
-    return this.chatWithAI(prompt)
+    try {
+      const response = await this.post('/workflows/generate', {
+        prompt: description,
+        save_to_db: false  // Generate preview first
+      })
+      return response
+    } catch (error) {
+      console.error('Failed to generate workflow suggestions:', error)
+      throw error
+    }
   }
 
   async explainBlock(blockType: string, parameters?: any) {
@@ -772,31 +764,32 @@ Return issues found and suggestions.`
     }
   }
 
-  // Generic HTTP methods for convenience
-  async get<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'GET' })
-  }
 
-  async post<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async put<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  async delete<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'DELETE' })
-  }
 }
 
 export const apiClient = new ApiClient()
+
+// Wallet API helpers
+export interface WalletInfo {
+  org_id: string
+  balance: number
+  currency: string
+}
+
+// Get current organization's wallet
+ApiClient.prototype.getWallet || (ApiClient.prototype as any).getWallet = async function () {
+  const path = await (this as any).orgPath('/wallet')
+  return this.request<WalletInfo>(path)
+}
+
+// Top-up wallet (mocked payment flow)
+ApiClient.prototype.topUpWallet || (ApiClient.prototype as any).topUpWallet = async function (amount: number) {
+  const path = await (this as any).orgPath('/wallet/topup')
+  return this.request(path, {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  })
+}
 
 // Types based on API schema
 export interface Workflow {
