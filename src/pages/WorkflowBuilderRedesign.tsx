@@ -7,9 +7,11 @@ import {
   addEdge,
   Background,
   MiniMap,
+  Position,
 } from '@xyflow/react'
 import type { Connection, Edge, Node } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import dagre from 'dagre'
 import { useBlocks, useBlockCategories, useCreateWorkflow, useRunWorkflow, useWorkflow, useWorkflows } from '../hooks/useApi'
 import { toast } from 'sonner'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,6 +20,7 @@ import NodeConfigPanel from '../components/workflow/NodeConfigPanel'
 import CollaborationPanel from '../components/workflow/CollaborationPanel'
 import ExecutionDebugger from '../components/workflow/ExecutionDebugger'
 import ExecutionMonitor from '../components/workflow/ExecutionMonitor'
+import AIWorkflowGenerator from '../components/ai/AIWorkflowGenerator'
 import { apiClient } from '../services/api'
 
 // Icons
@@ -40,9 +43,12 @@ import {
   Globe as GlobeIcon,
   Share2,
   Hash,
+  Sparkles,
   Lock,
   BookOpen,
   Plus,
+  Network,
+  Link,
 } from 'lucide-react'
 
 const initialNodes: Node[] = [
@@ -110,6 +116,7 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
   const [debuggerVisible, setDebuggerVisible] = useState(false)
   const [monitorVisible, setMonitorVisible] = useState(false)
   const [activePanel, setActivePanel] = useState<"debugger" | "monitor" | "collaboration" | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false)
   const executionPollRef = useRef<number | null>(null)
   const executionPollCancelRef = useRef<(() => void) | null>(null)
 
@@ -317,9 +324,93 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
     })
   }, [workflows, workflowSearch])
 
+  // Auto-layout function using Dagre
+  const autoLayoutNodes = useCallback(() => {
+    const dagreGraph = new dagre.graphlib.Graph()
+    dagreGraph.setDefaultEdgeLabel(() => ({}))
+    dagreGraph.setGraph({ rankdir: 'LR', nodesep: 100, ranksep: 150 })
+
+    nodes.forEach((node) => {
+      dagreGraph.setNode(node.id, { width: 250, height: 100 })
+    })
+
+    edges.forEach((edge) => {
+      dagreGraph.setEdge(edge.source, edge.target)
+    })
+
+    dagre.layout(dagreGraph)
+
+    const layoutedNodes = nodes.map((node) => {
+      const nodeWithPosition = dagreGraph.node(node.id)
+      return {
+        ...node,
+        position: {
+          x: nodeWithPosition.x - 125,
+          y: nodeWithPosition.y - 50,
+        },
+      }
+    })
+
+    setNodes(layoutedNodes)
+    toast.success('Workflow auto-aligned!')
+
+    // Fit view after layout
+    setTimeout(() => {
+      reactFlowInstance?.fitView({ padding: 0.2, maxZoom: 1.2 })
+    }, 50)
+  }, [nodes, edges, setNodes, reactFlowInstance])
+
+  // Enhanced onConnect with automatic data mapping
   const onConnect = useCallback(
-    (params: Connection) => setEdges(eds => addEdge(params, eds)),
-    [setEdges]
+    (params: Connection) => {
+      const sourceNode = nodes.find(n => n.id === params.source)
+      const targetNode = nodes.find(n => n.id === params.target)
+
+      // Add the edge
+      setEdges(eds => addEdge(params, eds))
+
+      // Auto-map data from source outputs to target inputs
+      if (sourceNode && targetNode) {
+        const sourceBlock = registryBlocks.find(b => b.type === sourceNode.data.blockType)
+        const targetBlock = registryBlocks.find(b => b.type === targetNode.data.blockType)
+
+        if (sourceBlock && targetBlock) {
+          const sourceOutputs = sourceBlock.io?.outputs || []
+          const targetInputs = targetBlock.io?.inputs || []
+
+          // Auto-map matching types
+          const updatedParams: any = {}
+          targetInputs.forEach((input: any) => {
+            const matchingOutput = sourceOutputs.find((output: any) =>
+              output.type === input.type || input.type === 'any'
+            )
+            if (matchingOutput && !targetNode.data.parameters?.[input.name]) {
+              updatedParams[input.name] = `{{${params.source}.${matchingOutput.name}}}`
+            }
+          })
+
+          if (Object.keys(updatedParams).length > 0) {
+            setNodes(nds => nds.map(n => {
+              if (n.id === params.target) {
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    parameters: {
+                      ...n.data.parameters,
+                      ...updatedParams
+                    }
+                  }
+                }
+              }
+              return n
+            }))
+            toast.success('Data flow auto-mapped!')
+          }
+        }
+      }
+    },
+    [setEdges, nodes, setNodes, registryBlocks]
   )
 
   // Apply theme-aware styles to edges so lines change color between day/night
@@ -617,6 +708,39 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
     }
   }
 
+  const handleApplyAIWorkflow = (generatedWorkflow: any) => {
+    try {
+      // Convert AI workflow format to React Flow format
+      const workflowNodes: Node[] = generatedWorkflow.nodes.map((node: any, index: number) => ({
+        id: node.id || `ai-node-${index}`,
+        type: 'workflowNode',
+        position: node.position || { x: index * 250 + 100, y: 100 },
+        data: {
+          blockType: node.type,
+          label: node.label,
+          parameters: node.parameters || {},
+        },
+      }))
+
+      const workflowEdges: Edge[] = generatedWorkflow.connections.map((conn: any, index: number) => ({
+        id: `ai-edge-${index}`,
+        source: conn.from,
+        target: conn.to,
+        type: 'smoothstep',
+      }))
+
+      setNodes(workflowNodes)
+      setEdges(workflowEdges)
+      setWorkflowName(generatedWorkflow.description || 'AI Generated Workflow')
+      setSelectedNodeId(null)
+
+      toast.success('AI-generated workflow applied to canvas!')
+    } catch (error) {
+      console.error('Failed to apply AI workflow:', error)
+      toast.error('Failed to apply AI-generated workflow. Please try again.')
+    }
+  }
+
   const loadDemoWorkflow = useCallback(
     (workflowType: 'simple' | 'ai_research' | 'full_pipeline') => {
       setNodes([])
@@ -897,8 +1021,24 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
               )}
               RUN
             </button>
+            <button
+              onClick={() => setShowAIGenerator(true)}
+              className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white`}
+            >
+              <Sparkles className="w-3 h-3" />
+              AI Generate
+            </button>
+            <button
+              onClick={autoLayoutNodes}
+              disabled={nodes.length <= 1}
+              className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 ${isDay ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+              title="Auto-arrange workflow nodes"
+            >
+              <Network className="w-3 h-3" />
+              Auto-Layout
+            </button>
           </div>
-          
+
           {/* SLIDING PANELS */}
           <div
             className={`transition-all duration-300 overflow-hidden ${
@@ -1569,6 +1709,16 @@ export default function WorkflowBuilderRedesign({ theme = 'night' }: { theme?: T
         isVisible={monitorVisible}
         onToggleVisibility={() => setMonitorVisible(!monitorVisible)}
       /> */}
+
+      {/* AI Workflow Generator Modal */}
+      <AIWorkflowGenerator
+        isOpen={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
+        onApplyToCanvas={handleApplyAIWorkflow}
+        onWorkflowGenerated={(workflow) => {
+          console.log('AI Workflow generated:', workflow)
+        }}
+      />
     </div>
   )
 }
